@@ -1,0 +1,43 @@
+# Godot 4
+.godot/
+/android/
+*.translation
+
+# Exports
+/build/
+/export/
+export_presets.cfg
+
+# Toolchain locale (binaire Godot, scons, etc.) — jamais versionnée
+.tools/
+
+# Emulateur / runtime local
+.run/
+
+# Build natif (GDExtension, outils C++)
+addons/serial_link/build/
+tools/**/build/
+*.o
+*.os
+*.so
+*.dll
+*.dylib
+*.a
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+compile_commands.json
+.cache/
+
+# Données produites à l'exécution
+logs/
+races/
+
+# Éditeurs / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
