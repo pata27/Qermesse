@@ -42,3 +42,16 @@
   erreur. Le piège est réel, il touchera le driver PC comme il a touché le test. Corrigé dans
   `docs/01` §2 et couvert par un test dédié. Motif : quand une série de tests tombe d'un bloc,
   chercher la cause unique côté banc d'essai avant de soupçonner le code testé.
+* **Une reconnexion en cours de course ne rejoue pas le handshake complet.** Le `s` initial remet un
+  boîtier inconnu dans un état connu ; rejoué après une coupure, il abat la course qu'on vient de
+  récupérer. Découvert en exécutant le scénario `perte-lien` / `retour-lien` de `ss_emu`, pas en
+  relisant la spec. Corrigé dans `docs/01` §4. Motif : un scénario de panne exécuté révèle des
+  couplages qu'aucune relecture ne montre.
+* **`t600` ne veut pas dire 600 secondes.** `600000 mod 65536 = 10176` : le firmware coupe la course
+  à 10,2 s et arrête le flux `R:`. Toutes les valeurs qui débordent ne débordent pas vers l'infini —
+  certaines tombent sur un entier positif court, ce qui est bien pire qu'un plafond inopérant.
+  D'où la constante `t60`, vérifiée par test, imposée par `docs/01` §5.5. Motif : face à un
+  débordement, ne jamais raisonner sur un cas ; balayer la plage.
+* **Un test qui tombe en série accuse le banc d'essai, pas la cible.** Deux fois de suite, une salve
+  d'échecs venait de mes tests (cadrage `x t600 g`, puis valeur `t600` elle-même), jamais du code
+  émulé. Vérifier l'hypothèse du test avant de soupçonner l'implémentation.

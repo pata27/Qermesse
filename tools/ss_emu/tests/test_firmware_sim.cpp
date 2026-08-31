@@ -238,7 +238,7 @@ TEST_CASE("le depart rallume la LED du faux-partant et remet ses ticks a zero") 
 
 TEST_CASE("un tick par front montant, et rien sur le front descendant") {
     Harness h;
-    h.send("x\nt600\ng\n");
+    h.send("x\nt60\ng\n");
     h.run_ms(4200);
     REQUIRE(h.fw.race_started());
     CHECK(h.fw.racer_ticks(0) == 0);
@@ -255,7 +255,7 @@ TEST_CASE("un tick par front montant, et rien sur le front descendant") {
 TEST_CASE("aucun anti-rebond : un rebond de contact produit un tick fantome") {
     // Raison d'etre du filtre PC de docs/01 §6.3.
     Harness h;
-    h.send("x\nt600\ng\n");
+    h.send("x\nt60\ng\n");
     h.run_ms(4200);
     h.pedal(0, 1);
     REQUIRE(h.fw.racer_ticks(0) == 1);
@@ -265,7 +265,7 @@ TEST_CASE("aucun anti-rebond : un rebond de contact produit un tick fantome") {
 
 TEST_CASE("format de la trame R: et cadence ~100 Hz") {
     Harness h;
-    h.send("x\nt600\ng\n");
+    h.send("x\nt60\ng\n");
     h.run_ms(4100);
     h.clear_out();
     h.run_ms(1000);
@@ -385,7 +385,7 @@ TEST_CASE("aucune trame <i>F: negative n'est atteignable") {
 
 TEST_CASE("s arrete la course et eteint les quatre LED") {
     Harness h;
-    h.send("x\nt600\ng\n");
+    h.send("x\nt60\ng\n");
     h.run_ms(4100);
     REQUIRE(h.fw.race_started());
     REQUIRE(h.fw.led_go(2));
@@ -452,4 +452,58 @@ TEST_CASE("tout octet suivant l ou t est avale par le tampon numerique") {
     CHECK(ok.fw.race_starting());
     CHECK(ok.fw.race_length_secs() == 60);
     CHECK_FALSE(ok.fw.race_type_distance());
+}
+
+TEST_CASE("t<secs> peut terminer la course a un instant absurde, pas seulement jamais") {
+    // Decouvert en ecrivant les tests du modele : t600 ne vaut pas 600 s.
+    // 600000 mod 65536 = 10176, positif : la course se termine a 10,2 s et le
+    // flux R: s'arrete. Le PC perd sa source de donnees en pleine course.
+    CHECK(avr_mul(600, 1000) == 10176);
+
+    Harness h;
+    h.send("x\nt600\ng\n");
+    h.run_ms(4100);
+    REQUIRE(h.fw.race_started());
+    h.run_ms(9000);  // t course ~ 9 s
+    CHECK(h.fw.race_started());
+    h.run_ms(2000);  // t course ~ 11 s, au-dela des 10176 ms
+    CHECK_FALSE(h.fw.race_started());
+    CHECK(h.saw("0F:10176"));
+}
+
+TEST_CASE("t60 est la valeur sure : le firmware ne termine jamais, R: coule sans fin") {
+    // Recette normative de docs/01 §5.5 : le PC envoie TOUJOURS t60 en mode
+    // temps et en poursuite, quelle que soit la duree reelle demandee.
+    // 60000 deborde en negatif, donc la condition de fin est inatteignable.
+    CHECK(avr_mul(60, 1000) < 0);
+
+    Harness h;
+    h.send("x\nt60\ng\n");
+    h.run_ms(4100);
+    h.run_ms(120000);  // deux minutes, bien au-dela de toute course reelle
+    CHECK(h.fw.race_started());
+    CHECK_FALSE(h.saw("F:"));
+    h.clear_out();
+    h.run_ms(200);
+    CHECK(h.saw("R:"));  // le flux de donnees ne s'interrompt jamais
+}
+
+TEST_CASE("balayage : quelles durees t<secs> sont sures pour le driver") {
+    // Une valeur est sure si son produit deborde en negatif : la course ne se
+    // termine jamais et le flux R: continue. 60 en fait partie ; 600 non.
+    auto safe = [](int secs) { return avr_mul(static_cast<ssemu::avr_int>(secs), 1000) < 0; };
+    CHECK(safe(60));
+    CHECK(safe(33));
+    CHECK(safe(120));
+    CHECK_FALSE(safe(30));   // termine normalement a 30 s
+    CHECK_FALSE(safe(600));  // termine a 10,2 s — le piege
+
+    // 300 est sur, mais PAR CHANCE : 300000 mod 65536 = 37856, qui tombe du
+    // bon cote. Rien dans le choix d'un plafond de course ne garantit cela —
+    // 600 est tout aussi plausible et catastrophique. C'est exactement pourquoi
+    // docs/01 §5.5 impose une CONSTANTE verifiee, et non la valeur choisie par
+    // l'operateur.
+    CHECK(safe(300));
+    CHECK_FALSE(safe(400));  // 400000 mod 65536 = 6784 : termine a 6,8 s
+    CHECK_FALSE(safe(1000)); // 1000000 mod 65536 = 16960 : termine a 17 s
 }

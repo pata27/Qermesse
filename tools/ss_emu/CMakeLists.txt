@@ -19,12 +19,19 @@ endif()
 add_library(ss_emu_core STATIC
   src/avr_types.cpp
   src/firmware_sim.cpp
+  src/rider_model.cpp
+  src/faults.cpp
+  src/port_pty.cpp
 )
 target_include_directories(ss_emu_core PUBLIC src)
 
+# L'outil lui-meme.
+add_executable(ss_emu src/main.cpp)
+target_link_libraries(ss_emu PRIVATE ss_emu_core)
+
 # Tests natifs : ne lancent ni Godot ni port serie.
 enable_testing()
-add_executable(ss_emu_tests tests/test_firmware_sim.cpp)
+add_executable(ss_emu_tests tests/test_firmware_sim.cpp tests/test_model_and_faults.cpp)
 target_link_libraries(ss_emu_tests PRIVATE ss_emu_core)
 target_include_directories(ss_emu_tests PRIVATE third_party tests)
 add_test(NAME ss_emu_tests COMMAND ss_emu_tests)

@@ -26,6 +26,20 @@ Le suivi d'avancement est dans `tasks/todo.md`.
 | `docs/06-QUALITE-RISQUES.md` | tests, CI, risques |
 | `docs/07-EMULATEUR-FIRMWARE.md` | émulateur de firmware `ss_emu` |
 
+## Outils
+
+| | |
+|---|---|
+| `tools/ss_emu/` | émulateur du firmware sur pseudo-terminal — permet de développer et de tester tout le lien série sans matériel branché |
+| `tools/ss_probe.py` | sonde console indépendante : handshake, ticks en direct, watchdog. Témoin croisé, sans code commun avec l'émulateur |
+
+```sh
+cmake -S tools/ss_emu -B tools/ss_emu/build && cmake --build tools/ss_emu/build -j
+./tools/ss_emu/build/ss_emu_tests
+./tools/ss_emu/build/ss_emu --pty --link ./.run/ttyEMU --riders 2 --profile egaux
+python3 tools/ss_probe.py ./.run/ttyEMU
+```
+
 ## Historique
 
 * **v1** — [cwhitney/SilverSprint](https://github.com/cwhitney/SilverSprint), C++/Cinder, macOS + Windows

@@ -63,7 +63,9 @@ de la trame `R:` (documenté comme tel dans l'UI : « photo-finish »).
 
 **Règle.** Distance maximale parcourue en `T` secondes. `T` réglable, défaut **60 s**, bornes 10–3600 s.
 
-**Séquence série.** `x` → `t<T>` → `g`.
+**Séquence série.** `x` → **`t60`** → `g`. La constante `60` n'a rien à voir avec `T` : c'est la
+valeur qui garantit que le firmware ne termine jamais de lui-même et que le flux `R:` ne s'interrompt
+pas. Recette et démonstration en `01` §5.5. `T` reste entièrement géré par le PC.
 
 **Condition de fin.** **Calculée par le PC seul :** `elapsedMs ≥ T × 1000`. Le PC envoie ensuite `s`.
 
@@ -97,14 +99,16 @@ Un rider éliminé garde son écran mais est grisé, sa piste 3D s'estompe.
 > les deux variantes interchangeables — mais elle n'est pas écrite tant qu'elle n'est pas demandée
 > (règle « pas de code mort »).
 
-**Séquence série.** `x` → `t<plafond_secs>` → `g`.
+**Séquence série.** `x` → **`t60`** → `g`.
 Le mode temps est utilisé comme *véhicule* parce que c'est le seul qui ne fait pas terminer le
 firmware sur une condition de distance. Quand le PC décide la fin, il envoie `s`.
 
-> **`t<plafond_secs>` n'a aucun effet.** À 300 s, le firmware déborde son `int` (`01` §5.5) et
-> n'appliquera jamais ce plafond. On l'émet uniquement pour laisser le firmware dans un état
-> cohérent avec le mode sélectionné. **Les deux plafonds ci-dessous sont donc entièrement à la
-> charge du PC — ce sont eux, et eux seuls, qui empêchent une course infinie.**
+> **Ne jamais envoyer `t300`.** Le plafond de 300 s envisagé initialement est un piège :
+> `300 × 1000` déborde l'`int` 16 bits en `-27680`… mais d'autres valeurs débordent vers un
+> **entier positif court**, et `t600` ferait terminer le firmware au bout de 10,2 s en coupant le
+> flux `R:` en pleine course (`01` §5.5). On envoie donc la constante `t60`, sûre par construction.
+> **Les deux plafonds ci-dessous sont entièrement à la charge du PC — ce sont eux, et eux seuls,
+> qui empêchent une course infinie.**
 
 **Plafonds de sécurité, appliqués par le PC (l'un ou l'autre déclenche la fin).**
 * Durée : `plafond_secs` (défaut 300 s), mesuré sur `elapsedMs`. Vainqueur = celui qui mène.

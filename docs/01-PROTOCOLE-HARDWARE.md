@@ -150,6 +150,19 @@ détecter la perte de lien (watchdog, §6.2) et à interpoler entre deux trames 
         └──────────────┘   seul état où START est autorisé
 ```
 
+### Reconnexion en cours de course : `v` seul, jamais `s`
+
+Le handshake initial commence par `s` pour remettre un boîtier resté en course dans un état connu.
+**Ce `s` ne doit pas être rejoué lors d'une reconnexion pendant une course** : il abattrait
+précisément la course qu'on vient de récupérer, et le rendu se figerait à la reprise du lien.
+
+Règle : le driver n'émet `s` qu'au handshake déclenché depuis `IDLE`. Toute réouverture de port
+alors que la FSM est en `ARMING`, `COUNTDOWN` ou `RUNNING` envoie **`v` seul**, attend `V:`, et
+reprend le flux. Les valeurs de `R:` étant absolues (§3), aucune donnée n'est perdue.
+
+Constaté à l'exécution du scénario de reconnexion sur `ss_emu` : preuve dans
+`tasks/preuves/2026-08-31-emulateur-pty.md`.
+
 **Correction obligatoire vs v1 :** le logiciel v1 autorisait le démarrage d'une course dès que le
 port était ouvert, sans avoir reçu `V:`. En v3, **`IDENTIFIED` est la seule condition d'activation
 du bouton START.** Un port ouvert sans réponse `V:` après 3 tentatives est fermé et blacklisté
@@ -208,8 +221,8 @@ Recette d'exploitation qui en découle :
 | Mode de jeu | Ce qu'on envoie au firmware | Qui décide la fin |
 |---|---|---|
 | Distance | `d` + `l<ticks>` + `g` | **le PC** (dès que les riders *actifs* ont fini). Le firmware peut aussi émettre ses `<i>F:` — on les utilise comme confirmation, jamais comme condition. |
-| Temps | `x` + `t<secs>` + `g` | **le PC exclusivement.** La redondance firmware est illusoire au-delà de 32 s — voir §5.5. |
-| **Poursuite** | `x` + `t<plafond_secs>` + `g` | **le PC exclusivement**, sur le critère d'écart. `t` **ne sert à rien** (§5.5) : le garde-fou anti-course-infinie est entièrement côté PC. On émet quand même `t` pour laisser le firmware dans un état cohérent. |
+| Temps | `x` + **`t60`** (constante, voir §5.5) + `g` | **le PC exclusivement.** La redondance firmware est illusoire, et une mauvaise valeur de `t` couperait le flux `R:` en pleine course. |
+| **Poursuite** | `x` + **`t60`** (constante, voir §5.5) + `g` | **le PC exclusivement**, sur le critère d'écart. Le garde-fou anti-course-infinie est entièrement côté PC. |
 
 Cette table est le cœur du plan. Un dev qui l'ignore reproduira les bugs de la v1.
 
@@ -232,8 +245,29 @@ avec `currentTimeMillis`, un `unsigned long`, convertit ce `-5536` en `429496176
 
 | `T` demandé | `T × 1000` en `int16` | Comportement firmware |
 |---|---|---|
-| ≤ 32 s | correct (≤ 32000) | la course se termine, `<i>F:` émis pour les 4 pistes |
-| ≥ 33 s | déborde, négatif | **la course ne se termine jamais**, aucun `<i>F:` |
+| ≤ 32 s | correct (≤ 32000) | la course se termine à l'heure, `<i>F:` émis pour les 4 pistes |
+| ≥ 33 s, produit négatif | ex. `60 → -5536` | **la course ne se termine jamais**, aucun `<i>F:`, le flux `R:` continue |
+| ≥ 33 s, produit positif | ex. `600 → 10176` | **la course se termine à un instant absurde** — ici 10,2 s — et le flux `R:` s'arrête |
+
+La troisième ligne est la plus dangereuse des trois, et c'est la moins intuitive. `t600` n'ouvre pas
+une fenêtre de 600 secondes : `600000 mod 65536 = 10176`, valeur positive, donc le firmware coupe
+la course au bout de 10,2 secondes. **Le PC perd alors sa source de données en pleine course**, sans
+le moindre message d'erreur.
+
+#### Recette normative : le PC envoie toujours `t60`
+
+En mode temps comme en mode poursuite, quelle que soit la durée réellement demandée par
+l'opérateur, **le driver émet `t60` et rien d'autre**. `60 × 1000 = 60000` déborde en `-5536`, donc :
+
+* la condition de fin firmware est inatteignable ;
+* le flux `R:` coule sans interruption, aussi longtemps que la course dure ;
+* le PC, seul juge, arrête quand il le décide en envoyant `s`.
+
+La durée demandée par l'opérateur n'est jamais transmise au firmware — elle n'a aucune raison de
+l'être, puisqu'il n'en fait rien de correct. Une valeur « sûre » est une valeur dont le produit par
+1000 déborde en négatif ; `60` est retenue parce qu'elle est sûre, lisible dans une trace, et
+plausible pour qui relit le protocole sans connaître ce bug. Test de non-régression :
+`balayage : quelles durees t<secs> sont sures pour le driver`.
 
 Conséquences normatives :
 
@@ -266,6 +300,13 @@ firmware cesse d'émettre `R:` sitôt que les quatre pistes matérielles ont fin
 Avec quatre riders actifs, ce silence peut précéder de quelques millisecondes la conclusion du PC.
 Un watchdog encore armé afficherait alors un faux `LINK_LOST` à l'instant précis de l'arrivée —
 sur l'écran spectacle, au pire moment possible.
+
+Deux silences différents, à ne pas confondre : le **port fermé** (câble arraché, boîtier
+ré-énuméré) et le **firmware muet, port toujours ouvert** (blocage, alimentation instable). Le
+second est le plus vicieux, parce que rien au niveau du système ne signale quoi que ce soit — seule
+l'absence de trames le trahit. Les deux basculent en `LINK_LOST`, mais on ne referme le port qu'au
+bout d'**une seconde** de silence : en deçà, un blocage passager se résorbe seul et refermer
+coûterait une reconnexion inutile. Panne `gel@<t>=<ms>` de `ss_emu` pour l'éprouver.
 
 Si aucune trame `R:` n'est reçue pendant **500 ms alors qu'une course est en cours** :
 bascule en `LINK_LOST`, gel du rendu de course sur la dernière valeur connue, bandeau d'alerte,

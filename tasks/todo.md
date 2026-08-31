@@ -27,11 +27,14 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 - [ ] `send_command` : allowlist de commandes + bornage à 7 chiffres (débordement `charBuff[8]`)
 - [ ] Watchdog 500 ms, reconnexion avec backoff plafonné à 5 s
 - [ ] Tests C++ natifs du parseur dans la CI, sans Godot
-- [ ] `tools/ss_emu` — cœur `FirmwareSim`, réplique fidèle de `ss_basic.ino` bugs compris (`docs/07` §4)
-- [ ] `tools/ss_emu` — cyclistes synthétiques et profils de course (`docs/07` §5)
-- [ ] `tools/ss_emu` — injection de pannes (`docs/07` §6)
-- [ ] `tools/ss_emu` — frontal pseudo-terminal, CLI, `--trace`
-- [ ] Tests doctest de `FirmwareSim`, en temps virtuel, dans la CI
+- [x] `tools/ss_emu` — cœur `FirmwareSim`, réplique fidèle de `ss_basic.ino` bugs compris (`docs/07` §4)
+      *(preuve : 50 cas doctest, 309 assertions, exit 0)*
+- [x] `tools/ss_emu` — cyclistes synthétiques et 5 profils de course (`docs/07` §5)
+- [x] `tools/ss_emu` — injection de 8 pannes (`docs/07` §6)
+- [x] `tools/ss_emu` — frontal pseudo-terminal, CLI, `--trace`
+      *(preuve : `tasks/preuves/2026-08-31-emulateur-pty.md`)*
+- [x] Tests doctest de `FirmwareSim`, en temps virtuel *(à raccorder à la CI au lot 0)*
+- [x] Sonde console indépendante `tools/ss_probe.py` — témoin croisé, pas l'outil de J1
 - [ ] `link_sim.gd` : profils de course + injection de pannes (`docs/03` §5)
 - [ ] Test de conformité `link_sim.gd` ↔ `ss_emu` sur scénario à graine fixée
 - [ ] **J1-ém** — contre `ss_emu` : handshake, ticks en direct, `LINK_LOST` < 500 ms, reconnexion,
