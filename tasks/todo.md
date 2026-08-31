@@ -138,4 +138,51 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 
 ## Revue
 
-*(à remplir à la fin de chaque lot : ce qui a été fait, ce qui a dévié de la spec, ce qui reste)*
+### Lots 0, 1 et 2 — 2026-08-31
+
+**Jalons franchis.** J0 (CI verte sur trois OS), J1-ém (lien série validé contre l'émulateur de
+firmware, à travers le GDExtension), J2 (75 tests headless, 3160 assertions, exit 0).
+**J1 reste ouvert** : le boîtier n'était pas disponible.
+
+**Ce qui a dévié de la spec, et pourquoi.** Sept corrections aux documents normatifs, toutes
+faites *avant* d'écrire le code correspondant :
+
+| Document | Correction | Origine |
+|---|---|---|
+| `01` §5.5 *(nouveau)* | Le firmware ne termine jamais une course en temps au-delà de 32 s : `raceLengthSecs * 1000` déborde un `int` 16 bits. La « double détection » du mode temps n'existait pas. | relecture ligne à ligne du `.ino` |
+| `01` §5.5 | `t600` termine la course à **10,2 s** et coupe le flux `R:`. Toutes les valeurs ne débordent pas vers l'infini. D'où la constante `t60`, sûre par construction. | test de balayage |
+| `01` §2 | Bornage de `l`/`t` : 7 chiffres **et** 1..32767. La première borne seule était insuffisante. | relecture |
+| `01` §2 | Cadrage strict : tout octet suivant `l` ou `t` est avalé par le tampon numérique. | neuf tests tombés d'un coup |
+| `01` §4 | Une reconnexion en cours de course émet `v` **seul** : rejouer le `s` abattrait la course récupérée. | scénario de panne exécuté |
+| `01` §6.2 | Watchdog armé à la première trame `R:` suivant le START, pas au START — le firmware est muet pendant les ~4 s de décompte. | premier test d'intégration sur pty |
+| `01` §6.3 | Le filtre ne peut pas rattraper un tick fantôme isolé : à 100 Hz, un seul tick implique déjà 129 km/h. Promesse retirée, tolérance d'un tick ajoutée. | onze tests tombés d'un coup |
+| `02` | Timeout `ARMING` 1 s → 2 s ; mode temps arbitré par le PC seul ; plafonds de poursuite à la charge du PC. | conséquences des ci-dessus |
+| `03` §1 | `libserialport` écarté : son intégration autotools sur trois OS contredit « aucune dépendance à reconstruire par réseau » pour un apport réduit à l'ouverture de port et l'énumération VID/PID. | décision d'architecture |
+| `07` *(nouveau)* | Spécification de l'émulateur de firmware `ss_emu`. | matériel indisponible |
+
+**Ce qui a été ajouté hors plan.** L'émulateur `tools/ss_emu` (~1400 lignes C++ + tests) et la sonde
+`tools/ss_probe.py`. Non prévus par `docs/05`, rendus nécessaires par l'absence de matériel — et
+utiles bien au-delà : ils resteront le moyen de développer et de démontrer sans boîtier.
+
+**Décision structurante prise en cours de route.** Émuler au niveau du **port série** (pseudo-terminal
+à 115200 bauds) et non au niveau du parseur. Le code Godot ne sait pas qu'il ne parle pas à un
+Arduino : ouverture de port, threading, découpage de flux, handshake, watchdog et reconnexion sont
+réellement traversés. C'est exactement ce que le mock de la v2 laissait sans couverture.
+
+**Ce que la CI trois OS a rattrapé** — et qui n'aurait pas été vu en local :
+`tcgetattr` sur le maître d'un pseudo-terminal répond `ENOTTY` sur macOS ; `GUID_DEVCLASS_PORTS`
+exige `initguid.h` avant `devguid.h` ; `advapi32` n'est pas lié par défaut sous SCons.
+
+**Ce qui reste.**
+
+* **J1** — brancher le boîtier, relever `lsusb`, compléter l'allowlist VID/PID, vérifier
+  l'affectation des pistes et le nombre réel de capteurs, débranchement USB physique à chaud.
+* Lot 3 (interface opérateur) et lot 4 (scène 3D) — sessions séparées. Le verrou « la donnée avant
+  le pixel » interdit le lot 4 tant que J1 n'est pas franchi ; **J1-ém ne le lève pas**.
+* Variante de poursuite « `G` à tous les autres » : implémentable derrière `RaceRule`, non écrite
+  tant qu'elle n'est pas demandée.
+* Les dossiers `art/`, `audio/`, `scenes/` ne contiennent que des `.gitkeep`, conformément à la
+  règle « pas d'asset orphelin ».
+
+**Chiffres.** 112 cas doctest / 757 assertions en C++ ; 75 tests GUT / 3160 assertions en GDScript ;
+sept jobs CI sur trois OS.
