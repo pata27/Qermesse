@@ -1,9 +1,16 @@
-## Constantes partagees par les deux implementations du lien.
+## Contrat serie cote GDScript — miroir de `addons/serial_link/src/line_parser.h`.
 ##
-## Elles doublent volontairement les enums du GDExtension : le simulateur doit
-## rester utilisable meme quand le module natif n'est pas compile, sans quoi la
-## CI headless dependrait d'un build C++ pour tester la logique de course.
-class_name LinkConst
+## Vit dans `core/` et non dans `hardware/` pour deux raisons :
+##
+##   * `core/` ne doit dependre de rien (docs/03 §2). Si les constantes de
+##     protocole vivaient dans `hardware/`, le moteur de course en dependrait et
+##     la regle serait violee des la premiere ligne du lot 2.
+##   * elles doublent volontairement les enums du GDExtension, pour que le
+##     simulateur et les tests headless restent utilisables sans build C++.
+##
+## Toute divergence avec `line_parser.h` est un bug de ce fichier : le C++ est
+## la reference, lui-meme adosse a `docs/01`.
+class_name Protocol
 extends RefCounted
 
 ## Miroir de sslink::FrameKind (addons/serial_link/src/line_parser.h).

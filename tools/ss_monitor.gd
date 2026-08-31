@@ -23,7 +23,7 @@ var _ticks := [0, 0, 0, 0]
 var _elapsed_ms := 0
 var _events: Array[String] = []
 var _armed := false
-var _roller_mm := LinkConst.DEFAULT_ROLLER_MM
+var _roller_mm := Protocol.DEFAULT_ROLLER_MM
 
 
 func _initialize() -> void:
@@ -99,8 +99,8 @@ func _print_ports() -> void:
 
 
 func _on_state(state: int) -> void:
-	_note("lien -> %s" % LinkConst.state_name(state))
-	if state == LinkConst.State.IDENTIFIED and not _armed:
+	_note("lien -> %s" % Protocol.state_name(state))
+	if state == Protocol.State.IDENTIFIED and not _armed:
 		_armed = true
 		_note("firmware %s sur %s" % [_link.get_firmware_version(), _link.get_current_port()
 			if _link.has_method("get_current_port") else "?"])
@@ -109,8 +109,8 @@ func _on_state(state: int) -> void:
 
 
 func _arm_race() -> void:
-	var ticks := LinkConst.ticks_for_metres(_distance_m, _roller_mm)
-	if not LinkConst.is_valid_firmware_argument(ticks):
+	var ticks := Protocol.ticks_for_metres(_distance_m, _roller_mm)
+	if not Protocol.is_valid_firmware_argument(ticks):
 		_note("distance hors bornes firmware : %d ticks" % ticks)
 		return
 	# docs/01 §2 : d ou x, puis l ou t, puis g — dans cet ordre, sans rien
@@ -124,26 +124,26 @@ func _arm_race() -> void:
 
 func _on_frame(kind: int, payload: Dictionary) -> void:
 	match kind:
-		LinkConst.Frame.PROGRESS:
+		Protocol.Frame.PROGRESS:
 			_ticks = payload.get("ticks", _ticks)
 			_elapsed_ms = int(payload.get("elapsed_ms", 0))
-		LinkConst.Frame.COUNTDOWN:
+		Protocol.Frame.COUNTDOWN:
 			_note("decompte %d" % int(payload.get("value", -1)))
-		LinkConst.Frame.RIDER_FINISH:
+		Protocol.Frame.RIDER_FINISH:
 			_note(
 				"ARRIVEE piste %d a %d ms"
 				% [int(payload.get("rider", -1)), int(payload.get("elapsed_ms", 0))]
 			)
-		LinkConst.Frame.FALSE_START:
+		Protocol.Frame.FALSE_START:
 			_note("FAUX DEPART piste %d" % int(payload.get("rider", -1)))
-		LinkConst.Frame.LENGTH_ACK:
+		Protocol.Frame.LENGTH_ACK:
 			_note("ack longueur : %d ticks" % int(payload.get("ticks", 0)))
-		LinkConst.Frame.VERSION:
+		Protocol.Frame.VERSION:
 			_note("version : %s" % payload.get("text", ""))
-		LinkConst.Frame.ERROR, LinkConst.Frame.UNKNOWN:
-			_note("%s : %s" % [LinkConst.frame_name(kind), payload.get("text", "")])
-		LinkConst.Frame.KIOSK_START, LinkConst.Frame.KIOSK_STOP:
-			_note("trame kiosque %s (loggee, sans effet)" % LinkConst.frame_name(kind))
+		Protocol.Frame.ERROR, Protocol.Frame.UNKNOWN:
+			_note("%s : %s" % [Protocol.frame_name(kind), payload.get("text", "")])
+		Protocol.Frame.KIOSK_START, Protocol.Frame.KIOSK_STOP:
+			_note("trame kiosque %s (loggee, sans effet)" % Protocol.frame_name(kind))
 
 
 func _note(text: String) -> void:
@@ -160,9 +160,9 @@ func _process(delta: float) -> bool:
 		while not _events.is_empty():
 			print(_events.pop_front())
 
-	var circumference := LinkConst.circumference_mm(_roller_mm)
+	var circumference := Protocol.circumference_mm(_roller_mm)
 	var line := "  %6.2f s " % (_elapsed_ms / 1000.0)
-	for i: int in range(LinkConst.MAX_RIDERS):
+	for i: int in range(Protocol.MAX_RIDERS):
 		line += "P%d:%5d t %7.1f m   " % [i, _ticks[i], _ticks[i] * circumference / 1000.0]
 	printraw("\r" + line)
 

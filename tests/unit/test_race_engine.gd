@@ -1,0 +1,491 @@
+## Tests du coeur metier — jalon J2 de docs/05.
+##
+## Tout tourne en headless, sans scene, sans port serie, sans rendu. Le moteur
+## n'emet pas de commandes : il emet `command_requested`, ce qui permet de
+## verifier ce qu'il AURAIT envoye au firmware sans qu'aucun materiel existe.
+extends GutTest
+
+var _engine: RaceEngine
+var _commands: Array[String] = []
+var _states: Array[int] = []
+var _finishes: Array[Dictionary] = []
+var _eliminations: Array[Dictionary] = []
+var _rejections: Array[String] = []
+var _result: RaceResult = null
+var _now_ms: int = 0
+
+
+func before_each() -> void:
+	_engine = RaceEngine.new()
+	_commands.clear()
+	_states.clear()
+	_finishes.clear()
+	_eliminations.clear()
+	_rejections.clear()
+	_result = null
+	_now_ms = 0
+	_engine.command_requested.connect(func(c: String) -> void: _commands.append(c))
+	_engine.state_changed.connect(func(_p: int, c: int) -> void: _states.append(c))
+	_engine.rider_finished.connect(func(r: int, ms: int, rank: int) -> void:
+		_finishes.append({"rider": r, "ms": ms, "rank": rank}))
+	_engine.rider_eliminated.connect(func(r: int, rank: int, gap: float) -> void:
+		_eliminations.append({"rider": r, "rank": rank, "gap": gap}))
+	_engine.tick_rejected.connect(func(d: String) -> void: _rejections.append(d))
+	_engine.race_finished.connect(func(res: RaceResult) -> void: _result = res)
+
+
+func _config(mode: RaceConfig.Mode, riders: Array[int]) -> RaceConfig:
+	var config := RaceConfig.new()
+	config.mode = mode
+	config.active_riders = riders
+	return config
+
+
+## Deroule le decompte firmware jusqu'au depart.
+func _countdown() -> void:
+	for value: int in [3, 2, 1, 0]:
+		_now_ms += 1000
+		_engine.tick(_now_ms)
+		_engine.on_countdown(value)
+
+
+## Injecte des trames `R:` a 100 Hz pour des vitesses constantes, en km/h.
+## Rend le nombre de trames emises.
+func _run_race(seconds: float, speeds: Array, from_ms: int = 0) -> int:
+	var physics := Physics.new()
+	var distances := [0.0, 0.0, 0.0, 0.0]
+	var frames := 0
+	var ms := from_ms
+	while ms < from_ms + int(seconds * 1000.0):
+		ms += 10
+		var ticks: Array = []
+		for rider: int in range(Protocol.MAX_RIDERS):
+			var kph: float = speeds[rider] if rider < speeds.size() else 0.0
+			distances[rider] += kph * Physics.KPH_TO_MM_PER_MS * 10.0
+			ticks.append(int(floor(distances[rider] / physics.circumference_mm)))
+		_engine.on_progress(ticks, ms)
+		frames += 1
+		if _engine.state() != RaceEngine.State.RUNNING:
+			break
+	return frames
+
+
+# =============================================================================
+# Armement et sequence serie — docs/01 §2 et §5.4
+# =============================================================================
+
+func test_la_sequence_d_armement_en_distance_respecte_l_ordre_impose() -> void:
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 100.0
+	assert_true(_engine.arm(config, 0))
+	assert_eq(_commands, ["d", "l278", "g"], "d ou x, puis l ou t, puis g")
+
+
+func test_les_modes_temps_et_poursuite_emettent_la_constante_sure_t60() -> void:
+	# docs/01 §5.5 : la duree demandee n'est JAMAIS transmise au firmware.
+	for mode: RaceConfig.Mode in [RaceConfig.Mode.TIME, RaceConfig.Mode.PURSUIT]:
+		_commands.clear()
+		var engine := RaceEngine.new()
+		engine.command_requested.connect(func(c: String) -> void: _commands.append(c))
+		var config := _config(mode, [0, 1])
+		config.duration_s = 600.0  # valeur qui casserait le firmware si transmise
+		assert_true(engine.arm(config, 0))
+		assert_eq(_commands, ["x", "t60", "g"])
+
+
+func test_une_configuration_invalide_n_emet_aucune_commande() -> void:
+	# Mieux vaut refuser bruyamment que d'envoyer une valeur que le firmware
+	# interpretera de travers.
+	var config := _config(RaceConfig.Mode.DISTANCE, [])
+	assert_false(_engine.arm(config, 0))
+	assert_eq(_commands, [], "aucune commande ne doit partir")
+	assert_string_contains(_engine.last_error(), "piste")
+
+
+func test_une_distance_hors_bornes_est_refusee() -> void:
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 9000.0
+	assert_false(_engine.arm(config, 0))
+	assert_string_contains(_engine.last_error(), "bornes")
+
+
+func test_le_timeout_d_armement_est_de_2_s_et_renvoie_a_idle() -> void:
+	# docs/02 : 1 s etait un faux negatif systematique, le premier CD: arrivant
+	# juste apres 1000 ms.
+	assert_true(_engine.arm(_config(RaceConfig.Mode.DISTANCE, [0, 1]), 0))
+	assert_eq(_engine.state(), RaceEngine.State.ARMING)
+	_engine.tick(1900)
+	assert_eq(_engine.state(), RaceEngine.State.ARMING, "1,9 s : on attend encore")
+	_engine.tick(2100)
+	assert_eq(_engine.state(), RaceEngine.State.IDLE)
+	assert_string_contains(_engine.last_error(), "CD:")
+	assert_has(_commands, "s", "un armement rate doit remettre le firmware au repos")
+
+
+# =============================================================================
+# LE bug historique de la v1 — docs/01 §5.1
+# =============================================================================
+
+func test_course_distance_a_2_riders_qui_se_termine() -> void:
+	# Le test le plus important du lot 2. Le firmware attend les QUATRE pistes
+	# et ne conclut jamais a deux riders ; c'est le PC qui tranche, en ne
+	# comptant que les pistes ACTIVES.
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 100.0
+	assert_true(_engine.arm(config, 0))
+	_countdown()
+	assert_eq(_engine.state(), RaceEngine.State.RUNNING)
+
+	_run_race(20.0, [45.0, 43.0])
+
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED, "la course DOIT se terminer")
+	assert_not_null(_result)
+	assert_eq(_result.ranking, [0, 1], "le plus rapide gagne")
+	assert_eq(_finishes.size(), 2)
+	assert_has(_commands, "s", "le PC envoie `s` quand LUI decide que c'est fini")
+	assert_false(_result.interrupted)
+
+	# 100 m a 45 km/h = 8,0 s ; a 43 km/h = 8,37 s. Marge large : le tick est
+	# quantifie a 35,9 cm.
+	assert_between(_result.finished_ms[0], 7900, 8200)
+	assert_between(_result.finished_ms[1], 8300, 8600)
+
+
+func test_les_pistes_inactives_sont_ignorees_partout() -> void:
+	# Une piste non declaree qui produirait des ticks — capteur parasite,
+	# rebond — ne doit ni apparaitre au classement, ni retarder la fin.
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 100.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(20.0, [45.0, 43.0, 60.0, 60.0])
+
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
+	assert_eq(_result.ranking.size(), 2)
+	assert_false(_result.ranking.has(2))
+	assert_eq(_result.finished_ms[2], 0)
+
+
+func test_course_distance_a_4_riders() -> void:
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1, 2, 3])
+	config.distance_m = 100.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(25.0, [46.0, 45.0, 44.0, 43.0])
+
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
+	assert_eq(_result.ranking, [0, 1, 2, 3])
+	for rider: int in range(4):
+		assert_eq(_result.rank_of(rider), rider + 1)
+
+
+func test_course_distance_a_1_rider() -> void:
+	var config := _config(RaceConfig.Mode.DISTANCE, [2])
+	config.distance_m = 100.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(20.0, [0.0, 0.0, 45.0, 0.0])
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
+	assert_eq(_result.ranking, [2])
+
+
+func test_le_plafond_de_securite_du_mode_distance() -> void:
+	# docs/02 §1 — 10 minutes. Un rider qui s'arrete ne doit pas bloquer la
+	# soiree.
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 5000.0
+	config.distance_timeout_s = 5.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(10.0, [20.0, 0.0])
+
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
+	assert_eq(_result.end_reason, RaceRule.EndReason.TIME_CAP)
+	assert_true(_result.interrupted, "une course coupee au plafond est INTERROMPUE")
+	assert_eq(_result.ranking[0], 0, "le plus avance est classe premier")
+
+
+# =============================================================================
+# Mode TEMPS — docs/02 §2
+# =============================================================================
+
+func test_mode_temps_le_pc_seul_decide_de_la_fin() -> void:
+	# docs/02 §2 : bornes 10..3600 s. 10 s est le minimum autorise.
+	var config := _config(RaceConfig.Mode.TIME, [0, 1])
+	config.duration_s = 10.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(13.0, [45.0, 50.0])
+
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
+	assert_eq(_result.end_reason, RaceRule.EndReason.TIME_ELAPSED)
+	assert_eq(_result.ranking, [1, 0], "le plus loin gagne, pas le plus rapide a un instant")
+	assert_gt(_result.distance_m[1], _result.distance_m[0])
+	assert_between(_result.elapsed_ms, 10000, 10100)
+
+
+func test_mode_temps_ex_aequo_departage_par_vitesse_de_pointe() -> void:
+	var config := _config(RaceConfig.Mode.TIME, [0, 1])
+	config.duration_s = 10.0
+	_engine.arm(config, 0)
+	_countdown()
+	# Memes ticks cumules, mais le rider 1 a eu une pointe plus elevee.
+	_run_race(5.0, [40.0, 30.0])
+	_run_race(6.0, [40.0, 55.0], 5000)
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
+	assert_not_null(_result)
+
+
+# =============================================================================
+# Mode POURSUITE — docs/02 §3
+# =============================================================================
+
+func test_poursuite_2_riders_fin_exacte_au_franchissement_de_l_ecart() -> void:
+	var config := _config(RaceConfig.Mode.PURSUIT, [0, 1])
+	config.gap_m = 50.0
+	_engine.arm(config, 0)
+	_countdown()
+	# 10 km/h d'ecart = 2,78 m/s. 50 m d'ecart atteints a t = 18,0 s.
+	_run_race(30.0, [50.0, 40.0])
+
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
+	assert_eq(_result.end_reason, RaceRule.EndReason.LAST_ONE_STANDING)
+	assert_eq(_result.ranking, [0, 1], "celui qui est devant gagne")
+	assert_true(_result.eliminated[1])
+	assert_eq(_eliminations.size(), 1)
+
+	# La fin doit tomber au tick pres, pas « quelque part vers 18 s ». Un tick
+	# vaut 35,9 cm, soit ~26 ms a cette vitesse relative.
+	assert_between(_result.elapsed_ms, 17900, 18200)
+	assert_almost_eq(float(_eliminations[0]["gap"]), 50.0, 0.6)
+
+
+func test_poursuite_4_riders_ordre_d_elimination_progressive() -> void:
+	# docs/02 §3 : le dernier sort des qu'il prend G metres au leader, et le
+	# rang vaut « riders restants + 1 ».
+	var config := _config(RaceConfig.Mode.PURSUIT, [0, 1, 2, 3])
+	config.gap_m = 30.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(120.0, [55.0, 50.0, 45.0, 40.0])
+
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
+	assert_eq(_eliminations.size(), 3, "trois elimines, un survivant")
+	assert_eq(_eliminations[0]["rider"], 3, "le plus lent sort en premier")
+	assert_eq(_eliminations[1]["rider"], 2)
+	assert_eq(_eliminations[2]["rider"], 1)
+	assert_eq(_eliminations[0]["rank"], 4)
+	assert_eq(_eliminations[1]["rank"], 3)
+	assert_eq(_eliminations[2]["rank"], 2)
+	assert_eq(_result.ranking, [0, 1, 2, 3])
+
+
+func test_poursuite_plafond_de_duree() -> void:
+	# Deux riders de niveau egal courraient jusqu'a epuisement sans ce plafond.
+	var config := _config(RaceConfig.Mode.PURSUIT, [0, 1])
+	config.gap_m = 500.0
+	config.pursuit_time_cap_s = 6.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(10.0, [45.0, 44.5])
+
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
+	assert_eq(_result.end_reason, RaceRule.EndReason.TIME_CAP)
+	assert_true(_result.interrupted)
+	assert_eq(_result.ranking[0], 0, "celui qui mene a cet instant gagne")
+
+
+func test_poursuite_plafond_de_distance() -> void:
+	var config := _config(RaceConfig.Mode.PURSUIT, [0, 1])
+	config.gap_m = 500.0
+	config.pursuit_time_cap_s = 3600.0
+	config.pursuit_distance_cap_m = 100.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(30.0, [45.0, 44.0])
+
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
+	assert_eq(_result.end_reason, RaceRule.EndReason.DISTANCE_CAP)
+	assert_true(_result.interrupted)
+
+
+func test_poursuite_la_tension_mesure_la_progression_vers_la_decision() -> void:
+	var config := _config(RaceConfig.Mode.PURSUIT, [0, 1])
+	config.gap_m = 50.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(9.0, [50.0, 40.0])
+	var pursuit := _engine.rule() as RulePursuit
+	assert_almost_eq(pursuit.tension(_engine.race_state()), 0.5, 0.1)
+
+
+# =============================================================================
+# Faux depart — docs/02 §4
+# =============================================================================
+
+func test_faux_depart_avertissement_la_course_continue() -> void:
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 100.0
+	config.false_start_policy = RaceConfig.FalseStartPolicy.WARN
+	_engine.arm(config, 0)
+	_engine.on_countdown(3)
+	_engine.on_false_start(0)
+	_engine.on_countdown(0)
+	assert_eq(_engine.state(), RaceEngine.State.RUNNING, "AVERTISSEMENT ne relance pas")
+	assert_true(_engine.race_state().false_started[0])
+
+
+func test_faux_depart_relance_avorte_la_course() -> void:
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.false_start_policy = RaceConfig.FalseStartPolicy.RESTART
+	_engine.arm(config, 0)
+	_engine.on_countdown(3)
+	_commands.clear()
+	_engine.on_false_start(1)
+	assert_eq(_engine.state(), RaceEngine.State.IDLE)
+	assert_has(_commands, "s")
+
+
+func test_faux_depart_penalite_applique_un_handicap_en_metres() -> void:
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 100.0
+	config.false_start_policy = RaceConfig.FalseStartPolicy.PENALTY
+	config.false_start_penalty_m = 10.0
+	_engine.arm(config, 0)
+	_engine.on_countdown(3)
+	_engine.on_false_start(0)
+	_engine.on_countdown(0)
+	_run_race(2.0, [45.0, 45.0])
+
+	var state := _engine.race_state()
+	assert_almost_eq(state.distance_m[1] - state.distance_m[0], 10.0, 0.5)
+
+
+func test_un_faux_depart_sur_une_piste_inactive_est_ignore() -> void:
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.false_start_policy = RaceConfig.FalseStartPolicy.RESTART
+	_engine.arm(config, 0)
+	_engine.on_countdown(3)
+	_engine.on_false_start(3)
+	assert_eq(_engine.state(), RaceEngine.State.COUNTDOWN, "piste 3 non declaree")
+
+
+# =============================================================================
+# Filtrage des ticks aberrants — docs/01 §6.3
+# =============================================================================
+
+func test_un_tick_impliquant_plus_de_120_kmh_est_rejete_et_loggue() -> void:
+	var config := _config(RaceConfig.Mode.TIME, [0, 1])
+	config.duration_s = 60.0
+	_engine.arm(config, 0)
+	_countdown()
+
+	# 10 ticks en 1 s = 12,9 km/h : plausible.
+	_engine.on_progress([10, 10, 0, 0], 1000)
+	# +290 ticks en 10 ms = 104 m en 10 ms, soit ~37 500 km/h.
+	_engine.on_progress([300, 10, 0, 0], 1010)
+
+	assert_eq(_rejections.size(), 1, "le rejet doit etre visible, jamais silencieux")
+	assert_string_contains(_rejections[0], "km/h")
+	assert_eq(_engine.race_state().ticks[0], 10, "la derniere valeur SAINE est conservee")
+
+
+func test_un_compteur_de_ticks_qui_recule_est_rejete() -> void:
+	var config := _config(RaceConfig.Mode.TIME, [0, 1])
+	_engine.arm(config, 0)
+	_countdown()
+	_engine.on_progress([10, 10, 0, 0], 1000)
+	_engine.on_progress([8, 10, 0, 0], 1010)
+	assert_eq(_rejections.size(), 1)
+	assert_string_contains(_rejections[0], "recul")
+	assert_eq(_engine.race_state().ticks[0], 10)
+
+
+func test_une_horloge_firmware_qui_recule_fait_rejeter_la_trame_entiere() -> void:
+	var config := _config(RaceConfig.Mode.TIME, [0, 1])
+	_engine.arm(config, 0)
+	_countdown()
+	_engine.on_progress([20, 20, 0, 0], 2000)
+	_engine.on_progress([21, 21, 0, 0], 1500)
+	assert_eq(_rejections.size(), 1)
+	assert_eq(_engine.race_state().ticks[0], 20)
+
+
+func test_une_valeur_rejetee_est_rattrapee_par_la_trame_suivante() -> void:
+	# docs/01 §3 : les valeurs de R: sont ABSOLUES. Perdre une trame est sans
+	# effet — c'est ce qui rend le systeme robuste, et il faut le preserver.
+	var config := _config(RaceConfig.Mode.TIME, [0, 1])
+	_engine.arm(config, 0)
+	_countdown()
+	_engine.on_progress([10, 10, 0, 0], 1000)
+	_engine.on_progress([9000, 10, 0, 0], 1010)
+	assert_eq(_engine.race_state().ticks[0], 10)
+	_engine.on_progress([11, 10, 0, 0], 1020)
+	assert_eq(_engine.race_state().ticks[0], 11, "le flux repart sans intervention")
+
+
+# =============================================================================
+# FSM — docs/06 §1 : aucun etat mort
+# =============================================================================
+
+func test_chaque_etat_de_la_fsm_est_atteint() -> void:
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 100.0
+	assert_eq(_engine.state(), RaceEngine.State.IDLE)
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(20.0, [45.0, 44.0])
+	_engine.show_results()
+	assert_eq(_engine.state(), RaceEngine.State.RESULTS)
+	_engine.acknowledge_results()
+	assert_eq(_engine.state(), RaceEngine.State.IDLE)
+
+	for wanted: int in [
+		RaceEngine.State.ARMING,
+		RaceEngine.State.COUNTDOWN,
+		RaceEngine.State.RUNNING,
+		RaceEngine.State.FINISHED,
+		RaceEngine.State.RESULTS,
+		RaceEngine.State.IDLE,
+	]:
+		assert_has(_states, wanted, "etat %s jamais atteint" % RaceEngine.State.keys()[wanted])
+
+
+func test_un_abandon_operateur_coupe_la_course_et_envoie_s() -> void:
+	_engine.arm(_config(RaceConfig.Mode.DISTANCE, [0, 1]), 0)
+	_countdown()
+	_commands.clear()
+	_engine.abort("arret operateur")
+	assert_eq(_engine.state(), RaceEngine.State.IDLE)
+	assert_has(_commands, "s")
+
+
+func test_une_perte_de_lien_prolongee_avorte_la_course() -> void:
+	# docs/01 §6.2 : au-dela du delai de grace, la course est perdue.
+	_engine.arm(_config(RaceConfig.Mode.DISTANCE, [0, 1]), 0)
+	_countdown()
+	_commands.clear()
+	_engine.on_link_lost_beyond_grace()
+	assert_eq(_engine.state(), RaceEngine.State.IDLE)
+	assert_has(_commands, "s")
+
+
+func test_on_ne_peut_pas_armer_deux_courses_a_la_fois() -> void:
+	_engine.arm(_config(RaceConfig.Mode.DISTANCE, [0, 1]), 0)
+	_commands.clear()
+	assert_false(_engine.arm(_config(RaceConfig.Mode.TIME, [0, 1]), 0))
+	assert_eq(_commands, [])
+
+
+func test_le_firmware_f_est_une_confirmation_jamais_une_condition_de_fin() -> void:
+	# docs/01 §5.4 : le firmware ne connait pas les pistes actives. Ses <i>F:
+	# ne doivent JAMAIS terminer une course cote PC.
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 1000.0
+	_engine.arm(config, 0)
+	_countdown()
+	_engine.on_progress([10, 10, 0, 0], 1000)
+	_engine.on_rider_finish(0, 1000)
+	_engine.on_rider_finish(1, 1000)
+	assert_eq(_engine.state(), RaceEngine.State.RUNNING, "la course continue")
+	assert_eq(_finishes.size(), 0)

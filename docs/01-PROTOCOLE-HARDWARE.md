@@ -323,8 +323,22 @@ Au-delà : course annulée, résultat marqué `INTERROMPUE` dans le log.
 ### 6.3 Filtrage des ticks aberrants
 
 Sans debounce firmware, un rebond de contact peut produire un tick fantôme. Filtre côté PC :
-rejeter toute trame `R:` impliquant une vitesse instantanée **> 120 km/h** ou un delta de ticks
-incompatible avec le `elapsedMs` écoulé. Un tick rejeté est loggué, jamais silencieusement absorbé.
+rejeter toute trame `R:` dont le saut de ticks est incompatible avec le `elapsedMs` écoulé, borne
+haute **120 km/h**, plus **une tolérance d'un tick**. Un tick rejeté est loggué, jamais
+silencieusement absorbé.
+
+> **Ce que ce filtre ne peut pas faire.** La première rédaction de ce paragraphe promettait de
+> rattraper les ticks fantômes. C'est faux, et la promesse est retirée : à 100 Hz un tick vaut
+> 35,9 cm et une trame couvre 10 ms, si bien qu'**un seul tick sur cette fenêtre implique déjà
+> 129 km/h**. Un contrôle de vitesse par trame est structurellement aveugle à un tick de trop —
+> il ne peut distinguer un rebond d'un tour de rouleau. D'où la tolérance d'un tick, sans laquelle
+> le filtre rejetterait la totalité d'une course normale (constaté : onze tests tombés d'un coup
+> à la première exécution du cœur métier).
+>
+> Le filtre attrape donc ce qui est réellement attrapable : les sauts massifs d'une valeur
+> corrompue, les compteurs qui reculent, l'horloge qui recule. Le garde-fou contre les rebonds est
+> ailleurs — le compteur de rejets et le panneau matériel, qui rendent un capteur mal fixé visible
+> **avant** la course. Prétendre mieux donnerait une fausse assurance.
 
 ### 6.4 Reconnexion
 

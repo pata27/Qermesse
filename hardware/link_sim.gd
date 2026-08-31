@@ -27,11 +27,11 @@ const PROFILES := {
 
 @export var wired_riders: int = 2  ## le boitier de l'utilisateur : 2 capteurs
 @export var profile: String = "egaux"
-@export var roller_mm: float = LinkConst.DEFAULT_ROLLER_MM
+@export var roller_mm: float = Protocol.DEFAULT_ROLLER_MM
 @export var seed: int = 42
 @export var identify_delay_s: float = 0.15  ## on ne s'identifie pas instantanement
 
-var _state: int = LinkConst.State.DISCONNECTED
+var _state: int = Protocol.State.DISCONNECTED
 var _running := false
 var _elapsed_s := 0.0
 var _accumulator := 0.0
@@ -77,9 +77,9 @@ func advance(delta: float) -> void:
 func _step() -> void:
 	_elapsed_s += STEP_S
 
-	if _state == LinkConst.State.PORT_OPEN and _elapsed_s >= _connect_at_s:
-		_emit(LinkConst.Frame.VERSION, {"text": LinkConst.FIRMWARE_VERSION, "truncated": false})
-		_set_state(LinkConst.State.IDENTIFIED)
+	if _state == Protocol.State.PORT_OPEN and _elapsed_s >= _connect_at_s:
+		_emit(Protocol.Frame.VERSION, {"text": Protocol.FIRMWARE_VERSION, "truncated": false})
+		_set_state(Protocol.State.IDENTIFIED)
 
 	if _race_starting:
 		_step_countdown()
@@ -92,13 +92,13 @@ func _step_countdown() -> void:
 	if _elapsed_s - _countdown_at_s > 1.0:
 		_last_countdown -= 1
 		_countdown_at_s = _elapsed_s
-		_emit(LinkConst.Frame.COUNTDOWN, {"value": _last_countdown})
+		_emit(Protocol.Frame.COUNTDOWN, {"value": _last_countdown})
 
 	# Faux depart : >= 4 fronts pendant le decompte.
 	for rider: int in _pending_false_start:
 		if not _false_start_emitted[rider]:
 			_false_start_emitted[rider] = true
-			_emit(LinkConst.Frame.FALSE_START, {"rider": rider})
+			_emit(Protocol.Frame.FALSE_START, {"rider": rider})
 
 	if _last_countdown == 0:
 		_start_race()
@@ -109,7 +109,7 @@ func _start_race() -> void:
 	_race_started = true
 	_race_start_s = _elapsed_s
 	_last_update_ms = 0
-	for i: int in range(LinkConst.MAX_RIDERS):
+	for i: int in range(Protocol.MAX_RIDERS):
 		_ticks[i] = 0
 		_finish_ms[i] = 0
 		_distance_mm[i] = 0.0
@@ -118,7 +118,7 @@ func _start_race() -> void:
 func _step_race() -> void:
 	var race_s := _elapsed_s - _race_start_s
 	var elapsed_ms := int(race_s * 1000.0)
-	var circumference := LinkConst.circumference_mm(roller_mm)
+	var circumference := Protocol.circumference_mm(roller_mm)
 
 	for i: int in range(wired_riders):
 		var kph := _speed_kph(i, race_s)
@@ -135,17 +135,17 @@ func _step_race() -> void:
 	if elapsed_ms - _last_update_ms > UPDATE_INTERVAL_MS:
 		_last_update_ms = elapsed_ms
 		_emit(
-			LinkConst.Frame.PROGRESS,
+			Protocol.Frame.PROGRESS,
 			{"ticks": _ticks.duplicate(), "elapsed_ms": elapsed_ms}
 		)
 
 
 func _check_distance(elapsed_ms: int) -> void:
 	var all_finished := true
-	for i: int in range(LinkConst.MAX_RIDERS):
+	for i: int in range(Protocol.MAX_RIDERS):
 		if _finish_ms[i] == 0 and _ticks[i] >= _race_length_ticks:
 			_finish_ms[i] = elapsed_ms
-			_emit(LinkConst.Frame.RIDER_FINISH, {"rider": i, "elapsed_ms": elapsed_ms})
+			_emit(Protocol.Frame.RIDER_FINISH, {"rider": i, "elapsed_ms": elapsed_ms})
 		if _finish_ms[i] == 0:
 			all_finished = false
 	# LE bug de la v1 : le firmware attend les QUATRE pistes materielles. Avec
@@ -214,14 +214,14 @@ func set_preferred_port(_port: String) -> void:
 func start() -> void:
 	_running = true
 	_connect_at_s = _elapsed_s + identify_delay_s
-	_set_state(LinkConst.State.PORT_OPEN)
+	_set_state(Protocol.State.PORT_OPEN)
 
 
 func stop() -> void:
 	_running = false
 	_race_starting = false
 	_race_started = false
-	_set_state(LinkConst.State.DISCONNECTED)
+	_set_state(Protocol.State.DISCONNECTED)
 
 
 ## Meme validation que le driver natif — docs/01 §2 et §5.5. Un simulateur plus
@@ -240,8 +240,8 @@ func _apply_simple_command(cmd: String) -> bool:
 	match cmd:
 		"v":
 			_emit(
-				LinkConst.Frame.VERSION,
-				{"text": LinkConst.FIRMWARE_VERSION, "truncated": false}
+				Protocol.Frame.VERSION,
+				{"text": Protocol.FIRMWARE_VERSION, "truncated": false}
 			)
 		"s":
 			_race_starting = false
@@ -253,7 +253,7 @@ func _apply_simple_command(cmd: String) -> bool:
 		"x":
 			_race_type_distance = false
 		"m":
-			_emit(LinkConst.Frame.MOCK_ACK, {"on": true})
+			_emit(Protocol.Frame.MOCK_ACK, {"on": true})
 		_:
 			_last_error = "commande inconnue : '%s' (docs/01 §2)" % cmd
 			return false
@@ -267,7 +267,7 @@ func _apply_argument_command(cmd: String) -> bool:
 		return false
 	if cmd[0] == "l":
 		_race_length_ticks = cmd.substr(1).to_int()
-		_emit(LinkConst.Frame.LENGTH_ACK, {"ticks": _race_length_ticks})
+		_emit(Protocol.Frame.LENGTH_ACK, {"ticks": _race_length_ticks})
 	return true
 
 
@@ -291,7 +291,7 @@ func _argument_problem(cmd: String) -> String:
 	if head == "t" and _avr_mul_1000(value) >= 0:
 		return (
 			"t%d terminerait le firmware a %d ms : utiliser %s (docs/01 §5.5)"
-			% [value, _avr_mul_1000(value), LinkConst.TIME_COMMAND]
+			% [value, _avr_mul_1000(value), Protocol.TIME_COMMAND]
 		)
 	return ""
 
@@ -307,7 +307,7 @@ func _arm_countdown() -> void:
 	_race_started = false
 	_last_countdown = 4
 	_countdown_at_s = _elapsed_s
-	for i: int in range(LinkConst.MAX_RIDERS):
+	for i: int in range(Protocol.MAX_RIDERS):
 		_ticks[i] = 0
 		_finish_ms[i] = 0
 		_distance_mm[i] = 0.0
@@ -319,7 +319,7 @@ func get_last_error() -> String:
 
 
 func get_firmware_version() -> String:
-	return LinkConst.FIRMWARE_VERSION if _state == LinkConst.State.IDENTIFIED else ""
+	return Protocol.FIRMWARE_VERSION if _state == Protocol.State.IDENTIFIED else ""
 
 
 func get_link_state() -> int:
@@ -327,7 +327,7 @@ func get_link_state() -> int:
 
 
 func can_start_race() -> bool:
-	return _state == LinkConst.State.IDENTIFIED
+	return _state == Protocol.State.IDENTIFIED
 
 
 func set_race_active(_active: bool) -> void:
@@ -341,7 +341,7 @@ func get_stats() -> Dictionary:
 		"frames_unknown": 0,
 		"frames_dropped": 0,
 		"lines_overlong": 0,
-		"connects": 1 if _state == LinkConst.State.IDENTIFIED else 0,
+		"connects": 1 if _state == Protocol.State.IDENTIFIED else 0,
 		"handshake_failures": 0,
 		"watchdog_trips": 0,
 		"races_interrupted": 0,
@@ -353,28 +353,28 @@ func get_stats() -> Dictionary:
 
 ## Le rider pedale pendant le decompte : produit FS:<i>.
 func inject_false_start(rider: int) -> void:
-	if rider >= 0 and rider < LinkConst.MAX_RIDERS and not _pending_false_start.has(rider):
+	if rider >= 0 and rider < Protocol.MAX_RIDERS and not _pending_false_start.has(rider):
 		_pending_false_start.append(rider)
 
 
 ## Rebond de contact : un tick de plus, sans mouvement (docs/01 §6.3).
 func inject_phantom_tick(rider: int) -> void:
-	if rider >= 0 and rider < LinkConst.MAX_RIDERS:
+	if rider >= 0 and rider < Protocol.MAX_RIDERS:
 		_ticks[rider] += 1
-		_distance_mm[rider] += LinkConst.circumference_mm(roller_mm)
+		_distance_mm[rider] += Protocol.circumference_mm(roller_mm)
 
 
 ## Trame corrompue : exactement celle que produit `ss_emu --inject trame-corrompue`.
 func inject_corrupt_frame() -> void:
-	_emit(LinkConst.Frame.UNKNOWN, {"text": "R:\\x01\\x99\\xC3 42,,", "truncated": false})
+	_emit(Protocol.Frame.UNKNOWN, {"text": "R:\\x01\\x99\\xC3 42,,", "truncated": false})
 
 
 ## Coupure du lien : le simulateur cesse d'emettre, comme un cable arrache.
 func inject_link_loss() -> void:
-	_set_state(LinkConst.State.LINK_LOST)
+	_set_state(Protocol.State.LINK_LOST)
 	_running = false
 
 
 func inject_link_return() -> void:
 	_running = true
-	_set_state(LinkConst.State.IDENTIFIED)
+	_set_state(Protocol.State.IDENTIFIED)

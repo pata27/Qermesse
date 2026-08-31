@@ -28,10 +28,10 @@ func _initialize() -> void:
 
 	print("module natif SerialLink : CHARGE")
 	print("  ports enumeres : %d" % ports.size())
-	print("  etat initial   : %s" % LinkConst.state_name(state))
+	print("  etat initial   : %s" % Protocol.state_name(state))
 	print("  START autorise : %s" % ("oui" if can_start else "non (attendu au demarrage)"))
 
-	if state != LinkConst.State.DISCONNECTED:
+	if state != Protocol.State.DISCONNECTED:
 		printerr("ECHEC : l'etat initial devrait etre DISCONNECTED.")
 		quit(1)
 		return

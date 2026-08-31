@@ -48,7 +48,7 @@ func get_firmware_version() -> String:
 
 
 func get_link_state() -> int:
-	return _link.get_link_state() if _link != null else LinkConst.State.DISCONNECTED
+	return _link.get_link_state() if _link != null else Protocol.State.DISCONNECTED
 
 
 func can_start_race() -> bool:
