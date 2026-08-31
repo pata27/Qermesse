@@ -66,8 +66,9 @@ Toutes terminées par `\n`.
 
   Le driver PC refuse l'émission hors de ces bornes. Non négociable : dépassement = corruption
   mémoire AVR d'un côté, condition de fin absurde de l'autre.
-  Repère : 5000 m avec un rouleau de 114.3 mm = 13927 ticks — on reste sous 32767, la borne
-  ne gêne aucun usage réel.
+  Repère : 5000 m avec un rouleau de 114.3 mm = **13924 ticks** — on reste sous 32767, la borne
+  ne gêne aucun usage réel. (Chiffre corrigé : la première rédaction annonçait 13927, faux d'un
+  arrondi. Vérifié par le test `make_length_command : 100 m @ 114.3 mm donne l278`.)
 * `d`, `x`, `t`, `s` sont *fire-and-forget*. Ne jamais attendre d'ack sur ces commandes.
 * **Cadrage strict de `l` et `t`.** Dès que le firmware a lu `l` ou `t`, il bascule dans un mode où
   **tout octet reçu part dans le tampon numérique**, jusqu'au terminateur — espaces et commandes
@@ -295,7 +296,12 @@ Un thread dédié à la lecture série, communication avec le thread de jeu par 
 ### 6.2 Watchdog
 
 Le watchdog n'est **armé que pendant l'état `RUNNING` de la FSM du PC**, et il est **désarmé dès
-que le PC quitte `RUNNING`** — pas seulement à l'émission de `s`. Raison : en mode distance, le
+que le PC quitte `RUNNING`** — pas seulement à l'émission de `s`.
+
+Il ne s'arme par ailleurs qu'à la **première trame `R:` reçue après le START**, et non au START
+lui-même. Le firmware ne dit rien pendant les ~4 secondes de décompte : un watchdog armé dès le
+START tomberait systématiquement à `CD:2`, avant même le départ. Constaté au premier test
+d'intégration sur pseudo-terminal, qui n'a vu que deux trames `CD:` sur quatre. Raison : en mode distance, le
 firmware cesse d'émettre `R:` sitôt que les quatre pistes matérielles ont fini (§3, anomalie 6).
 Avec quatre riders actifs, ce silence peut précéder de quelques millisecondes la conclusion du PC.
 Un watchdog encore armé afficherait alors un faux `LINK_LOST` à l'instant précis de l'arrivée —
