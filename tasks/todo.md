@@ -54,23 +54,28 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 
 ## Lot 2 — Cœur métier *(3 j)*
 
-- [ ] `physics.gd` : ticks ⇄ mètres ⇄ km/h, lissage 20 échantillons
-- [ ] `race_engine.gd` : FSM de `docs/02`, PC autoritaire, riders actifs uniquement
-- [ ] `rule_distance.gd`
-- [ ] `rule_time.gd`
-- [ ] `rule_pursuit.gd` + les deux variantes 3–4 riders interchangeables
-- [ ] Plafonds de sécurité de la poursuite (temps 300 s, distance 5000 m)
-- [ ] Filtrage des ticks aberrants (> 120 km/h, incohérence tick/temps), rejets loggués
-- [ ] Politiques de faux départ : `IGNORE` / `AVERTISSEMENT` / `RELANCE` / `PENALITE`
-- [ ] `recorder.gd` : CSV en append **réel** + JSON par course avec trace complète des trames
-- [ ] `settings.gd` + `roster.gd`, chemins par OS, noms des riders persistés
-- [ ] Test : `100 m @ 114.3 mm = 278 ticks`
-- [ ] Test : **course distance à 2 riders qui se termine** *(le bug historique de la v1)*
-- [ ] Test : poursuite 2 riders, fin au tick près sur les 50 m d'écart
-- [ ] Test : poursuite 4 riders, ordre d'élimination correct
-- [ ] Test : chaque état de la FSM atteint au moins une fois
-- [ ] Test : rejeu d'une course JSON → classement identique
-- [ ] **J2** — suite headless verte *(preuve : sortie de test)*
+- [x] `physics.gd` : ticks ⇄ mètres ⇄ km/h, lissage 20 échantillons (`speed_smoother.gd`)
+- [x] `race_engine.gd` : FSM de `docs/02`, PC autoritaire, riders actifs uniquement
+- [x] `rule_distance.gd`
+- [x] `rule_time.gd`
+- [x] `rule_pursuit.gd` — élimination progressive. La variante « `G` à tous » reste implémentable
+      derrière `RaceRule` mais n'est pas écrite : pas de code mort (`docs/06` §1)
+- [x] Plafonds de sécurité de la poursuite (temps 300 s, distance 5000 m), marqués `INTERROMPUE`
+- [x] Filtrage des ticks aberrants, rejets loggués — **avec tolérance d'un tick**, sans quoi le
+      filtre rejetait une course entière ; `docs/01` §6.3 corrigé en conséquence
+- [x] Politiques de faux départ : `IGNORE` / `AVERTISSEMENT` / `RELANCE` / `PENALITE`
+- [x] `recorder.gd` : CSV en append **réel** + JSON par course avec trace complète des trames
+- [x] `settings.gd` + `roster.gd` + `json_store.gd` (écriture atomique), chemins par OS,
+      noms des riders persistés
+- [x] `replay.gd` — rejeu qui recalcule tout, sans réinjecter le résultat enregistré
+- [x] Test : `100 m @ 114.3 mm = 278 ticks`
+- [x] Test : **course distance à 2 riders qui se termine** *(le bug historique de la v1)*
+- [x] Test : poursuite 2 riders, fin au franchissement des 50 m
+- [x] Test : poursuite 4 riders, ordre d'élimination et rangs corrects
+- [x] Test : chaque état de la FSM atteint au moins une fois
+- [x] Test : rejeu d'une course JSON → classement identique
+- [x] **J2** — suite headless verte, 75 tests / 3160 assertions, exit 0
+      *(preuve : `tasks/preuves/2026-08-31-J2-coeur-metier.md`)*
 
 ## Lot 3 — Interface opérateur *(4 j)*
 

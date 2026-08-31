@@ -68,3 +68,18 @@
   aussitôt. Affiché dans le panneau matériel, il aurait annoncé des milliers de pertes imaginaires.
   Séparé en `try_push()` (silencieux) et `push()` (comptabilise). Motif : un compteur exposé à
   l'utilisateur est une affirmation ; elle doit être vraie.
+* **Un filtre calibre sur une fenetre trop courte rejette le signal.** A 100 Hz, un tick de rouleau
+  vaut 35,9 cm et une trame couvre 10 ms : un seul tick implique 129 km/h. Le controle de vitesse
+  par trame etait donc structurellement incapable de distinguer un cycliste d'un rebond, et
+  rejetait la totalite d'une course normale. `docs/01` §6.3 promettait ce qu'aucun filtre ne peut
+  tenir ; la promesse a ete retiree plutot que maquillee. Motif : verifier qu'un seuil est
+  atteignable AVEC la resolution reelle du capteur avant de l'ecrire dans une spec.
+* **Deux evenements sur la meme trame, deux compteurs qui se marchent dessus.** A la fin d'une
+  poursuite, l'elimination du dernier et l'arrivee du vainqueur arrivent ensemble. Un unique
+  compteur de rang faisait sortir le dernier premier. Motif : quand deux flux d'evenements
+  alimentent une meme numerotation, les separer explicitement plutot qu'ordonner au hasard.
+* **`core/` ne journalise pas.** Un `push_warning` dans un module de `core/` impose un canal de
+  sortie a du code qui doit rester utilisable en headless, en test et en rejeu — et fait echouer
+  la suite GUT, qui compte les avertissements moteur. Le module rapporte, la couche applicative
+  affiche. Meme raison pour `JSON.parse_string`, qui ecrit dans le journal du moteur : preferer
+  `JSON.new().parse()` sur un cas d'erreur deja gere.

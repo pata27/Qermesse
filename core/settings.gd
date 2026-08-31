@@ -1,0 +1,118 @@
+## Reglages persistants — docs/02 §5.
+##
+## Un reglage absent ou corrompu retombe sur sa valeur par defaut : le logiciel
+## doit toujours demarrer. Un fichier de reglages qui empeche de lancer une
+## course la veille d'un evenement est pire que pas de reglages du tout.
+class_name Settings
+extends RefCounted
+
+var preferred_port: String = ""
+var use_simulator: bool = true
+var roller_mm: float = Physics.DEFAULT_ROLLER_MM
+var speed_samples: int = Physics.SPEED_SAMPLES
+
+var mode: RaceConfig.Mode = RaceConfig.Mode.DISTANCE
+var distance_m: float = 500.0
+var duration_s: float = 60.0
+var gap_m: float = 50.0
+var pursuit_time_cap_s: float = 300.0
+var pursuit_distance_cap_m: float = 5000.0
+var distance_timeout_s: float = 600.0
+
+var false_start_policy: RaceConfig.FalseStartPolicy = RaceConfig.FalseStartPolicy.WARN
+var false_start_penalty_m: float = 10.0
+
+## Ecran de destination de la fenetre spectacle — docs/03 §6.
+var show_window_screen: int = -1
+var single_window_mode: bool = true
+var audio_muted: bool = false
+
+
+func to_dict() -> Dictionary:
+	return {
+		"version": 1,
+		"preferred_port": preferred_port,
+		"use_simulator": use_simulator,
+		"roller_mm": roller_mm,
+		"speed_samples": speed_samples,
+		"mode": int(mode),
+		"distance_m": distance_m,
+		"duration_s": duration_s,
+		"gap_m": gap_m,
+		"pursuit_time_cap_s": pursuit_time_cap_s,
+		"pursuit_distance_cap_m": pursuit_distance_cap_m,
+		"distance_timeout_s": distance_timeout_s,
+		"false_start_policy": int(false_start_policy),
+		"false_start_penalty_m": false_start_penalty_m,
+		"show_window_screen": show_window_screen,
+		"single_window_mode": single_window_mode,
+		"audio_muted": audio_muted,
+	}
+
+
+func from_dict(data: Dictionary) -> void:
+	preferred_port = str(data.get("preferred_port", preferred_port))
+	use_simulator = bool(data.get("use_simulator", use_simulator))
+	roller_mm = _clamp_float(data, "roller_mm", roller_mm, 20.0, 500.0)
+	speed_samples = int(clampf(float(data.get("speed_samples", speed_samples)), 1.0, 240.0))
+	mode = _clamp_enum(data, "mode", int(mode), 0, 2) as RaceConfig.Mode
+	distance_m = _clamp_float(data, "distance_m", distance_m, 50.0, 5000.0)
+	duration_s = _clamp_float(data, "duration_s", duration_s, 10.0, 3600.0)
+	gap_m = _clamp_float(data, "gap_m", gap_m, 10.0, 500.0)
+	pursuit_time_cap_s = _clamp_float(data, "pursuit_time_cap_s", pursuit_time_cap_s, 10.0, 3600.0)
+	pursuit_distance_cap_m = _clamp_float(
+		data, "pursuit_distance_cap_m", pursuit_distance_cap_m, 100.0, 100000.0
+	)
+	distance_timeout_s = _clamp_float(data, "distance_timeout_s", distance_timeout_s, 30.0, 3600.0)
+	false_start_policy = (
+		_clamp_enum(data, "false_start_policy", int(false_start_policy), 0, 3)
+		as RaceConfig.FalseStartPolicy
+	)
+	false_start_penalty_m = _clamp_float(data, "false_start_penalty_m", false_start_penalty_m,
+		0.0, 500.0)
+	show_window_screen = int(data.get("show_window_screen", show_window_screen))
+	single_window_mode = bool(data.get("single_window_mode", single_window_mode))
+	audio_muted = bool(data.get("audio_muted", audio_muted))
+
+
+## Construit la configuration de course correspondant aux reglages courants.
+func to_race_config(active_riders: Array[int]) -> RaceConfig:
+	var config := RaceConfig.new()
+	config.mode = mode
+	config.active_riders = active_riders
+	config.distance_m = distance_m
+	config.duration_s = duration_s
+	config.gap_m = gap_m
+	config.pursuit_time_cap_s = pursuit_time_cap_s
+	config.pursuit_distance_cap_m = pursuit_distance_cap_m
+	config.distance_timeout_s = distance_timeout_s
+	config.false_start_policy = false_start_policy
+	config.false_start_penalty_m = false_start_penalty_m
+	config.roller_mm = roller_mm
+	return config
+
+
+func save(path: String = "") -> bool:
+	return JsonStore.write(path if not path.is_empty() else AppPaths.settings_path(), to_dict())
+
+
+func load_from(path: String = "") -> bool:
+	var data := JsonStore.read(path if not path.is_empty() else AppPaths.settings_path())
+	if data.is_empty():
+		return false
+	from_dict(data)
+	return true
+
+
+## Une valeur hors bornes dans le fichier est ramenee dans les bornes, pas
+## rejetee : mieux vaut un reglage plafonne qu'un demarrage refuse.
+func _clamp_float(data: Dictionary, key: String, fallback: float, low: float, high: float) -> float:
+	if not data.has(key):
+		return fallback
+	return clampf(float(data[key]), low, high)
+
+
+func _clamp_enum(data: Dictionary, key: String, fallback: int, low: int, high: int) -> int:
+	if not data.has(key):
+		return fallback
+	return int(clampf(float(data[key]), float(low), float(high)))
