@@ -156,8 +156,24 @@ Implémente la même interface que le lien série et génère un flux `R:` synth
 * injection de pannes à la demande : trame corrompue, perte de lien, faux départ, tick fantôme.
 
 Sans ça, aucun développement ni aucune démo n'est possible sans matériel branché, et la CI ne peut
-rien tester de bout en bout. **C'est ce qui a manqué à la v2** : son mode mock court-circuitait la
-couche série au lieu de la simuler, donc ne testait justement pas la partie risquée.
+rien tester de bout en bout.
+
+### Deux simulateurs, deux rôles — ne pas les confondre
+
+`link_sim.gd` court-circuite par construction la couche série : c'est ce qui le rend gratuit à
+exécuter en CI, et c'est aussi ce qui fait qu'il **ne teste pas la partie risquée**. C'est très
+exactement l'erreur de la v2, dont le mode mock injectait des structures déjà parsées.
+
+D'où un second simulateur, situé un cran plus bas : **`tools/ss_emu`**, un émulateur du firmware
+qui parle sur un vrai pseudo-terminal, à 115200 bauds, octet par octet. Le code Godot ne sait pas
+qu'il ne parle pas à un Arduino. Ouverture de port, threading, découpage de flux, handshake,
+watchdog et reconnexion sont donc traversés pour de vrai, sans matériel branché.
+
+Spécification complète : **`docs/07-EMULATEUR-FIRMWARE.md`**.
+
+`link_sim.gd` reste indispensable — il est instantané, disponible sur les trois OS et sert les
+tests headless du cœur métier. Il doit produire des trames **identiques** à celles de `ss_emu`,
+bugs firmware compris ; un test de conformité compare les deux sur un scénario à graine fixée.
 
 ---
 

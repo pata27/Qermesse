@@ -24,6 +24,7 @@ Le suivi d'avancement est dans `tasks/todo.md`.
 | `docs/04-DIRECTION-ARTISTIQUE.md` | rendu, UX, audio |
 | `docs/05-PLAN-EXECUTION.md` | lots et jalons |
 | `docs/06-QUALITE-RISQUES.md` | tests, CI, risques |
+| `docs/07-EMULATEUR-FIRMWARE.md` | émulateur de firmware `ss_emu` |
 
 ## Historique
 

@@ -35,7 +35,17 @@ validé sur l'Arduino réel.**
 * `send_command` avec validation stricte et bornage à 7 chiffres.
 * Watchdog 500 ms, reconnexion avec backoff.
 * Tests C++ natifs du parseur dans la CI, sans lancer Godot.
-* `link_sim.gd` complet (document `03` §5) : profils de course et injection de pannes.
+* **`tools/ss_emu` — émulateur de firmware sur pseudo-terminal** (document `07`). Écrit *en premier*
+  dans le lot, parce que sans matériel disponible il conditionne tout le reste du lot 1.
+  Réplique fidèle de `ss_basic.ino`, bugs compris, cyclistes synthétiques, injection de pannes.
+* `link_sim.gd` complet (document `03` §5) : profils de course et injection de pannes, trames
+  identiques à celles de `ss_emu` (test de conformité entre les deux).
+
+**Jalon J1-ém — intermédiaire, franchissable sans matériel.** Contre `ss_emu` sur pseudo-terminal :
+handshake complet et version firmware affichée, ticks des pistes câblées en direct, `perte-lien`
+injectée → `LINK_LOST` en moins de 500 ms, `retour-lien` → reconnexion et reprise, trame corrompue
+absorbée sans plantage. Preuve : trace `--trace` + sortie console. **J1-ém autorise le lot 2 à
+démarrer. Il n'autorise pas le lot 4 : le verrou « la donnée avant le pixel » reste J1.**
 
 **Jalon J1 — le plus important du projet.** Sur l'Arduino **réel** de l'utilisateur, avec deux
 rouleaux tournés à la main : un outil console affiche en direct les ticks des 4 pistes, la version

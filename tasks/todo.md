@@ -27,7 +27,15 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 - [ ] `send_command` : allowlist de commandes + bornage à 7 chiffres (débordement `charBuff[8]`)
 - [ ] Watchdog 500 ms, reconnexion avec backoff plafonné à 5 s
 - [ ] Tests C++ natifs du parseur dans la CI, sans Godot
+- [ ] `tools/ss_emu` — cœur `FirmwareSim`, réplique fidèle de `ss_basic.ino` bugs compris (`docs/07` §4)
+- [ ] `tools/ss_emu` — cyclistes synthétiques et profils de course (`docs/07` §5)
+- [ ] `tools/ss_emu` — injection de pannes (`docs/07` §6)
+- [ ] `tools/ss_emu` — frontal pseudo-terminal, CLI, `--trace`
+- [ ] Tests doctest de `FirmwareSim`, en temps virtuel, dans la CI
 - [ ] `link_sim.gd` : profils de course + injection de pannes (`docs/03` §5)
+- [ ] Test de conformité `link_sim.gd` ↔ `ss_emu` sur scénario à graine fixée
+- [ ] **J1-ém** — contre `ss_emu` : handshake, ticks en direct, `LINK_LOST` < 500 ms, reconnexion,
+      trame corrompue absorbée *(preuve : trace `--trace` + console)*. Autorise le lot 2, **pas le lot 4**.
 - [ ] **J1** — sur l'Arduino réel : ticks des 4 pistes en direct, version firmware affichée,
       débranchement à chaud → `LINK_LOST` < 500 ms, rebranchement → reprise *(preuve : vidéo)*
 
@@ -102,9 +110,9 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 
 ## Décisions en attente (`docs/06` §5)
 
-- [ ] Poursuite 3–4 riders : élimination progressive ou « `G` à tous les autres » ? *(avant lot 2)*
-- [ ] VID/PID du boîtier réel (`lsusb`) *(avant J1)*
-- [ ] Nombre de capteurs réellement câblés : 2 ou 4 ? *(avant lot 3)*
+- [x] Poursuite 3–4 riders → **élimination progressive** *(tranché, session initiale ; `docs/02` §3 mis à jour)*
+- [ ] VID/PID du boîtier réel (`lsusb`) *(avant J1 — boîtier non disponible à la session initiale)*
+- [x] Nombre de capteurs réellement câblés → **2** *(tranché, session initiale ; défaut de `ss_emu --riders`)*
 - [ ] Compte développeur Apple disponible ? *(avant lot 6)*
 - [ ] Logo, nom affiché, sponsors éventuels *(avant lot 5)*
 

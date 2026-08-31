@@ -14,7 +14,8 @@
 
 | Niveau | Outil | Portée |
 |---|---|---|
-| Unitaire C++ | doctest, binaire natif | `line_parser`, ring buffer — sans Godot |
+| Unitaire C++ | doctest, binaire natif | `line_parser`, ring buffer, `FirmwareSim` — sans Godot |
+| Bout en bout série | `tools/ss_emu` sur pseudo-terminal | ouverture de port, handshake, threading, watchdog, reconnexion — la partie risquée |
 | Unitaire GDScript | GUT headless | `physics`, `race_engine`, les trois règles, `recorder`, `settings` |
 | Rejeu | GUT + courses JSON | une course enregistrée rejouée doit donner exactement le même classement |
 | Injection de pannes | `link_sim` | trame corrompue, perte de lien, tick fantôme, faux départ |
@@ -36,6 +37,8 @@ Sur tag : publication d'une release avec les trois artefacts.
 |---|---|---|
 | **Compilation du GDExtension pénible sur les 3 OS** | fort, bloque tout | attaqué en lot 1, CI sur les 3 OS dès J0, plan B « pont TCP » documenté et décidé explicitement si dérapage > 6 j |
 | **Le firmware réel diverge de `ss_basic.ino`** (boîtier reflashé, variante) | fort | J1 valide contre le matériel réel avant toute autre chose ; le parseur logue toute trame inconnue au lieu de l'ignorer |
+| **Matériel indisponible pendant le développement** | fort, bloque le lot 1 | `tools/ss_emu` (document `07`) émule le firmware sur un vrai pseudo-terminal : tout le code risqué est traversé sans matériel. Jalon intermédiaire J1-ém, qui **ne remplace pas J1** |
+| **Se satisfaire de l'émulateur et ne jamais brancher le boîtier** | fort | J1-ém est explicitement marqué insuffisant pour ouvrir le lot 4 ; `07` §2 liste ce que l'émulateur ne prouve pas |
 | **Trames `G`/`S` réellement émises par un shield kiosque** | moyen | parsées et loggées dès le lot 1, comportement activé seulement si observé |
 | **Perf 3D insuffisante sur GPU intégré** | moyen | budget fixé et mesuré à J4, trois niveaux de qualité, effets coupables identifiés (volumétrique, foule, flou radial) |
 | **Le mode poursuite ne « prend » pas au test terrain** | moyen | règle 3–4 riders paramétrable derrière `PursuitRule`, `G` réglable en direct, les deux variantes livrées |

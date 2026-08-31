@@ -16,3 +16,23 @@
   n'importe quel périphérique série. Seule la réponse `V:SS_v...` prouve qu'on parle au bon boîtier.
 * **Documenter le protocole avant de le coder.** La v1 comme la v2 n'ont jamais écrit le contrat
   série ; il a fallu le reconstituer par lecture croisée du firmware et du driver.
+
+## Session initiale (2026-08-31)
+
+* **Vérifier la largeur des types avant de croire une spec reconstituée.** `docs/01` décrivait une
+  « double détection » de fin de course en mode temps, PC et firmware. Elle n'existe pas :
+  `raceLengthSecs * 1000` est une multiplication entre deux `int` 16 bits sur AVR, qui déborde dès
+  33 secondes. Au défaut de 60 s, le firmware ne termine jamais. Une spec reconstituée par lecture
+  décrit des *intentions* ; seule la relecture ligne à ligne, types compris, décrit le *comportement*.
+  Trois erreurs de `01`/`02` venaient de la même cause. Motif : lire le code cible avec les règles
+  d'arithmétique de sa plateforme, pas avec celles de sa machine de développement.
+* **Émuler au niveau du transport, jamais au niveau du parseur.** Le mock de la v2 injectait des
+  structures déjà parsées : il testait le code sans risque et laissait sans couverture l'ouverture
+  de port, le threading, le découpage de flux, le handshake et le watchdog. `ss_emu` parle sur un
+  vrai pseudo-terminal à 115200 bauds. Motif : un simulateur doit se brancher au point le plus bas
+  possible, sinon il ne simule que ce qu'on maîtrise déjà.
+* **Un émulateur ne corrige jamais sa cible.** `ss_emu` reproduit les bugs du firmware, débordements
+  `int16` compris. Un émulateur qui assainit valide un code PC qui échouera sur le vrai matériel.
+* **Nommer ce qu'une preuve ne prouve pas.** J1-ém est écrit dans `docs/05` comme explicitement
+  insuffisant pour ouvrir le lot 4, et `docs/07` §2 liste ce que l'émulateur ne couvre pas. Sans ça,
+  la tentation de cocher J1 sur une preuve d'émulateur est quasi certaine.
