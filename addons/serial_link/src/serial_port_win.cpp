@@ -14,7 +14,11 @@
 #endif
 
 #include <windows.h>
-// setupapi.h doit suivre windows.h.
+// L'ordre compte : initguid.h AVANT devguid.h, faute de quoi GUID_DEVCLASS_PORTS
+// est declare sans etre defini dans cette unite de compilation. setupapi.h doit
+// suivre windows.h.
+#include <initguid.h>
+#include <devguid.h>
 #include <setupapi.h>
 
 #include <algorithm>

@@ -63,26 +63,32 @@ bool PtyPort::create_pty(std::string& err) {
     }
     device_ = name;
 
+    // On garde l'esclave ouvert : sinon, dès que le client referme le port, un
+    // read() sur le maître renvoie EIO et l'émulateur croit à une panne.
+    slave_fd_ = ::open(device_.c_str(), O_RDWR | O_NOCTTY);
+    if (slave_fd_ < 0) {
+        err = errno_text("open(slave)");
+        return false;
+    }
+
     // Mode brut : ni écho, ni traduction \n -> \r\n. Sans cela, la discipline
     // de ligne réécrirait les trames et le protocole serait faussé.
+    //
+    // La configuration s'applique sur l'ESCLAVE, pas sur le maître. Linux
+    // tolère tcgetattr sur le maître, macOS non : il répond ENOTTY,
+    // « Inappropriate ioctl for device ». C'est l'esclave qui porte la
+    // discipline de ligne, donc c'est lui qu'il faut configurer — et cela
+    // fonctionne sur les deux systèmes.
     struct termios tio {};
-    if (::tcgetattr(master_fd_, &tio) != 0) {
+    if (::tcgetattr(slave_fd_, &tio) != 0) {
         err = errno_text("tcgetattr");
         return false;
     }
     ::cfmakeraw(&tio);
     ::cfsetispeed(&tio, B115200);
     ::cfsetospeed(&tio, B115200);
-    if (::tcsetattr(master_fd_, TCSANOW, &tio) != 0) {
+    if (::tcsetattr(slave_fd_, TCSANOW, &tio) != 0) {
         err = errno_text("tcsetattr");
-        return false;
-    }
-
-    // On garde l'esclave ouvert : sinon, dès que le client referme le port, un
-    // read() sur le maître renvoie EIO et l'émulateur croit à une panne.
-    slave_fd_ = ::open(device_.c_str(), O_RDWR | O_NOCTTY);
-    if (slave_fd_ < 0) {
-        err = errno_text("open(slave)");
         return false;
     }
 

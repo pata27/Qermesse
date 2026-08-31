@@ -55,3 +55,16 @@
 * **Un test qui tombe en série accuse le banc d'essai, pas la cible.** Deux fois de suite, une salve
   d'échecs venait de mes tests (cadrage `x t600 g`, puis valeur `t600` elle-même), jamais du code
   émulé. Vérifier l'hypothèse du test avant de soupçonner l'implémentation.
+* **Le maître d'un pseudo-terminal n'accepte pas `tcgetattr` sur macOS.** Linux le tolère, macOS
+  répond `ENOTTY`. C'est l'esclave qui porte la discipline de ligne : c'est lui qu'il faut
+  configurer, et cela marche sur les deux. Trouvé par la CI macOS, pas en local. Motif : une
+  matrice trois OS dès le jalon J0 n'est pas un luxe ; elle a payé au premier commit natif.
+* **Armer un watchdog au START, c'est le faire tomber pendant le décompte.** Le firmware n'émet
+  aucun `R:` pendant les ~4 s de `CD:`. Le watchdog ne doit s'armer qu'à la première trame reçue
+  *après* le START. Trouvé par le premier test d'intégration sur pseudo-terminal, qui n'a vu que
+  deux trames `CD:` sur quatre — un test unitaire à port factice ne l'aurait pas montré.
+* **Un compteur nommé « perdu » ne doit compter que ce qui est perdu.** Mon `push()` de ring buffer
+  incrémentait `dropped()` à chaque tentative échouée, y compris quand l'appelant réessayait
+  aussitôt. Affiché dans le panneau matériel, il aurait annoncé des milliers de pertes imaginaires.
+  Séparé en `try_push()` (silencieux) et `push()` (comptabilise). Motif : un compteur exposé à
+  l'utilisateur est une affirmation ; elle doit être vraie.
