@@ -94,3 +94,33 @@
   tolérance du filtre de ticks — la quantification à 35,9 cm sur une fenêtre de 10 ms — vue d'un
   autre côté. Motif : toute grandeur dérivée d'un capteur doit être vérifiée contre une valeur
   attendue connue, pas seulement contre elle-même.
+
+## Lot 4 — retours sur le rendu 3D (2026-08-31)
+
+* **Un matériau émissif n'a pas d'ombrage : toute forme pleine devient un aplat.** Les cyclistes
+  sortaient en « grosses patates » parce que le maillot était fortement émissif. Le vélo, lui, se
+  lisait — parce qu'il est fait de traits fins, où la silhouette suffit. Correction : le corps est
+  **éclairé** (deux lumières directionnelles, ambiante réduite) avec un simple liseré coloré ;
+  l'émission est réservée aux jantes et aux lignes de piste. Motif : l'émission sert à *désigner*,
+  la lumière sert à *donner du volume*. Les confondre aplatit tout.
+* **`TorusMesh` a son axe sur Y : le tourner autour de Y ne fait rien.** Mes roues étaient couchées
+  à plat sur la piste, ce qui explique à lui seul que rien ne ressemblait à un vélo. Il faut
+  basculer autour de Z. Motif : vérifier l'orientation par défaut d'une primitive avant d'écrire
+  une rotation « évidente » — et surtout, REGARDER le résultat.
+* **Regarder le rendu fait partie du travail.** J'ai mesuré des fps et écrit des shaders pendant
+  plusieurs étapes sans jamais ouvrir une capture. L'utilisateur, lui, a regardé, et a vu en trois
+  secondes ce que je n'avais pas vu. `xvfb-run` permet de capturer sans ouvrir de fenêtre sur son
+  bureau : il n'y a aucune excuse.
+* **Une scène sans habillage n'est pas un affichage de course.** « On ne sait pas quelle distance il
+  reste ni où on en est. » L'information — objectif, distance parcourue, distance restante,
+  progression — est aussi indispensable que la piste elle-même, et elle était renvoyée au lot 5.
+* **Une traînée plaquée au sol est invisible.** Vue à la hauteur de caméra de `docs/04` §4, elle se
+  réduit à un trait. Un aileron vertical se lit. Motif : penser un effet dans le repère de la
+  CAMÉRA, pas dans celui du monde.
+* **`Engine.get_frames_per_second()` est lissé sur une seconde.** Calculer un centile dessus revient
+  à faire des statistiques sur des valeurs répétées : j'ai failli rapporter un « 1 % bas » qui ne
+  mesurait rien. Le fps se déduit du delta de chaque image.
+* **Ne jamais laisser un script de correctifs échouer en silence.** Deux fois, un appel mal formé a
+  fait que les shaders étaient écrits mais pas le code qui les utilise — et j'ai mesuré des fps sur
+  une scène amputée de son post-traitement sans m'en apercevoir. Les patchs vérifient désormais leur
+  ancrage ET leur nombre d'arguments.

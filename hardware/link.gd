@@ -129,3 +129,10 @@ func get_stats() -> Dictionary:
 func set_simulation_speed(scale: float) -> void:
 	if _impl.has_method("set_simulation_speed"):
 		_impl.set_simulation_speed(scale)
+
+
+## Nombre de capteurs du boîtier SIMULÉ. Sans effet sur le matériel, dont le
+## câblage ne se change pas par logiciel.
+func set_simulator_riders(count: int) -> void:
+	if _impl.has_method("set_wired_riders"):
+		_impl.set_wired_riders(count)

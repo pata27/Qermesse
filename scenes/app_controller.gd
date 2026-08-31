@@ -246,6 +246,11 @@ func set_simulation_speed(scale: float) -> void:
 	_link.set_simulation_speed(scale)
 
 
+## Nombre de capteurs du boîtier SIMULÉ. Sans effet sur le matériel réel.
+func set_simulator_riders(count: int) -> void:
+	_link.set_simulator_riders(count)
+
+
 # --- Reactions au lien et au moteur ------------------------------------------
 
 func _on_command_requested(command: String) -> void:

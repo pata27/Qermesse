@@ -99,6 +99,28 @@ clavier hors des boutons prévus, et le CSV produit est correct.
 
 ## Lot 4 — Scène 3D *(6–8 j — le gros morceau)*
 
+> ### Dérogation au verrou « la donnée avant le pixel » — 2026-08-31
+>
+> **Décidée explicitement par l'utilisateur**, à qui la question a été posée et qui a répondu
+> « tu peux lever le verrou ». Elle est consignée ici plutôt que subie en silence : une dérogation
+> non écrite est une règle qui s'érode.
+>
+> **Ce qui est acquis au moment de la lever.** J0, J1-ém et J2 sont franchis, et J3 aussi : le lien
+> série est validé de bout en bout contre un émulateur de firmware qui parle sur un vrai
+> pseudo-terminal, le cœur métier est couvert par 86 tests headless, et une course complète se mène
+> à l'interface opérateur. La chaîne de données n'est donc **pas** dans l'état où était celle de la
+> v2 quand elle s'est mise à polir un affichage — c'est ce qui rend la dérogation défendable.
+>
+> **Ce qui manque, et qui ne change pas.** Le boîtier de l'utilisateur n'a jamais été branché.
+> **J1 reste ouvert**, et avec lui : l'allowlist VID/PID, le nombre réel de capteurs câblés,
+> l'affectation des pistes, et surtout le débranchement USB **physique** à chaud — le seul chemin
+> que l'émulateur ne peut pas exercer (`docs/07` §2).
+>
+> **Conséquence à tenir.** Le lot 4 ne doit rien construire qui dépende d'une hypothèse non vérifiée
+> sur le matériel. Concrètement : la scène 3D lit l'état de course, elle ne lit jamais le port série ;
+> elle doit rester correcte quel que soit le nombre de pistes réellement câblées ; et
+> `docs/RECETTE.md` reste à dérouler avant tout usage en événement.
+
 * Piste de vélodrome, couloirs, ligne d'arrivée, tribunes, foule instanciée.
 * Rider : modèle, animation de pédalage indexée sur la vitesse réelle, inclinaison.
 * Matériaux et shaders néon, bloom, volumétrique léger, vignettage.

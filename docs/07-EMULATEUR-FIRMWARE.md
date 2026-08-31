@@ -41,7 +41,10 @@ risqué est traversé pour de vrai.**
 À écrire noir sur blanc, parce que la tentation de cocher J1 sera forte :
 
 * **`ss_emu` ne franchit pas le jalon J1.** J1 exige le matériel réel de l'utilisateur. L'émulateur
-  produit un jalon intermédiaire, noté **J1-ém.**, qui autorise le lot 2 à démarrer — pas le lot 4.
+  produit un jalon intermédiaire, noté **J1-ém.**, qui autorise le lot 2 à démarrer.
+  *Il n'autorisait pas le lot 4 ; celui-ci a été ouvert le 2026-08-31 par une dérogation explicite
+  de l'utilisateur, consignée dans `docs/05`. Le reste de cette section demeure entièrement valable :
+  ce que l'émulateur ne prouve pas, il ne le prouve toujours pas.*
 * Il ne dit rien du câblage réel, du nombre de capteurs branchés, ni de la qualité des contacts.
 * Il ne reproduit pas les rebonds mécaniques réels d'un reed switch : il en produit un modèle
   paramétrable, ce qui est utile pour tester le filtre, pas pour le calibrer.

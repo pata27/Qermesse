@@ -342,6 +342,12 @@ func set_simulation_speed(scale: float) -> void:
 	time_scale = maxf(0.01, scale)
 
 
+## Nombre de capteurs « cablés » du boîtier simulé. Les pistes au-delà restent à
+## HIGH, comme un connecteur vide.
+func set_wired_riders(count: int) -> void:
+	wired_riders = clampi(count, 1, Protocol.MAX_RIDERS)
+
+
 func get_stats() -> Dictionary:
 	return {
 		"frames_total": 0,
