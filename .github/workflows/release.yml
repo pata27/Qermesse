@@ -1,0 +1,139 @@
+# Publication sur tag — lot 6 de docs/05.
+#
+# Declenchee UNIQUEMENT sur un tag `v*`, jamais sur un push ordinaire : chaque
+# execution telecharge 1,3 Go de modeles d'exportation par OS, ce qui n'a aucun
+# sens a chaque commit.
+#
+# Chaque plateforme construit SON module natif puis exporte : un GDExtension
+# compile ailleurs ne serait pas chargeable.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.5"
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            label: Linux
+            preset: Linux
+            godot_archive: Godot_v4.5-stable_linux.x86_64.zip
+            godot_binary: Godot_v4.5-stable_linux.x86_64
+            output: dist/SilverSprint-v3.x86_64
+          - os: windows-latest
+            label: Windows
+            preset: Windows
+            godot_archive: Godot_v4.5-stable_win64.exe.zip
+            godot_binary: Godot_v4.5-stable_win64.exe
+            output: dist/SilverSprint-v3.exe
+          - os: macos-latest
+            label: macOS
+            preset: macOS
+            godot_archive: Godot_v4.5-stable_macos.universal.zip
+            godot_binary: Godot.app/Contents/MacOS/Godot
+            output: dist/SilverSprint-v3.zip
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install scons
+
+      - name: Cache SCons
+        uses: actions/cache@v4
+        with:
+          path: .scons-cache
+          key: scons-${{ matrix.os }}-release-${{ hashFiles('.gitmodules') }}-${{ hashFiles('addons/serial_link/src/*') }}
+          restore-keys: |
+            scons-${{ matrix.os }}-release-
+
+      # Le module natif d'abord : sans lui l'export produit un logiciel muet.
+      # On construit la variante `template_release`, celle qu'embarque l'export.
+      - name: Compiler le module natif
+        working-directory: addons/serial_link
+        env:
+          SCONS_CACHE: ${{ github.workspace }}/.scons-cache
+        run: scons target=template_release -j2
+
+      - name: Recuperer Godot ${{ env.GODOT_VERSION }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sSfL -o godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/${{ matrix.godot_archive }}"
+          python -c "import zipfile; zipfile.ZipFile('godot.zip').extractall('.godot-bin')"
+          chmod +x ".godot-bin/${{ matrix.godot_binary }}" || true
+
+      - name: Recuperer les modeles d'exportation
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sSfL -o templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          python scripts/install_export_templates.py templates.tpz "${GODOT_VERSION}.stable"
+
+      - name: Importer le projet
+        shell: bash
+        run: |
+          ".godot-bin/${{ matrix.godot_binary }}" --headless --import || true
+          ".godot-bin/${{ matrix.godot_binary }}" --headless --import
+
+      - name: Exporter
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          ".godot-bin/${{ matrix.godot_binary }}" --headless \
+            --export-release "${{ matrix.preset }}" "${{ matrix.output }}"
+          ls -la dist/
+          test -s "${{ matrix.output }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: silversprint-${{ matrix.label }}
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: Publier la release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefacts
+      - name: Rassembler
+        run: |
+          mkdir -p release
+          find artefacts -type f -exec cp {} release/ \;
+          ls -la release/
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+          body: |
+            Binaires construits par la CI sur les trois systemes.
+
+            **macOS** : l'application n'est ni signee ni notariee. Au premier
+            lancement, faire un clic droit puis « Ouvrir », ou lever la mise en
+            quarantaine :
+
+                xattr -dr com.apple.quarantine SilverSprint-v3.app
+
+            Avant toute utilisation en evenement, derouler `docs/RECETTE.md`.

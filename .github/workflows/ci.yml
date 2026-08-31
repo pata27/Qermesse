@@ -66,16 +66,24 @@ jobs:
           python-version: "3.12"
       - run: pip install scons
 
-      # godot-cpp represente l'essentiel du temps de compilation et ne bouge
-      # qu'au changement de sous-module : on le met en cache sur son SHA.
-      - name: Cache godot-cpp
+      # godot-cpp represente l'essentiel des quinze minutes de compilation.
+      # Mettre en cache `bin/` ne servait a rien : la bibliotheque etait
+      # restauree mais SCons recompilait tous les objets, qui vivent ailleurs.
+      # godot-cpp lit la variable SCONS_CACHE et y branche un CacheDir : c'est
+      # ce dossier-la qu'il faut garder.
+      - name: Cache SCons
         uses: actions/cache@v4
         with:
-          path: addons/serial_link/godot-cpp/bin
-          key: godot-cpp-${{ matrix.os }}-${{ hashFiles('.gitmodules') }}-${{ hashFiles('addons/serial_link/godot-cpp/gdextension/*.json') }}
+          path: .scons-cache
+          key: scons-${{ matrix.os }}-debug-${{ hashFiles('.gitmodules') }}-${{ hashFiles('addons/serial_link/src/*') }}
+          restore-keys: |
+            scons-${{ matrix.os }}-debug-${{ hashFiles('.gitmodules') }}-
+            scons-${{ matrix.os }}-debug-
 
       - name: Compiler le module
         working-directory: addons/serial_link
+        env:
+          SCONS_CACHE: ${{ github.workspace }}/.scons-cache
         run: scons target=template_debug -j2
 
       - name: Verifier qu'une bibliotheque a bien ete produite

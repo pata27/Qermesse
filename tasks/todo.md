@@ -121,12 +121,17 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 
 - [ ] **Session de test avec le matériel réel et de vrais cyclistes**
 - [ ] Corrections issues du terrain
-- [ ] Export Windows `.exe` + installeur
-- [ ] Export Linux `.AppImage`
-- [ ] Export macOS `.app` + `.dmg`, signature/notarisation si compte disponible
-- [ ] Release automatique par la CI sur tag
+- [~] Export Windows `.exe` — preset écrit et **accepté par Godot**, export non encore produit
+      *(les modèles d'exportation, 1,3 Go, ne sont pas installés localement)*
+- [~] Export Linux — preset écrit et accepté. `.AppImage` non fait : l'export Godot produit un
+      binaire autonome, l'empaquetage AppImage reste à ajouter
+- [~] Export macOS `.app` dans un `.zip` — preset écrit. `.dmg`, signature et notarisation :
+      dépendent d'un compte développeur Apple *(décision `docs/06` §5, toujours ouverte)*
+- [~] Release automatique par la CI sur tag — `.github/workflows/release.yml` écrit, YAML validé,
+      **jamais exécuté** : il ne se déclenche que sur un tag `v*`
 - [ ] Manuel opérateur
-- [ ] `docs/DEPANNAGE.md`
+- [x] `docs/DEPANNAGE.md` — dépannage terrain, écrit pour l'opérateur
+- [x] `docs/RECETTE.md` — checklist matériel du jalon J1, à dérouler avant chaque release
 - [ ] **J6** — un tiers installe sur machine vierge et fait courir deux personnes sans aide
 
 ---
@@ -142,6 +147,28 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 ---
 
 ## Revue
+
+### Lot 3 — 2026-08-31
+
+**J3 franchi.** Une course complète se mène à la souris, du roster au CSV. Preuve en quatre captures
+de la vraie fenêtre plus le CSV produit, et une suite de dix tests headless qui n'agissent que sur
+les widgets. La CI mène en plus une course complète à l'interface, en headless, sur les trois OS.
+
+**Écart de spec assumé.** La fenêtre opérateur est construite en code et non en `.tscn` — motif
+consigné dans `docs/03` §2. La fenêtre spectacle relèvera du choix inverse.
+
+**Deux défauts trouvés en menant la course pour de vrai, pas en relisant :**
+la vitesse de pointe mesurée sur l'instantanée donnait 117 km/h pour un cycliste à 45 ;
+et Godot ne déclenche ni `_enter_tree` ni `_ready` de façon synchrone depuis
+`SceneTree._initialize()`, si bien que l'interface se bâtissait contre un contrôleur vide et
+affichait « aucun port détecté » sans rien signaler.
+
+**Amorcé pour la suite.** `docs/RECETTE.md` — la checklist qui fera de J1 une session de vingt
+minutes le jour où le boîtier sera là. `docs/DEPANNAGE.md`. Les presets d'export et la CI de release
+sur tag, écrits et validés syntaxiquement mais **non exécutés**, faute des 1,3 Go de modèles
+d'exportation.
+
+**Bloqué.** Le lot 4 (scène 3D) reste fermé : `docs/05` et `docs/07` §2 exigent J1 sur matériel réel.
 
 ### Lots 0, 1 et 2 — 2026-08-31
 

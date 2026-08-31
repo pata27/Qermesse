@@ -6,7 +6,8 @@
 # Exports
 /build/
 /export/
-export_presets.cfg
+# export_presets.cfg EST versionne : c'est lui qui decrit les exports que la
+# CI produit sur tag. Le fichier ne contient aucun secret.
 
 # Toolchain locale (binaire Godot, scons, etc.) — jamais versionnée
 .tools/
@@ -48,3 +49,7 @@ Thumbs.db
 # SCons
 .sconsign.dblite
 *.sconsign.dblite
+
+# Cache SCons (CI)
+.scons-cache/
+dist/

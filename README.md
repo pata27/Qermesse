@@ -63,6 +63,8 @@ Preuves dans `tasks/preuves/`.
 | `docs/05-PLAN-EXECUTION.md` | lots et jalons |
 | `docs/06-QUALITE-RISQUES.md` | tests, CI, risques |
 | `docs/07-EMULATEUR-FIRMWARE.md` | émulateur de firmware `ss_emu` |
+| `docs/RECETTE.md` | checklist matériel — jalon J1 et avant chaque release |
+| `docs/DEPANNAGE.md` | dépannage terrain, écrit pour l'opérateur |
 
 ## Outils
 
