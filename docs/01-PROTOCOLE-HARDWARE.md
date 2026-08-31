@@ -69,6 +69,12 @@ Toutes terminées par `\n`.
   Repère : 5000 m avec un rouleau de 114.3 mm = 13927 ticks — on reste sous 32767, la borne
   ne gêne aucun usage réel.
 * `d`, `x`, `t`, `s` sont *fire-and-forget*. Ne jamais attendre d'ack sur ces commandes.
+* **Cadrage strict de `l` et `t`.** Dès que le firmware a lu `l` ou `t`, il bascule dans un mode où
+  **tout octet reçu part dans le tampon numérique**, jusqu'au terminateur — espaces et commandes
+  suivantes compris. `x t60 g` ne démarre donc aucune course : le `g` finit à l'intérieur du nombre,
+  et aucune `ERROR:` n'est émise pour le signaler. Le driver émet `l<chiffres>\n` / `t<chiffres>\n`
+  d'un bloc, sans rien intercaler, et n'envoie la commande suivante qu'après le terminateur.
+  Vérifié par le test `tout octet suivant l ou t est avale par le tampon numerique`.
 * La commande `m` (mock firmware) **n'est pas utilisée en v3** : notre simulateur est côté PC (voir `04`),
   ce qui permet de développer sans aucun matériel branché.
 

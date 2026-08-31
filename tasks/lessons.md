@@ -36,3 +36,9 @@
 * **Nommer ce qu'une preuve ne prouve pas.** J1-ém est écrit dans `docs/05` comme explicitement
   insuffisant pour ouvrir le lot 4, et `docs/07` §2 liste ce que l'émulateur ne couvre pas. Sans ça,
   la tentation de cocher J1 sur une preuve d'émulateur est quasi certaine.
+* **Le firmware avale silencieusement les octets qui suivent `l` ou `t`.** Neuf tests sont tombés
+  d'un coup à la première exécution parce que j'écrivais `"x t600 g"` : l'espace et le `g` sont
+  entrés dans le tampon numérique, la course n'a jamais démarré, et le firmware n'a émis *aucune*
+  erreur. Le piège est réel, il touchera le driver PC comme il a touché le test. Corrigé dans
+  `docs/01` §2 et couvert par un test dédié. Motif : quand une série de tests tombe d'un bloc,
+  chercher la cause unique côté banc d'essai avant de soupçonner le code testé.
