@@ -7,12 +7,13 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 
 ## Lot 0 — Fondations *(0.5 j)*
 
-- [ ] Dépôt git, `.gitignore` Godot, licence, `README.md`
-- [ ] Projet Godot 4.5, renderer Forward+
-- [ ] Arborescence conforme à `docs/03` §2
-- [ ] GUT installé, test bidon vert en headless
-- [ ] GitHub Actions : lint + tests headless, matrice 3 OS
-- [ ] **J0** — `godot --headless --script tests/run.gd` sort en 0 sur les 3 OS *(preuve : log CI)*
+- [x] Dépôt git, `.gitignore` Godot, licence MIT, `README.md`
+- [x] Projet Godot 4.5, renderer Forward+
+- [x] Arborescence conforme à `docs/03` §2
+- [x] GUT 9.6.1 vendorisé, test témoin vert en headless
+- [x] GitHub Actions : lint + tests C++ + tests headless, matrice 3 OS
+- [x] **J0** — `godot --headless --script tests/run.gd` sort en 0 sur les 3 OS
+      *(preuve : `tasks/preuves/2026-08-31-J0-ci-trois-os.md`, run CI 33390935079, 7 jobs verts)*
 
 ## Lot 1 — Lien série *(3–4 j — lot le plus risqué)*
 
