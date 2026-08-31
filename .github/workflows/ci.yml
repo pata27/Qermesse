@@ -1,0 +1,94 @@
+# CI SilverSprint v3 — docs/06 §3.
+#
+# Deux niveaux de test, tous deux sur les trois OS :
+#   1. binaires natifs C++ (emulateur de firmware, plus tard le parseur serie),
+#      qui ne lancent pas Godot ;
+#   2. suite GUT en headless, qui est le jalon J0.
+#
+# Le binaire Godot est telecharge et verifie ici plutot que par une action
+# tierce : docs/06 §4 exige des dependances epinglees et reconstructibles sans
+# surprise, y compris sur un evenement sans reseau fiable.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.5"
+
+jobs:
+  lint:
+    name: Lint GDScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "gdtoolkit==4.*"
+      - name: gdlint
+        run: gdlint core hardware scenes tests
+
+  cpp:
+    name: Tests C++ (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configurer
+        run: cmake -S tools/ss_emu -B tools/ss_emu/build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - name: Compiler
+        run: cmake --build tools/ss_emu/build --config RelWithDebInfo -j 2
+      - name: Tester
+        run: ctest --test-dir tools/ss_emu/build --build-config RelWithDebInfo --output-on-failure
+
+  godot:
+    name: Tests headless Godot (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            archive: Godot_v4.5-stable_linux.x86_64.zip
+            binary: Godot_v4.5-stable_linux.x86_64
+          - os: windows-latest
+            archive: Godot_v4.5-stable_win64.exe.zip
+            binary: Godot_v4.5-stable_win64.exe
+          - os: macos-latest
+            archive: Godot_v4.5-stable_macos.universal.zip
+            binary: Godot.app/Contents/MacOS/Godot
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Recuperer Godot ${{ env.GODOT_VERSION }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/${{ matrix.archive }}"
+          curl -sSfL -o godot.zip "$url"
+          # unzip n'est pas garanti sous Git Bash ; python l'est sur les trois runners.
+          python -c "import zipfile; zipfile.ZipFile('godot.zip').extractall('.godot-bin')"
+          chmod +x ".godot-bin/${{ matrix.binary }}" || true
+          ".godot-bin/${{ matrix.binary }}" --version
+
+      # L'import est obligatoire : sans lui, les scripts ne se resolvent pas et
+      # GUT ne trouve aucun test. Il est lance deux fois — le premier passage
+      # genere les .uid, le second les prend en compte.
+      - name: Importer le projet
+        shell: bash
+        run: |
+          ".godot-bin/${{ matrix.binary }}" --headless --import || true
+          ".godot-bin/${{ matrix.binary }}" --headless --import
+
+      - name: Suite headless — jalon J0
+        shell: bash
+        run: |
+          ".godot-bin/${{ matrix.binary }}" --headless --script tests/run.gd

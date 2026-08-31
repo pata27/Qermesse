@@ -1,0 +1,26 @@
+; SilverSprint v3 — configuration du projet Godot.
+;
+; Regle d'or de docs/03 §2 : core/ ne connait ni la scene, ni le port serie, ni
+; le rendu. Il tourne et se teste en headless.
+
+config_version=5
+
+[application]
+
+config/name="SilverSprint v3"
+config/description="Logiciel de course de rouleaux (goldsprints)."
+config/features=PackedStringArray("4.5", "Forward Plus")
+
+[debug]
+
+gdscript/warnings/untyped_declaration=1
+gdscript/warnings/unsafe_property_access=1
+gdscript/warnings/unsafe_method_access=1
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+
+[rendering]
+
+renderer/rendering_method="forward_plus"

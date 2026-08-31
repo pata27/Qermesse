@@ -41,3 +41,6 @@ races/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Binaire Godot telecharge par la CI
+.godot-bin/
