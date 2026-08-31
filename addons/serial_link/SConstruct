@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+"""Construction du GDExtension `serial_link`.
+
+Chaine godot-cpp standard : SCons, godot-cpp en sous-module epingle sur
+`godot-4.5-stable`. C'est la seule partie du projet qui n'utilise pas CMake ;
+tout le C++ testable (parseur, file SPSC, machine a etats du lien) se construit
+et se teste par CMake, sans Godot.
+
+    scons target=template_debug
+    scons target=template_release
+"""
+
+import os
+
+env = SConscript("godot-cpp/SConstruct")
+
+env.Append(CPPPATH=["src/"])
+
+sources = [
+    "src/line_parser.cpp",
+    "src/port_selection.cpp",
+    "src/link_driver.cpp",
+    "src/serial_port_posix.cpp",
+    "src/serial_port_win.cpp",
+    "src/serial_link.cpp",
+    "src/register_types.cpp",
+]
+
+# Enumeration des ports avec VID/PID : la seule dependance systeme du module.
+if env["platform"] == "macos":
+    env.Append(LINKFLAGS=["-framework", "IOKit", "-framework", "CoreFoundation"])
+elif env["platform"] == "windows":
+    env.Append(LIBS=["setupapi"])
+
+if env["platform"] == "macos":
+    library = env.SharedLibrary(
+        "bin/libserial_link.{}.{}.framework/libserial_link.{}.{}".format(
+            env["platform"], env["target"], env["platform"], env["target"]
+        ),
+        source=sources,
+    )
+else:
+    library = env.SharedLibrary(
+        "bin/libserial_link{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+        source=sources,
+    )
+
+Default(library)

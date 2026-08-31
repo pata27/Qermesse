@@ -49,8 +49,54 @@ jobs:
       - name: Tester
         run: ctest --test-dir build --build-config RelWithDebInfo --output-on-failure
 
+  gdextension:
+    name: GDExtension (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install scons
+
+      # godot-cpp represente l'essentiel du temps de compilation et ne bouge
+      # qu'au changement de sous-module : on le met en cache sur son SHA.
+      - name: Cache godot-cpp
+        uses: actions/cache@v4
+        with:
+          path: addons/serial_link/godot-cpp/bin
+          key: godot-cpp-${{ matrix.os }}-${{ hashFiles('.gitmodules') }}-${{ hashFiles('addons/serial_link/godot-cpp/gdextension/*.json') }}
+
+      - name: Compiler le module
+        working-directory: addons/serial_link
+        run: scons target=template_debug -j2
+
+      - name: Verifier qu'une bibliotheque a bien ete produite
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -la addons/serial_link/bin/
+          test -n "$(ls -A addons/serial_link/bin/)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: serial-link-${{ matrix.os }}
+          path: addons/serial_link/bin/
+          if-no-files-found: error
+
+
   godot:
     name: Tests headless Godot (${{ matrix.os }})
+    # Depend du module natif : on teste le projet tel qu'il sera livre, pas une
+    # variante amputee de son extension.
+    needs: gdextension
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -67,6 +113,11 @@ jobs:
             binary: Godot.app/Contents/MacOS/Godot
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: serial-link-${{ matrix.os }}
+          path: addons/serial_link/bin/
 
       - name: Recuperer Godot ${{ env.GODOT_VERSION }}
         shell: bash
@@ -92,3 +143,10 @@ jobs:
         shell: bash
         run: |
           ".godot-bin/${{ matrix.binary }}" --headless --script tests/run.gd
+
+      # Le module natif doit etre CHARGE, pas seulement compile : une
+      # bibliotheque presente mais rejetee par Godot passerait inapercue.
+      - name: Verifier que le module natif est charge
+        shell: bash
+        run: |
+          ".godot-bin/${{ matrix.binary }}" --headless --script tools/check_extension.gd

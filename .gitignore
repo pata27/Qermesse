@@ -44,3 +44,7 @@ Thumbs.db
 
 # Binaire Godot telecharge par la CI
 .godot-bin/
+
+# SCons
+.sconsign.dblite
+*.sconsign.dblite

@@ -1,0 +1,7 @@
+# Configuration gdlint — voir docs/06 §3.
+#
+# Une seule valeur s'ecarte des defauts de gdtoolkit, et pour une raison
+# precise : un fichier de test GUT expose une fonction publique par cas.
+# Vingt cas dans un meme fichier est normal et souhaitable ; les decouper
+# artificiellement nuirait a la lisibilite sans rien apporter.
+max-public-methods: 60

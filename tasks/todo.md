@@ -17,17 +17,23 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 
 ## Lot 1 — Lien série *(3–4 j — lot le plus risqué)*
 
-- [ ] godot-cpp en submodule épinglé, SConstruct, build sur les 3 OS
-- [ ] `line_parser` C++ pur : toutes les trames de `docs/01` §3
-- [ ] Cas tordus couverts : erreur malformée à double préfixe, trames sans `:`, regex `^([0-3])F:(\d+)$`
-- [ ] Ring buffer SPSC + thread de lecture + drain thread principal
-- [ ] Énumération des ports avec VID/PID
-- [ ] Sélection : port choisi → allowlist VID/PID → regex nom. **Pas de fallback « dernier port »**
-- [ ] Handshake `s` puis `v`, attente `V:SS_v...`, 3 essais, timeout 2 s
-- [ ] `IDENTIFIED` = seule condition d'autorisation du départ
-- [ ] `send_command` : allowlist de commandes + bornage à 7 chiffres (débordement `charBuff[8]`)
-- [ ] Watchdog 500 ms, reconnexion avec backoff plafonné à 5 s
-- [ ] Tests C++ natifs du parseur dans la CI, sans Godot
+- [x] godot-cpp en submodule épinglé (`godot-4.5-stable`, `e83fd09`), SConstruct, build sur les 3 OS
+- [x] `line_parser` C++ pur : toutes les trames de `docs/01` §3
+- [x] Cas tordus couverts : erreur malformée à double préfixe portant un **octet brut**, trames sans
+      `:`, `<idx>F:` parsé avant toute découpe sur `:`, `<i>F:` négatif, `G`/`S` kiosque
+- [x] Ring buffer SPSC + thread de lecture + drain thread principal
+      *(test de charge 2 threads / 100 000 trames)*
+- [x] Énumération des ports avec VID/PID — `/sys/class/tty`, IOKit, SetupAPI
+- [x] Sélection : port choisi → allowlist VID/PID → motif de nom. **Pas de fallback « dernier port »**
+      *(preuve : 32 ports réels sur la machine, 0 candidat retenu)*
+- [x] Handshake `s` puis `v`, attente `V:SS_v...`, 3 essais, timeout 2 s
+- [x] `IDENTIFIED` = seule condition d'autorisation du départ
+- [x] `send_command` : allowlist + bornage 7 chiffres **et** 1..32767, refus des `t` dangereux
+- [x] Watchdog 500 ms armé à la première trame `R:`, reconnexion avec backoff plafonné à 5 s
+- [x] Tests C++ natifs du parseur dans la CI, sans Godot
+- [x] Test d'intégration driver ↔ émulateur sur vrai pseudo-terminal, en CI
+- [x] `tools/ss_monitor.gd` — outil console du jalon, via le GDExtension
+- [x] `tools/check_extension.gd` — vérifie que Godot CHARGE le module, pas seulement qu'il compile
 - [x] `tools/ss_emu` — cœur `FirmwareSim`, réplique fidèle de `ss_basic.ino` bugs compris (`docs/07` §4)
       *(preuve : 50 cas doctest, 309 assertions, exit 0)*
 - [x] `tools/ss_emu` — cyclistes synthétiques et 5 profils de course (`docs/07` §5)
@@ -38,10 +44,13 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 - [x] Sonde console indépendante `tools/ss_probe.py` — témoin croisé, pas l'outil de J1
 - [ ] `link_sim.gd` : profils de course + injection de pannes (`docs/03` §5)
 - [ ] Test de conformité `link_sim.gd` ↔ `ss_emu` sur scénario à graine fixée
-- [ ] **J1-ém** — contre `ss_emu` : handshake, ticks en direct, `LINK_LOST` < 500 ms, reconnexion,
-      trame corrompue absorbée *(preuve : trace `--trace` + console)*. Autorise le lot 2, **pas le lot 4**.
-- [ ] **J1** — sur l'Arduino réel : ticks des 4 pistes en direct, version firmware affichée,
-      débranchement à chaud → `LINK_LOST` < 500 ms, rebranchement → reprise *(preuve : vidéo)*
+- [x] **J1-ém** — contre `ss_emu`, **via le GDExtension** : handshake, ticks en direct, `LINK_LOST`,
+      reconnexion sur pty renuméroté avec course survivante, trame corrompue absorbée
+      *(preuve : `tasks/preuves/2026-08-31-J1em-gdextension.md`)*. Autorise le lot 2, **pas le lot 4**.
+- [ ] **J1** — sur l'Arduino réel : ticks des pistes en direct, version firmware affichée,
+      débranchement USB **physique** à chaud → `LINK_LOST` < 500 ms, rebranchement → reprise
+      *(preuve : vidéo)*. **BLOQUÉ : boîtier non disponible.** Reste à faire : relever `lsusb`,
+      compléter l'allowlist VID/PID de `port_selection.cpp`, vérifier l'affectation des pistes.
 
 ## Lot 2 — Cœur métier *(3 j)*
 

@@ -1,0 +1,15 @@
+[configuration]
+
+entry_symbol = "serial_link_library_init"
+compatibility_minimum = "4.5"
+
+[libraries]
+
+linux.debug.x86_64 =   "res://addons/serial_link/bin/libserial_link.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "res://addons/serial_link/bin/libserial_link.linux.template_release.x86_64.so"
+
+windows.debug.x86_64 =   "res://addons/serial_link/bin/libserial_link.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "res://addons/serial_link/bin/libserial_link.windows.template_release.x86_64.dll"
+
+macos.debug =   "res://addons/serial_link/bin/libserial_link.macos.template_debug.framework"
+macos.release = "res://addons/serial_link/bin/libserial_link.macos.template_release.framework"
