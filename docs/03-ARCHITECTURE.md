@@ -7,9 +7,31 @@
 | Moteur | **Godot 4.5** (renderer Forward+) | 3D, shaders, particules, audio, UI et export natif Win/Linux/macOS depuis une seule machine. Gratuit, sans royalties, projet ouvert. |
 | Gameplay / UI | **GDScript** | itération rapide, hot-reload, largement suffisant pour de la logique à 100 Hz |
 | Cœur métier | **GDScript, en `RefCounted` purs sans dépendance à la scène** | testable en headless |
-| Port série | **GDExtension C++** (`libserialport`) | Godot n'a pas d'accès série natif. Module isolé, ~400 lignes, testable seul |
+| Port série | **GDExtension C++**, couche série écrite à la main | Godot n'a pas d'accès série natif. Module isolé, testable seul. Voir ci-dessous : `libserialport` a été écarté. |
 | Build natif | **SCons** (chaîne standard godot-cpp) | |
 | CI | **GitHub Actions**, matrice ubuntu / windows / macos | |
+
+### Pourquoi pas `libserialport`
+
+Le choix initial était `libserialport`. Il est abandonné, pour une raison unique mais dirimante :
+**la contrainte « aucune dépendance à reconstruire par réseau »** de `06` §4. `libserialport` se
+construit par autotools et son `config.h` est généré ; l'intégrer à une chaîne SCons multiplateforme
+suppose d'écrire ce `config.h` à la main pour chaque OS, ce qui est exactement le genre de bricolage
+qui casse la veille d'un événement, sur un portable, sans réseau.
+
+Ce qu'il apportait vraiment se réduit à deux choses : ouvrir un port, et l'énumérer avec son VID/PID.
+La première est banale (`termios` sur POSIX, `SetCommState` sur Windows). La seconde est la seule
+partie réellement fastidieuse, et elle tient en trois implémentations courtes :
+
+| OS | Énumération VID/PID |
+|---|---|
+| Linux | `/sys/class/tty/<port>/device/../{idVendor,idProduct}` |
+| macOS | IOKit — `IOServiceMatching("IOSerialBSDClient")`, propriétés `idVendor` / `idProduct` |
+| Windows | SetupAPI — identifiant matériel `USB\VID_2341&PID_0043` |
+
+Coût estimé : environ 400 lignes au total, contre un système de build tiers à dompter sur trois OS.
+Le module reste isolé derrière une interface étroite (`serial_port.h`), donc réversible : si cette
+couche s'avérait fragile, le repli reste le pont TCP décrit au §4.
 
 ### Pourquoi pas la stack de la v2 (SDL2 + OpenGL + Dear ImGui)
 

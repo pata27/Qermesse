@@ -43,11 +43,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Configurer
-        run: cmake -S tools/ss_emu -B tools/ss_emu/build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
       - name: Compiler
-        run: cmake --build tools/ss_emu/build --config RelWithDebInfo -j 2
+        run: cmake --build build --config RelWithDebInfo -j 2
       - name: Tester
-        run: ctest --test-dir tools/ss_emu/build --build-config RelWithDebInfo --output-on-failure
+        run: ctest --test-dir build --build-config RelWithDebInfo --output-on-failure
 
   godot:
     name: Tests headless Godot (${{ matrix.os }})
