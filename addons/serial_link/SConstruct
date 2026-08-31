@@ -30,7 +30,9 @@ sources = [
 if env["platform"] == "macos":
     env.Append(LINKFLAGS=["-framework", "IOKit", "-framework", "CoreFoundation"])
 elif env["platform"] == "windows":
-    env.Append(LIBS=["setupapi"])
+    # advapi32 porte RegQueryValueEx/RegCloseKey, utilises pour lire le nom du
+    # port dans le registre. CMake le lie par defaut, SCons non.
+    env.Append(LIBS=["setupapi", "advapi32"])
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(

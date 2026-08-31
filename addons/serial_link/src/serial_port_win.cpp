@@ -26,7 +26,12 @@
 #include <cstdlib>
 #include <string>
 
+// SetupAPI pour l'enumeration, advapi32 pour la cle de registre qui porte le
+// nom du port (COM3). CMake lie advapi32 par defaut, SCons non : sans ce
+// pragma, la CI Windows echoue au LIEN et pas a la compilation, ce qui rend le
+// diagnostic bien moins evident.
 #pragma comment(lib, "setupapi.lib")
+#pragma comment(lib, "advapi32.lib")
 
 namespace sslink {
 namespace {
