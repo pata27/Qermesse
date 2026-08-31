@@ -23,7 +23,16 @@ IDLE ──START──▶ ARMING ──▶ COUNTDOWN(3,2,1) ──CD:0──▶ 
 ```
 
 `ARMING` couvre l'aller-retour série (`d`/`x`, `l`/`t`, `g`) avant réception du premier `CD:`.
-Timeout 1 s : si aucun `CD:` n'arrive, retour `IDLE` + erreur explicite à l'opérateur.
+**Timeout 2 s** : si aucun `CD:` n'arrive, retour `IDLE` + erreur explicite à l'opérateur.
+
+> Le timeout était fixé à 1 s dans la version initiale de ce document : c'était un faux négatif
+> systématique. À la réception de `g`, le firmware pose `lastCountDownMillis = millis()` et
+> n'émet `CD:3` qu'à la condition `(millis() - lastCountDownMillis) > 1000`. Le premier `CD:`
+> arrive donc **juste après** la seconde, plus la latence série. 2 s laisse une marge honnête
+> sans rendre l'attente pénible pour l'opérateur.
+
+> Corollaire : le décompte complet dure **~4 s** (`CD:3` à t+1 s … `CD:0` à t+4 s), pas 3 s.
+> L'habillage plein écran du lot 5 doit être calé sur les trames reçues, jamais sur un minuteur local.
 
 > **Nettoyage vs v2 :** la v2 déclarait un état `GO` dessiné par l'UI mais jamais atteint par le moteur.
 > En v3, un état non atteignable est un bug de conception : la FSM ci-dessus est exhaustive et testée
@@ -56,9 +65,14 @@ de la trame `R:` (documenté comme tel dans l'UI : « photo-finish »).
 
 **Séquence série.** `x` → `t<T>` → `g`.
 
-**Condition de fin.** Double détection, on retient la première :
-* le PC voit `elapsedMs ≥ T × 1000` ;
-* le firmware émet ses `<i>F:` de fin de course.
+**Condition de fin.** **Calculée par le PC seul :** `elapsedMs ≥ T × 1000`. Le PC envoie ensuite `s`.
+
+> Une version antérieure de ce document décrivait une « double détection » PC + firmware dont on
+> retenait la première. **Elle n'existe pas.** Le firmware déborde son `int` 16 bits sur
+> `raceLengthSecs * 1000` et ne termine jamais une course de plus de 32 secondes — démonstration
+> complète en `01` §5.5. Avec le défaut à 60 s, le firmware n'émettra jamais ses `<i>F:`.
+> Quand ils arrivent (T ≤ 32 s), ils sont traités comme une confirmation loggée, jamais comme
+> une condition de fin.
 
 **Classement.** Décroissant par ticks cumulés. Ex æquo → vitesse de pointe la plus élevée.
 
@@ -77,20 +91,25 @@ spectaculaire, durée variable — c'est le mode « showcase » du logiciel.
 restants + 1). La course continue avec les riders restants, jusqu'à ce qu'il n'en reste qu'un.
 Un rider éliminé garde son écran mais est grisé, sa piste 3D s'estompe.
 
-> **Point à valider avec l'utilisateur avant implémentation.** L'alternative est
-> « premier à mettre `G` à *tous* les autres gagne, sans élimination ». L'élimination progressive
-> est retenue par défaut parce qu'elle donne une tension croissante et un vrai classement final,
-> mais c'est un choix de game design, pas une contrainte technique. Le moteur doit rendre les
-> deux règles interchangeables derrière une même interface (`PursuitRule`).
+> **Tranché avec l'utilisateur (session initiale) : élimination progressive.** C'est la règle par
+> défaut et la seule livrée au lot 2. L'alternative « premier à mettre `G` à *tous* les autres
+> gagne, sans élimination » reste implémentable derrière l'interface `PursuitRule`, qui doit rendre
+> les deux variantes interchangeables — mais elle n'est pas écrite tant qu'elle n'est pas demandée
+> (règle « pas de code mort »).
 
 **Séquence série.** `x` → `t<plafond_secs>` → `g`.
 Le mode temps est utilisé comme *véhicule* parce que c'est le seul qui ne fait pas terminer le
-firmware sur une condition de distance. `plafond_secs` = **300 s** par défaut : garde-fou pur, jamais
-atteint en pratique. Quand le PC décide la fin, il envoie `s`.
+firmware sur une condition de distance. Quand le PC décide la fin, il envoie `s`.
 
-**Plafonds de sécurité (l'un ou l'autre déclenche la fin).**
-* Durée : `plafond_secs` (défaut 300 s). Vainqueur = celui qui mène à cet instant.
+> **`t<plafond_secs>` n'a aucun effet.** À 300 s, le firmware déborde son `int` (`01` §5.5) et
+> n'appliquera jamais ce plafond. On l'émet uniquement pour laisser le firmware dans un état
+> cohérent avec le mode sélectionné. **Les deux plafonds ci-dessous sont donc entièrement à la
+> charge du PC — ce sont eux, et eux seuls, qui empêchent une course infinie.**
+
+**Plafonds de sécurité, appliqués par le PC (l'un ou l'autre déclenche la fin).**
+* Durée : `plafond_secs` (défaut 300 s), mesuré sur `elapsedMs`. Vainqueur = celui qui mène.
 * Distance : 5000 m cumulés. Idem.
+* Ces deux plafonds sont couverts par des tests dédiés au jalon J2.
 
 Sans ces plafonds, deux riders de niveau égal courent jusqu'à épuisement — inacceptable en
 événementiel. Ils doivent être visibles dans l'UI (jauge « temps restant avant décision »).

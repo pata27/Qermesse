@@ -55,9 +55,19 @@ Toutes terminées par `\n`.
 
 ### Pièges à respecter
 
-* Le buffer de parsing numérique du firmware fait **8 octets sans garde de dépassement**
-  (`char charBuff[8]`). Le driver PC **doit** borner `<ticks>` et `<secs>` à **7 chiffres max**
-  et refuser toute valeur hors bornes avant émission. Non négociable : dépassement = corruption mémoire AVR.
+* **Double bornage obligatoire de `l<ticks>` et `t<secs>`.** Deux contraintes indépendantes,
+  toutes deux à respecter :
+  1. *Longueur* — le buffer de parsing fait **8 octets sans garde de dépassement**
+     (`char charBuff[8]`, `charBuffPos` incrémenté sans test). Au terminateur, le firmware écrit
+     `charBuff[charBuffPos] = '\0'` : à 8 chiffres il écrit hors du tableau. Donc **7 chiffres max**.
+  2. *Valeur* — `atoi()` remplit un `int`, qui fait **16 bits signés sur AVR**. `raceLengthTicks`
+     et `raceLengthSecs` sont des `int`. Toute valeur > 32767 est repliée modulo 2¹⁶ et devient
+     potentiellement négative. Donc **plage utile `1..32767`**.
+
+  Le driver PC refuse l'émission hors de ces bornes. Non négociable : dépassement = corruption
+  mémoire AVR d'un côté, condition de fin absurde de l'autre.
+  Repère : 5000 m avec un rouleau de 114.3 mm = 13927 ticks — on reste sous 32767, la borne
+  ne gêne aucun usage réel.
 * `d`, `x`, `t`, `s` sont *fire-and-forget*. Ne jamais attendre d'ack sur ces commandes.
 * La commande `m` (mock firmware) **n'est pas utilisée en v3** : notre simulateur est côté PC (voir `04`),
   ce qui permet de développer sans aucun matériel branché.
@@ -83,12 +93,24 @@ Toutes terminées par `\n`.
    avec deux préfixes concaténés :
    `ERROR:Command invalid ERROR:Unprintable ASCII code <val>`.
    Le parseur doit la classer en `Unknown` et logger, jamais lever.
+   **`<val>` n'est pas un nombre.** `val` est déclaré `char` et `Serial.println(char)` d'Arduino
+   émet *le caractère*, pas son code décimal. La ligne contient donc l'octet de contrôle brut,
+   suivi de `\r\n`. Le parseur doit survivre à des octets non-UTF-8 au milieu d'une ligne :
+   travailler sur des `uint8_t`, jamais supposer du texte valide.
 2. **`<idx>F:` se parse par regex `^([0-3])F:(\d+)$`**, jamais par `split(':')` naïf — sinon collision
    avec les autres préfixes.
 3. **`G` et `S` seuls** sont gérés par le driver v1 (mode « kiosque », bouton physique) mais
    **ne sont jamais émis par `ss_basic.ino`**. En v3 : les parser (retour `Kiosk::Start` / `Kiosk::Stop`),
    les logger, ne rien en faire tant que le matériel correspondant n'est pas confirmé. Coût : 4 lignes.
 4. Une trame reçue peut ne contenir aucun `:`. Gérer proprement.
+5. **`<i>F:` peut porter un nombre négatif en mode temps.** Le firmware imprime
+   `Serial.println(raceLengthSecs * 1000, DEC)` — arithmétique `int` 16 bits, qui déborde dès
+   `raceLengthSecs > 32`. Pour `T = 60` la trame serait `0F:-5536`. La regex `^([0-3])F:(\d+)$`
+   ne matche pas : la trame part en `Unknown` et est logguée. C'est le comportement voulu — mais
+   voir §5.5, en pratique cette branche n'est jamais atteinte.
+6. **Fin du flux `R:` sans perte de lien.** En mode distance, le firmware arrête d'émettre dès que
+   *les quatre* pistes ont franchi la ligne (`checkDistanceBased()` met `raceStarted = false`).
+   Un silence sur `R:` n'est donc pas nécessairement une perte de lien. Voir §6.2.
 
 ### `R:` porte des **valeurs absolues**, pas des deltas
 
@@ -180,10 +202,44 @@ Recette d'exploitation qui en découle :
 | Mode de jeu | Ce qu'on envoie au firmware | Qui décide la fin |
 |---|---|---|
 | Distance | `d` + `l<ticks>` + `g` | **le PC** (dès que les riders *actifs* ont fini). Le firmware peut aussi émettre ses `<i>F:` — on les utilise comme confirmation, jamais comme condition. |
-| Temps | `x` + `t<secs>` + `g` | le firmware **et** le PC (redondance, on prend le premier des deux) |
-| **Poursuite** | `x` + `t<plafond_secs>` + `g` | **le PC exclusivement**, sur le critère d'écart. `t` sert de garde-fou anti-course-infinie. |
+| Temps | `x` + `t<secs>` + `g` | **le PC exclusivement.** La redondance firmware est illusoire au-delà de 32 s — voir §5.5. |
+| **Poursuite** | `x` + `t<plafond_secs>` + `g` | **le PC exclusivement**, sur le critère d'écart. `t` **ne sert à rien** (§5.5) : le garde-fou anti-course-infinie est entièrement côté PC. On émet quand même `t` pour laisser le firmware dans un état cohérent. |
 
 Cette table est le cœur du plan. Un dev qui l'ignore reproduira les bugs de la v1.
+
+### 5.5 Le firmware ne termine jamais une course en temps au-delà de 32 secondes
+
+Découvert à la relecture ligne à ligne de `ss_basic.ino` (v3, session initiale). C'est un bug
+firmware supplémentaire, du même ordre de gravité que §5.1.
+
+```c
+int raceLengthSecs = 60;              // int = 16 bits signés sur AVR
+...
+void checkTimeBased() {
+    if(currentTimeMillis > raceLengthSecs * 1000){   // ← débordement int
+```
+
+`raceLengthSecs * 1000` est une multiplication **entre deux `int`** : le résultat est calculé en
+16 bits *avant* toute promotion. Pour `T = 60`, `60000` déborde et vaut `-5536`. La comparaison
+avec `currentTimeMillis`, un `unsigned long`, convertit ce `-5536` en `4294961760` — environ
+49,7 jours. **La condition n'est jamais vraie.**
+
+| `T` demandé | `T × 1000` en `int16` | Comportement firmware |
+|---|---|---|
+| ≤ 32 s | correct (≤ 32000) | la course se termine, `<i>F:` émis pour les 4 pistes |
+| ≥ 33 s | déborde, négatif | **la course ne se termine jamais**, aucun `<i>F:` |
+
+Conséquences normatives :
+
+* En **mode temps**, la condition de fin est calculée **par le PC seul** (`elapsedMs ≥ T × 1000`).
+  La « double détection » décrite dans une version antérieure de `02` §2 n'existe pas. Les `<i>F:`
+  éventuels (T ≤ 32 s) sont acceptés comme confirmation, jamais comme condition.
+* En **mode poursuite**, `t<plafond_secs>` avec un plafond de 300 s est **inopérant**. Le garde-fou
+  anti-course-infinie doit être implémenté côté PC, sans exception. On continue d'émettre `t` par
+  hygiène de protocole, pas pour son effet.
+* Le driver **n'attend jamais** de `<i>F:` pour conclure quoi que ce soit, dans aucun mode.
+
+Le firmware n'étant pas modifié en v3, ce bug est une contrainte permanente, pas un incident.
 
 ---
 
@@ -197,6 +253,13 @@ Un thread dédié à la lecture série, communication avec le thread de jeu par 
 (appels Cinder et mutation du singleton `Model` depuis le thread série → data races et crashs aléatoires).
 
 ### 6.2 Watchdog
+
+Le watchdog n'est **armé que pendant l'état `RUNNING` de la FSM du PC**, et il est **désarmé dès
+que le PC quitte `RUNNING`** — pas seulement à l'émission de `s`. Raison : en mode distance, le
+firmware cesse d'émettre `R:` sitôt que les quatre pistes matérielles ont fini (§3, anomalie 6).
+Avec quatre riders actifs, ce silence peut précéder de quelques millisecondes la conclusion du PC.
+Un watchdog encore armé afficherait alors un faux `LINK_LOST` à l'instant précis de l'arrivée —
+sur l'écran spectacle, au pire moment possible.
 
 Si aucune trame `R:` n'est reçue pendant **500 ms alors qu'une course est en cours** :
 bascule en `LINK_LOST`, gel du rendu de course sur la dernière valeur connue, bandeau d'alerte,
