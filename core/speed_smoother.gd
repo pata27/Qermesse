@@ -43,3 +43,10 @@ func reset() -> void:
 
 func sample_count() -> int:
 	return _count
+
+
+## Vrai quand la fenetre est pleine. Avant cela, la moyenne porte sur trop peu
+## d'echantillons pour valoir comme mesure : un seul tick isole la ferait
+## bondir a plus de 100 km/h.
+func is_full() -> bool:
+	return _count == _capacity

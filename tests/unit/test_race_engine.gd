@@ -489,3 +489,25 @@ func test_le_firmware_f_est_une_confirmation_jamais_une_condition_de_fin() -> vo
 	_engine.on_rider_finish(1, 1000)
 	assert_eq(_engine.state(), RaceEngine.State.RUNNING, "la course continue")
 	assert_eq(_finishes.size(), 0)
+
+
+func test_la_vitesse_de_pointe_reste_plausible() -> void:
+	# Constate sur la premiere course complete menee a l'interface : la pointe
+	# etait calculee sur la vitesse instantanee, ce qui donnait 117 km/h pour un
+	# cycliste a 45. A 100 Hz, un tick vaut 35,9 cm : un seul tick sur une trame
+	# de 10 ms « vaut » 129 km/h.
+	var config := _config(RaceConfig.Mode.TIME, [0, 1])
+	config.duration_s = 12.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(14.0, [45.0, 30.0])
+
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
+	for rider: int in [0, 1]:
+		var expected: float = [45.0, 30.0][rider]
+		var peak := _result.max_kph[rider]
+		var mean := _result.avg_kph[rider]
+		assert_between(peak, expected * 0.9, expected * 1.15,
+			"la pointe doit encadrer la vitesse reelle de la piste %d" % rider)
+		assert_gt(peak, mean, "la pointe depasse la moyenne")
+		assert_lt(peak, Physics.MAX_PLAUSIBLE_KPH, "et reste sous le plafond du filtre")

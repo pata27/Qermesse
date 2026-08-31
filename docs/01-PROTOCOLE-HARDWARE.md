@@ -367,3 +367,10 @@ en mm**, mesuré physiquement (distance aimant → centre du rouleau, ×2).
 Lissage de la vitesse affichée : moyenne mobile. v1 utilisait 60 échantillons (~600 ms à 100 Hz),
 v2 utilisait 10 (~100 ms). **Retenir 20 échantillons (~200 ms)** : v1 était trop mou pour un rendu
 de jeu, v2 trop nerveux. Paramètre exposé en réglage avancé.
+
+**La vitesse de pointe se mesure sur la vitesse lissée, jamais sur l'instantanée**, et seulement une
+fois la fenêtre pleine. À cette échelle, la vitesse instantanée n'a pas de sens : un tick vaut
+35,9 cm et une trame couvre 10 ms, donc un seul tick affiche 129 km/h. Mesurée sur l'instantanée,
+la « pointe » d'un cycliste à 45 km/h ressortait à **117 km/h** dans le CSV — constaté sur la
+première course complète menée à l'interface. La même quantification impose la tolérance d'un tick
+du filtre (§6.3) : c'est le même phénomène vu de deux côtés.

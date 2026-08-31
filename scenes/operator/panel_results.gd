@@ -1,0 +1,111 @@
+## Ecran de resultats et historique de la journee — docs/05 lot 3.
+class_name PanelResults
+extends VBoxContainer
+
+var _controller: AppController
+var _table: RichTextLabel
+var _history: ItemList
+var _export_button: Button
+var _csv_label: Label
+
+
+func setup(controller: AppController) -> void:
+	_controller = controller
+	_build()
+	_controller.race_finished.connect(_on_race_finished)
+
+
+func _build() -> void:
+	var title := Label.new()
+	title.text = "Resultats"
+	title.add_theme_font_size_override("font_size", 20)
+	add_child(title)
+
+	_table = RichTextLabel.new()
+	_table.bbcode_enabled = false
+	_table.custom_minimum_size = Vector2(520, 140)
+	_table.text = "Aucune course terminee."
+	add_child(_table)
+
+	var history_title := Label.new()
+	history_title.text = "Courses du jour"
+	add_child(history_title)
+
+	_history = ItemList.new()
+	_history.custom_minimum_size = Vector2(520, 110)
+	_history.item_selected.connect(_on_history_selected)
+	add_child(_history)
+
+	_export_button = Button.new()
+	_export_button.text = "Ouvrir le dossier du CSV"
+	_export_button.pressed.connect(_on_export)
+	add_child(_export_button)
+
+	_csv_label = Label.new()
+	_csv_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_csv_label.custom_minimum_size.x = 520
+	add_child(_csv_label)
+
+
+func table_text() -> String:
+	return _table.text
+
+
+func history_count() -> int:
+	return _history.item_count
+
+
+func csv_path_label() -> String:
+	return _csv_label.text
+
+
+func show_result(result: RaceResult) -> void:
+	var lines: Array[String] = []
+	lines.append(
+		"%s — %s%s"
+		% [
+			result.mode,
+			result.end_reason_name(),
+			"  [INTERROMPUE : %s]" % result.interruption_note if result.interrupted else "",
+		]
+	)
+	lines.append("rang  piste  nom            distance   temps     moy      max")
+	for rider: int in result.ranking:
+		lines.append(
+			"%4d  %5d  %-14s %7.1f m  %6.2f s  %5.1f  %5.1f"
+			% [
+				result.rank_of(rider),
+				rider + 1,
+				_controller.roster.rider(rider).display_name(),
+				result.distance_m[rider],
+				result.finished_ms[rider] / 1000.0,
+				result.avg_kph[rider],
+				result.max_kph[rider],
+			]
+		)
+	_table.text = "\n".join(lines)
+	# Le chemin du CSV est affiche en clair : un operateur doit pouvoir le
+	# retrouver sans deviner ou le logiciel range ses fichiers.
+	_csv_label.text = "CSV : %s" % _controller.recorder.csv_path()
+
+
+func _on_race_finished(result: RaceResult) -> void:
+	show_result(result)
+	_history.add_item(
+		"%s  %s  vainqueur piste %d"
+		% [result.finished_at_iso, result.mode, result.winner() + 1]
+	)
+
+
+func _on_history_selected(index: int) -> void:
+	var results := _controller.history()
+	if index >= 0 and index < results.size():
+		show_result(results[index])
+
+
+func _on_export() -> void:
+	var path := _controller.recorder.csv_path()
+	if path.is_empty():
+		_csv_label.text = "Aucun CSV ecrit pour l'instant."
+		return
+	OS.shell_open(path.get_base_dir())

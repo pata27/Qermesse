@@ -83,3 +83,14 @@
   la suite GUT, qui compte les avertissements moteur. Le module rapporte, la couche applicative
   affiche. Meme raison pour `JSON.parse_string`, qui ecrit dans le journal du moteur : preferer
   `JSON.new().parse()` sur un cas d'erreur deja gere.
+* **Godot ne déclenche `_ready` ni `_enter_tree` de façon synchrone depuis `SceneTree._initialize()`.**
+  Un outil en ligne de commande bâtissait donc l'interface contre un contrôleur vide, et le panneau
+  matériel affichait « aucun port détecté » sans rien signaler. Corrigé par une initialisation
+  explicite et idempotente que la vue déclenche elle-même, plutôt qu'en insérant un `await` au bon
+  endroit. Motif : quand un ordre d'appel est fragile, supprimer la dépendance à l'ordre, pas
+  l'ajuster.
+* **Une métrique affichée est une affirmation.** La « vitesse de pointe » était calculée sur la
+  vitesse instantanée : un cycliste à 45 km/h ressortait à 117 km/h dans le CSV. Même cause que la
+  tolérance du filtre de ticks — la quantification à 35,9 cm sur une fenêtre de 10 ms — vue d'un
+  autre côté. Motif : toute grandeur dérivée d'un capteur doit être vérifiée contre une valeur
+  attendue connue, pas seulement contre elle-même.

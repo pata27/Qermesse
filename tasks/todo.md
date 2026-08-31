@@ -79,15 +79,20 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 
 ## Lot 3 — Interface opérateur *(4 j)*
 
-- [ ] Roster 1–4 riders : noms, couleurs, activation de piste
-- [ ] Sélection du mode et de ses paramètres (`D`, `T`, `G`, politique de faux départ)
-- [ ] Panneau matériel : ports, état du lien, version firmware
-- [ ] Test capteurs : tourner chaque rouleau, vérifier que les ticks arrivent sur la bonne piste
-- [ ] Calibration du diamètre de rouleau, avec aide à la mesure
-- [ ] Contrôle de course : START / STOP / relance
-- [ ] Écran de résultats, historique du jour, export CSV
-- [ ] Bascule simulateur / matériel en un clic
-- [ ] **J3** — course complète menée au simulateur sans clavier, CSV correct *(preuve : CSV + capture)*
+- [x] Roster 1–4 riders : noms, dossards, couleurs, activation de piste
+- [x] Sélection du mode et de ses paramètres (`D`, `T`, `G`, politique de faux départ) — seuls les
+      réglages du mode choisi sont affichés
+- [x] Panneau matériel : ports **avec le motif de leur retenue ou de leur rejet**, état du lien,
+      version firmware, statistiques du lien
+- [x] Test capteurs : bouton dédié, activité par piste, pour détecter un câblage inversé
+      **avant** la course
+- [x] Calibration du diamètre de rouleau, avec aide à la mesure et retour immédiat en ticks
+- [x] Contrôle de course : START / STOP / relance. START grisé tant que le départ est interdit,
+      avec le motif en infobulle
+- [x] Écran de résultats, historique du jour, chemin du CSV affiché en clair
+- [x] Bascule simulateur / matériel en un clic
+- [x] **J3** — course complète menée au simulateur sans clavier, CSV correct
+      *(preuve : `tasks/preuves/2026-08-31-J3-interface-operateur.md`, 4 captures + CSV)*
 
 ## Lot 4 — Scène 3D *(6–8 j)*
 

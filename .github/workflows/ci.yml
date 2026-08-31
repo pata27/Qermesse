@@ -150,3 +150,11 @@ jobs:
         shell: bash
         run: |
           ".godot-bin/${{ matrix.binary }}" --headless --script tools/check_extension.gd
+
+      # Bout en bout : une course complete menee a l'interface operateur, au
+      # simulateur. Les tests unitaires verifient les pieces ; celui-ci verifie
+      # que l'assemblage produit bien une course et un CSV.
+      - name: Course complete a l'interface — jalon J3
+        shell: bash
+        run: |
+          ".godot-bin/${{ matrix.binary }}" --headless --script tools/ss_operator_demo.gd -- --vitesse 12

@@ -53,6 +53,12 @@ func is_simulated() -> bool:
 
 
 func _swap(backend_kind: Backend, impl: Node) -> void:
+	# Rien a faire si le lien demande est deja en place. Sans ce garde-fou,
+	# `_ready` cree un simulateur que le controleur remplace aussitot par un
+	# autre, identique : un noeud construit puis jete a chaque demarrage.
+	if _impl != null and _backend == backend_kind:
+		impl.free()
+		return
 	if _impl != null:
 		_impl.stop()
 		remove_child(_impl)
@@ -115,3 +121,11 @@ func set_race_active(active: bool) -> void:
 
 func get_stats() -> Dictionary:
 	return _impl.get_stats()
+
+
+## Accelere le temps SIMULE. Sans effet sur le materiel, qui a sa propre
+## horloge : la methode est volontairement silencieuse dans ce cas plutot que
+## de lever, pour que l'appelant n'ait pas a savoir quel lien est branche.
+func set_simulation_speed(scale: float) -> void:
+	if _impl.has_method("set_simulation_speed"):
+		_impl.set_simulation_speed(scale)

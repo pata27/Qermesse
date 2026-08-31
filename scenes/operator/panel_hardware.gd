@@ -1,0 +1,231 @@
+## Panneau materiel — ports, etat du lien, version firmware, test capteurs,
+## calibration du rouleau (docs/05 lot 3).
+##
+## Ce panneau est l'outil de depannage terrain. Il doit dire POURQUOI un port
+## n'est pas retenu, et pas seulement lesquels existent : c'est la moitie du
+## diagnostic quand le boitier ne repond pas.
+class_name PanelHardware
+extends VBoxContainer
+
+signal backend_changed()
+
+## Aide a la mesure — docs/05 lot 3.
+const CALIBRATION_HELP := (
+	"Mesurer la distance de l'aimant au centre du rouleau, puis doubler. "
+	+ "Un tick = un tour de rouleau = une circonference. "
+	+ "Aucun rapport de transmission n'intervient."
+)
+
+var _controller: AppController
+var _backend_toggle: CheckButton
+var _state_label: Label
+var _firmware_label: Label
+var _port_list: ItemList
+var _ports: Array = []
+var _refresh_button: Button
+var _sensor_button: Button
+var _sensor_labels: Array[Label] = []
+var _roller: SpinBox
+var _ticks_label: Label
+var _stats_label: Label
+
+
+func setup(controller: AppController) -> void:
+	_controller = controller
+	_build()
+	_controller.link_state_changed.connect(func(_s: int) -> void: refresh())
+	_controller.sensor_activity.connect(_on_sensor_activity)
+	refresh()
+
+
+func _build() -> void:
+	var title := Label.new()
+	title.text = "Materiel"
+	title.add_theme_font_size_override("font_size", 20)
+	add_child(title)
+
+	_backend_toggle = CheckButton.new()
+	_backend_toggle.text = "Simulateur"
+	_backend_toggle.button_pressed = _controller.settings.use_simulator
+	_backend_toggle.toggled.connect(_on_backend_toggled)
+	add_child(_backend_toggle)
+
+	_state_label = Label.new()
+	add_child(_state_label)
+	_firmware_label = Label.new()
+	add_child(_firmware_label)
+
+	var port_row := HBoxContainer.new()
+	add_child(port_row)
+	_refresh_button = Button.new()
+	_refresh_button.text = "Rafraichir les ports"
+	_refresh_button.pressed.connect(refresh_ports)
+	port_row.add_child(_refresh_button)
+
+	_port_list = ItemList.new()
+	_port_list.custom_minimum_size = Vector2(520, 110)
+	_port_list.item_selected.connect(_on_port_selected)
+	add_child(_port_list)
+
+	var roller_row := HBoxContainer.new()
+	add_child(roller_row)
+	var roller_label := Label.new()
+	roller_label.text = "Diametre du rouleau (mm)"
+	roller_row.add_child(roller_label)
+	_roller = SpinBox.new()
+	_roller.min_value = 20.0
+	_roller.max_value = 500.0
+	_roller.step = 0.1
+	_roller.value = _controller.settings.roller_mm
+	_roller.value_changed.connect(_on_roller_changed)
+	roller_row.add_child(_roller)
+
+	_ticks_label = Label.new()
+	add_child(_ticks_label)
+
+	var help := Label.new()
+	help.text = CALIBRATION_HELP
+	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	help.custom_minimum_size.x = 520
+	add_child(help)
+
+	_sensor_button = Button.new()
+	_sensor_button.text = "Test capteurs"
+	_sensor_button.toggle_mode = true
+	_sensor_button.toggled.connect(_on_sensor_test_toggled)
+	add_child(_sensor_button)
+
+	var sensor_row := HBoxContainer.new()
+	add_child(sensor_row)
+	for lane: int in range(Protocol.MAX_RIDERS):
+		var label := Label.new()
+		label.text = "P%d : —" % (lane + 1)
+		label.custom_minimum_size.x = 110
+		sensor_row.add_child(label)
+		_sensor_labels.append(label)
+
+	_stats_label = Label.new()
+	_stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_stats_label.custom_minimum_size.x = 520
+	add_child(_stats_label)
+
+
+func refresh() -> void:
+	var state := _controller.link_state()
+	_state_label.text = "Lien : %s" % Protocol.state_name(state)
+	if state == Protocol.State.IDENTIFIED:
+		_state_label.add_theme_color_override("font_color", Color("#00E676"))
+	elif state == Protocol.State.LINK_LOST:
+		_state_label.add_theme_color_override("font_color", Color("#FF3B30"))
+	else:
+		_state_label.add_theme_color_override("font_color", Color("#FFB300"))
+
+	var version := _controller.firmware_version()
+	_firmware_label.text = (
+		"Firmware : %s" % version
+		if not version.is_empty()
+		# docs/01 §4 : un port ouvert n'est pas une preuve. On le dit.
+		else "Firmware : inconnu — aucun V: recu, le depart reste interdit"
+	)
+	_backend_toggle.set_pressed_no_signal(_controller.is_simulated())
+	_refresh_ticks_label()
+	_refresh_stats()
+
+
+func refresh_ports() -> void:
+	_ports = _controller.list_ports()
+	_port_list.clear()
+	for entry: Dictionary in _ports:
+		var ids := "sans VID/PID"
+		if int(entry.get("vid", -1)) >= 0:
+			ids = "%04x:%04x" % [int(entry["vid"]), int(entry["pid"])]
+		var mark := "•" if bool(entry.get("candidate", false)) else " "
+		_port_list.add_item(
+			"%s %-22s %-13s %s" % [mark, entry.get("port", "?"), ids, entry.get("reason", "")]
+		)
+	if _ports.is_empty():
+		_port_list.add_item("aucun port detecte")
+
+
+func port_list() -> ItemList:
+	return _port_list
+
+
+func backend_toggle() -> CheckButton:
+	return _backend_toggle
+
+
+func sensor_button() -> Button:
+	return _sensor_button
+
+
+func roller_field() -> SpinBox:
+	return _roller
+
+
+func ticks_hint() -> String:
+	return _ticks_label.text
+
+
+func _refresh_ticks_label() -> void:
+	# Retour immediat sur la calibration : l'operateur voit ce que sa mesure
+	# donne en ticks avant de lancer quoi que ce soit.
+	var physics := Physics.new(_controller.settings.roller_mm)
+	_ticks_label.text = (
+		"Circonference %.1f mm — 100 m = %d ticks, %.0f m = %d ticks"
+		% [
+			physics.circumference_mm,
+			physics.metres_to_ticks(100.0),
+			_controller.settings.distance_m,
+			physics.metres_to_ticks(_controller.settings.distance_m),
+		]
+	)
+
+
+func _refresh_stats() -> void:
+	var stats := _controller.link_stats()
+	if stats.is_empty():
+		_stats_label.text = ""
+		return
+	_stats_label.text = (
+		"Trames %s, inconnues %s, perdues %s — reconnexions %s, watchdog %s"
+		% [
+			stats.get("frames_total", 0),
+			stats.get("frames_unknown", 0),
+			stats.get("frames_dropped", 0),
+			stats.get("connects", 0),
+			stats.get("watchdog_trips", 0),
+		]
+	)
+
+
+func _on_backend_toggled(pressed: bool) -> void:
+	_controller.apply_backend(pressed)
+	refresh()
+	backend_changed.emit()
+
+
+func _on_port_selected(index: int) -> void:
+	if index < _ports.size():
+		_controller.set_preferred_port(str((_ports[index] as Dictionary).get("port", "")))
+
+
+func _on_roller_changed(value: float) -> void:
+	_controller.settings.roller_mm = value
+	_refresh_ticks_label()
+
+
+func _on_sensor_test_toggled(pressed: bool) -> void:
+	if pressed:
+		_controller.begin_sensor_test()
+	else:
+		_controller.end_sensor_test()
+		for lane: int in range(Protocol.MAX_RIDERS):
+			_sensor_labels[lane].text = "P%d : —" % (lane + 1)
+
+
+func _on_sensor_activity(ticks: PackedInt32Array) -> void:
+	# On affiche la piste qui bouge : c'est ainsi qu'on detecte un cablage
+	# inverse avant la course, et pas pendant.
+	for lane: int in range(Protocol.MAX_RIDERS):
+		_sensor_labels[lane].text = "P%d : %d ticks" % [lane + 1, ticks[lane]]

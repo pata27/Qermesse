@@ -30,6 +30,10 @@ const PROFILES := {
 @export var roller_mm: float = Protocol.DEFAULT_ROLLER_MM
 @export var seed: int = 42
 @export var identify_delay_s: float = 0.15  ## on ne s'identifie pas instantanement
+## Acceleration du temps simule. Sert aux demonstrations — une course de 60 s
+## se montre en 6 s — et aux tests, qui derouleraient sinon une course entiere
+## en temps reel. Sans effet sur le materiel : le firmware a sa propre horloge.
+@export var time_scale: float = 1.0
 
 var _state: int = Protocol.State.DISCONNECTED
 var _running := false
@@ -63,7 +67,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not _running:
 		return
-	advance(delta)
+	advance(delta * time_scale)
 
 
 ## Point d'entree deterministe, utilise tel quel par les tests headless.
@@ -332,6 +336,10 @@ func can_start_race() -> bool:
 
 func set_race_active(_active: bool) -> void:
 	pass  # pas de watchdog a simuler : le simulateur ne perd jamais le lien
+
+
+func set_simulation_speed(scale: float) -> void:
+	time_scale = maxf(0.01, scale)
 
 
 func get_stats() -> Dictionary:

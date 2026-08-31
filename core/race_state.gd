@@ -83,7 +83,13 @@ func apply_sample(accepted_ticks: PackedInt32Array, sample_ms: int) -> void:
 			var instant := physics.speed_kph(value - _previous_ticks[rider], delta_ms)
 			_smoothers[rider].push(instant)
 			speed_kph[rider] = _smoothers[rider].value()
-			max_speed_kph[rider] = maxf(max_speed_kph[rider], instant)
+			# La vitesse de POINTE se mesure sur la vitesse lissee, et seulement
+			# une fois la fenetre pleine. La vitesse instantanee ne veut rien
+			# dire a cette echelle : un tick vaut 35,9 cm et une trame 10 ms,
+			# si bien qu'un seul tick affiche 129 km/h. Un cycliste a 45 km/h
+			# sortait ainsi avec une « pointe » a 117 km/h dans le CSV.
+			if _smoothers[rider].is_full():
+				max_speed_kph[rider] = maxf(max_speed_kph[rider], speed_kph[rider])
 		ticks[rider] = value
 		distance_m[rider] = physics.ticks_to_metres(value) + handicap_m[rider]
 		_previous_ticks[rider] = value

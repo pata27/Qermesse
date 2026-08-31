@@ -80,8 +80,12 @@ SilverSprint-v3/
 │   ├── link_serial.gd
 │   └── link_sim.gd                # simulateur de riders (voir §5)
 ├── scenes/
-│   ├── main.tscn                  # routeur, autoload
+│   ├── main.tscn                  # routeur
+│   ├── main.gd
+│   ├── app_controller.gd          # assemblage lien ⇄ cœur métier — le SEUL point de rencontre
 │   ├── operator/                  # fenêtre opérateur (roster, réglages, contrôle, résultats)
+│   │   ├── operator_panel.gd
+│   │   └── panel_{roster,mode,hardware,race,results}.gd
 │   ├── race3d/                    # scène 3D plein écran
 │   └── shared/                    # composants UI réutilisables
 ├── art/
@@ -95,6 +99,24 @@ SilverSprint-v3/
 **Règle d'or :** `core/` ne connaît ni Godot-la-scène, ni le port série, ni le rendu. Il reçoit des
 `TickSample` et émet des événements. Il doit tourner en headless et être testable sans écran.
 C'est la condition pour ne pas refaire l'erreur de la v1 (état mutable partagé entre threads).
+
+`core/` ne **journalise** pas non plus : un `push_warning` y imposerait un canal de sortie à du code
+qui doit rester utilisable en headless, en test et en rejeu. Les modules rapportent un motif, la
+couche applicative décide de l'afficher.
+
+`scenes/app_controller.gd` est le seul fichier qui connaisse à la fois `hardware/` et `core/`. Toute
+l'interface passe par lui et ne mute jamais l'état directement — c'est aussi ce qui rend le jalon J3
+démontrable sans écran : les tests appellent exactement ce que les boutons appellent.
+
+### Pourquoi la fenêtre opérateur est construite en code et non en `.tscn`
+
+C'est un formulaire dense, piloté de bout en bout par `Settings` et `Roster`. En scène, chaque champ
+existerait deux fois — une fois dans le `.tscn`, une fois dans le script qui le remplit — et il
+faudrait charger une ressource pour le tester. En code, la fenêtre s'instancie en headless, ce qui
+permet à la CI de mener une course complète à l'interface sur les trois OS.
+
+La fenêtre **spectacle** relèvera d'un choix inverse : elle est du travail visuel, pas de la saisie,
+et sera une vraie scène (lot 4).
 
 ---
 
