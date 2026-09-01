@@ -388,7 +388,9 @@ func _reposition_riders(delta: float) -> void:
 	if _rails != null:
 		_rails.position.z = scroll
 	if _crowd != null:
-		_crowd.position.z = scroll
+		# La foule défile SPECTATEUR PAR SPECTATEUR, pas en bloc : répartis au
+		# hasard, ils se téléportaient tous les dix mètres au tour du modulo.
+		_crowd.scroll(_anchor_m)
 	_track_material.set_shader_parameter("anchor_m", _anchor_m)
 	_track_material.set_shader_parameter(
 		"band_intensity", clampf(_leader_speed_kph / 45.0, 0.25, 1.5)

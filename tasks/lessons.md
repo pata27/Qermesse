@@ -211,3 +211,9 @@
 * **Terminer un câblage avant de lancer autre chose.** J'ai remplacé le décadrage par rotation dans
   la caméra sans finir de brancher son remplaçant, et l'utilisateur s'est retrouvé avec un cadrage
   cassé et plus aucun volet. Un changement d'interface se termine dans la même passe.
+* **Un décor qui défile par modulo n'accepte que des objets PÉRIODIQUES.** Poteaux, poutres et
+  marquages sont espacés de dix mètres exactement : décaler leur nœud de `-fposmod(ancre, 10)` les
+  fait défiler sans que rien ne se voie, puisque le motif revient sur lui-même. Les spectateurs, eux,
+  sont répartis au hasard : à chaque tour de modulo, la tribune entière se téléportait de dix
+  mètres. Ils rebouclent désormais un par un dans leur shader, à l'extrémité du tronçon, hors de vue.
+  Motif : le recyclage par modulo est une propriété du MOTIF, pas du nœud qui le porte.

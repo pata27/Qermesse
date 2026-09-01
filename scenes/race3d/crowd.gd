@@ -16,6 +16,7 @@ const STAND_SETBACK_M := 5.5
 
 var _material: ShaderMaterial
 var _excitement := 0.0
+var _periodic: Node3D
 
 
 func build(count: int, lane_span_m: float, seed_value: int = 4242) -> void:
@@ -30,6 +31,7 @@ func build(count: int, lane_span_m: float, seed_value: int = 4242) -> void:
 
 	_material = ShaderMaterial.new()
 	_material.shader = load("res://art/shaders/crowd.gdshader")
+	_material.set_shader_parameter("span_m", TrackBuilder.SEGMENT_LENGTH_M * 0.7)
 
 	# Un spectateur assis : plus large que haut au-dessus de la taille.
 	var quad := QuadMesh.new()
@@ -71,6 +73,21 @@ func build(count: int, lane_span_m: float, seed_value: int = 4242) -> void:
 		# Les spectateurs sont loin : inutile de les faire projeter des ombres.
 		instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(instance)
+
+
+## Fait défiler la foule et la charpente avec la course.
+##
+## Les deux ne défilent pas de la même façon, et c'est le fond du problème : la
+## charpente est régulièrement espacée, donc un simple modulo suffit ; les
+## spectateurs sont répartis au hasard et doivent reboucler un par un, ce dont
+## leur shader se charge. Les gradins eux-mêmes ne défilent pas du tout — ce
+## sont des boîtes uniformes sur toute la longueur, rien n'y trahirait un
+## mouvement.
+func scroll(anchor_m: float) -> void:
+	if _periodic != null:
+		_periodic.position.z = -fposmod(anchor_m, TrackBuilder.SCROLL_PERIOD_M)
+	if _material != null:
+		_material.set_shader_parameter("scroll_m", anchor_m)
 
 
 ## Gradins : une marche par rangée, de part et d'autre. Quelques boîtes
@@ -170,7 +187,13 @@ func _build_stands(lane_span_m: float) -> void:
 	trusses.multimesh = truss_multi
 	trusses.material_override = truss_material
 	trusses.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(trusses)
+	# La charpente est le seul élément de cette branche à devoir défiler : elle
+	# est régulièrement espacée, donc un modulo suffit. Les gradins, eux, sont
+	# des boîtes uniformes sur toute la longueur.
+	_periodic = Node3D.new()
+	_periodic.name = "DecorPeriodique"
+	add_child(_periodic)
+	_periodic.add_child(trusses)
 
 
 ## La foule réagit à l'accélération et au franchissement — docs/04 §4.

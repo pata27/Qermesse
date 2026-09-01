@@ -49,6 +49,8 @@ const SLIDE_RATE := 3.0
 ## déplace sa trace de `slant/2` entre le haut et le bas de l'image — et le
 ## halo lumineux qui la borde.
 const SLICE_MARGIN := 0.16
+## Facteur de résolution des vues de volet, voir `_ensure_pane`.
+const SLICE_RENDER_SCALE := 0.8
 
 
 ## Un volet : sa vue, sa caméra, sa lame.
@@ -109,6 +111,13 @@ func prime(riders: int) -> void:
 	_warm_frames = 3
 
 
+## Facteur de résolution effectif, surchargeable par `SS_SLICE_SCALE` pour
+## pouvoir le chiffrer sans recompiler.
+static func _render_scale() -> float:
+	var forced := OS.get_environment("SS_SLICE_SCALE")
+	return SLICE_RENDER_SCALE if forced.is_empty() else clampf(float(forced), 0.3, 1.0)
+
+
 ## Crée un volet au premier besoin.
 func _ensure_pane(index: int) -> Pane:
 	while _panes.size() <= index:
@@ -125,6 +134,20 @@ func _ensure_pane(index: int) -> Pane:
 		# étirées, ces vues faisaient fourmiller les néons — des traits d'un
 		# pixel de large ne supportent aucun rééchantillonnage.
 		pane.viewport.msaa_3d = Viewport.MSAA_2X
+		# RÉSOLUTION RÉDUITE, mais seulement ici.
+		#
+		# Cette scène est limitée par le remplissage : à quatre volets elle rend
+		# 177 images par seconde en 1080p et 344 en 540p, alors que diviser par
+		# deux ses appels de rendu n'avait rien changé. Ce sont les vues de volet
+		# qui se multiplient — la vue principale, elle, reste à sa résolution
+		# native, comme tout l'habillage, qui est en 2D et n'est pas concerné.
+		#
+		# Quatre-vingts pour cent : 36 % de pixels en moins par volet, pour un
+		# adoucissement que l'anticrénelage rattrape en grande partie. Réglé une
+		# fois à la création — changer ce facteur en cours de course réalloue les
+		# tampons de rendu, et c'est exactement le hoquet qu'on vient d'enlever.
+		pane.viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+		pane.viewport.scaling_3d_scale = _render_scale()
 		# Tant que la lame est fermée, la vue n'est pas dessinée : une caméra
 		# qui tourne pour rien coûterait sa part entière du budget.
 		pane.viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED

@@ -10,11 +10,32 @@ uniform vec4 crowd_tint : source_color = vec4(0.18, 0.22, 0.32, 1.0);
 uniform float time_offset = 0.0;
 // Monte au franchissement et à l'accélération : la foule RÉAGIT.
 uniform float excitement = 0.0;
+// Distance parcourue par le peloton, en mètres, et longueur du tronçon peuplé.
+// Le défilement de la foule se fait ICI, spectateur par spectateur.
+uniform float scroll_m = 0.0;
+uniform float span_m = 560.0;
 
 void vertex() {
+	// DÉFILEMENT PAR INSTANCE, et non par translation du noeud entier.
+	//
+	// Tout le décor périodique — poteaux, poutres, marquages — défile en
+	// décalant son noeud de `-fposmod(ancre, 10 m)`. C'est invisible tant que
+	// les objets sont espacés de dix mètres exactement : le décalage revient
+	// alors sur un motif identique. Les spectateurs, eux, sont répartis au
+	// HASARD : à chaque tour de modulo, la tribune entière se téléportait de
+	// dix mètres en arrière. D'où des sauts, et l'impression que la foule
+	// n'avançait pas avec le reste.
+	//
+	// Chaque spectateur reboucle donc pour son propre compte, sur toute la
+	// longueur du tronçon. Le saut existe toujours, mais il ne concerne qu'un
+	// spectateur à la fois, et il a lieu à l'extrémité du tronçon — dans la
+	// brume, hors de vue.
+	vec4 origin = MODEL_MATRIX[3];
+	origin.z = mod(origin.z - scroll_m + span_m * 0.5, span_m) - span_m * 0.5;
+
 	// Billboard : la face reste tournée vers la caméra.
 	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(
-		INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]);
+		INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], origin);
 
 	// Phase tirée de l'IDENTIFIANT d'instance, et surtout PAS de la position
 	// monde. Depuis que le décor défile, cette position change à chaque image :
