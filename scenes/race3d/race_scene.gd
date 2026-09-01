@@ -482,6 +482,15 @@ func _reposition_riders(delta: float) -> void:
 		for index: int in range(order.size() - 1):
 			gaps.append(float(positions[order[index]]) - float(positions[order[index + 1]]))
 	_split.consider(gaps)
+	# L'ANIMATION DES LAMES EST AVANCÉE ICI, avant que les caméras ne cadrent.
+	#
+	# `advance` déplace chaque lame ET transmet au composite la tranche d'écran
+	# qu'il doit échantillonner. Appelée après le cadrage, elle donnait au
+	# shader la position NOUVELLE de la lame alors que les caméras avaient rendu
+	# l'ANCIENNE : le composite lisait donc chaque vue à côté, et les lignes de
+	# piste débordaient d'un volet sur l'autre au bord des lames. Les deux
+	# doivent lire la même valeur dans la même image.
+	_split.advance(delta)
 
 	# Bornes des groupes, déduites des cassures RETENUES par l'écran scindé —
 	# pas recalculées ici, sinon découpage de l'image et découpage du peloton
@@ -575,7 +584,6 @@ func _reposition_riders(delta: float) -> void:
 			])
 
 	_relieve_for_panes(_split.group_count())
-	_split.advance(delta)
 
 
 ## Recensement des instances visuelles, par branche de la scène. Sert à savoir
@@ -743,8 +751,11 @@ func _group_frame(order: Array[int], from: int, to: int, positions: Dictionary) 
 
 ## Suit la taille de la fenêtre pour la vue scindée.
 func _on_viewport_resized() -> void:
-	if _split != null:
-		_split.resize(get_viewport().get_visible_rect().size)
+	# La scène peut être en train de quitter l'arbre — fermeture de la fenêtre
+	# spectacle, fin de l'application — et n'avoir déjà plus de viewport.
+	var view := get_viewport()
+	if _split != null and view != null:
+		_split.resize(view.get_visible_rect().size)
 
 
 ## Position du couloir à l'écran : les pistes actives sont resserrées au centre,

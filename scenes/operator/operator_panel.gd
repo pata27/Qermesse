@@ -18,10 +18,16 @@ var _mode_panel: PanelMode
 var _hardware_panel: PanelHardware
 var _race_panel: PanelRace
 var _results_panel: PanelResults
+var _spectacle_panel: PanelSpectacle
+var _root: Node
 
 
-func setup(app_controller: AppController) -> void:
+## `root` est la racine de l'application, celle qui possède les fenêtres. Elle
+## est facultative : les outils en ligne de commande montent cette interface
+## sans elle, et le panneau spectacle est alors simplement absent.
+func setup(app_controller: AppController, root: Node = null) -> void:
 	controller = app_controller
+	_root = root
 	# Le controleur est peut-etre encore vide : l'interface exige qu'il soit
 	# pret, elle ne se contente pas de l'esperer.
 	controller.initialize()
@@ -33,18 +39,26 @@ func _build() -> void:
 
 	var scroll := ScrollContainer.new()
 	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
 
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 24)
+	# Les colonnes OCCUPENT la fenêtre. Sans ces drapeaux, elles se réduisaient
+	# à la largeur de leur contenu et l'interface se tassait en haut à gauche
+	# d'un grand fond vide.
+	columns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.add_child(columns)
 
 	var left := VBoxContainer.new()
 	left.add_theme_constant_override("separation", 16)
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(left)
 
 	var right := VBoxContainer.new()
 	right.add_theme_constant_override("separation", 16)
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.add_child(right)
 
 	_roster_panel = PanelRoster.new()
@@ -67,6 +81,19 @@ func _build() -> void:
 	right.add_child(_results_panel)
 	_results_panel.setup(controller)
 
+	# Le pilotage de la fenêtre spectacle s'adresse à la RACINE de
+	# l'application, pas au contrôleur de course : c'est elle qui possède les
+	# fenêtres. Elle est passée EXPLICITEMENT plutôt que cherchée dans l'arbre :
+	# ce panneau est construit avant d'y entrer, et `get_tree()` y journalise
+	# une erreur — c'est précisément ce que vérifie
+	# `test_l_interface_construite_avant_l_entree_dans_l_arbre_fonctionne`.
+	# Sans racine — les outils en ligne de commande — le panneau est simplement
+	# absent.
+	if _root != null and _root.has_method("open_spectacle"):
+		_spectacle_panel = PanelSpectacle.new()
+		right.add_child(_spectacle_panel)
+		_spectacle_panel.setup(_root, controller)
+
 	# Un changement de roster ou de mode peut rendre le depart possible ou
 	# impossible : le bouton START doit suivre immediatement.
 	_roster_panel.roster_changed.connect(_on_configuration_changed)
@@ -74,6 +101,10 @@ func _build() -> void:
 	_hardware_panel.backend_changed.connect(_on_configuration_changed)
 
 	_hardware_panel.refresh_ports()
+
+
+func spectacle_panel() -> PanelSpectacle:
+	return _spectacle_panel
 
 
 func roster_panel() -> PanelRoster:

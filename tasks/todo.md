@@ -133,7 +133,13 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 - [ ] Photo-finish : écart < 1 m → ralenti et plan latéral
 - [ ] Podium et écran de fin
 - [ ] Audio complet + coupure globale d'un bouton
-- [ ] Deuxième fenêtre : choix de l'écran, plein écran, persistance, mode dégradé mono-écran
+- [x] Deuxième fenêtre : choix de l'écran, plein écran, persistance, mode dégradé mono-écran
+      — `scenes/spectacle_window.gd`, `scenes/operator/panel_spectacle.gd`
+      *(preuve : `tasks/preuves/images/lot5-deux-fenetres.png`, capture des DEUX fenêtres sur une
+      même course. `is_embedded() = false`, identifiant système 1, écran 2 sur une machine à trois
+      écrans. Il a fallu `display/window/subwindows/embed_subwindows=false` : par défaut Godot
+      dessine une fenêtre fille À L'INTÉRIEUR de la principale, ce qui rendait le second écran
+      inatteignable.)*
 - [ ] **J5** — les 3 modes en configuration deux écrans, avec le son *(preuve : vidéo)*
 
 ## Lot 6 — Terrain, packaging, sortie *(4 j)*

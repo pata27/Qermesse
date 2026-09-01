@@ -10,18 +10,17 @@
 class_name RuleDistance
 extends RaceRule
 
-var _target_ticks: int = 0
-
-
-func rule_name() -> String:
-	return "distance"
-
-
 ## Tolerance, en ticks, sur le retard du compte du PC au moment ou le boitier
 ## annonce une arrivee. Voir `note_hardware_finish`. Huit ticks valent 2,9 m :
 ## largement de quoi couvrir une trame `R:` perdue, et bien trop peu pour qu'une
 ## trame parasite termine une course qui n'en est qu'a la moitie.
 const TRAILING_TOLERANCE_TICKS := 8
+
+var _target_ticks: int = 0
+
+
+func rule_name() -> String:
+	return "distance"
 
 
 func begin(state: RaceState) -> void:

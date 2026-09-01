@@ -48,6 +48,24 @@ void fragment() {
 	float halo = 1.0 - smoothstep(0.0, edge_width * 7.0, abs(d));
 	float glow = (core + halo * 0.35) * clamp(split_amount * 2.0, 0.0, 1.0);
 
-	vec3 rgb = mix(view.rgb, edge_color.rgb, clamp(glow, 0.0, 1.0));
-	COLOR = vec4(rgb, clamp(other + glow, 0.0, 1.0));
+	// COMPOSITION EXACTE — deux couches, pas une moyenne.
+	//
+	// Il y a deux choses à poser sur l'image du dessous : la vue du volet, qui
+	// ne couvre que le côté droit de la lame (`other`), et la lame lumineuse,
+	// qui couvre les deux côtés (`glow`).
+	//
+	// Écrire `mix(view, edge, glow)` avec une opacité de `glow` mélangeait les
+	// deux : à GAUCHE de la lame, où `other` vaut zéro et où le volet ne doit
+	// donc rien afficher, le halo peignait quand même les deux tiers de
+	// l'image de l'autre volet. Les lignes de piste du volet voisin
+	// transparaissaient dans le halo — elles semblaient déborder par-dessus la
+	// séparation.
+	//
+	// La bonne formule empile les couches au lieu de les moyenner :
+	//   résultat = lame·glow + vue·other·(1−glow) + fond·(1−glow)(1−other)
+	// d'où l'opacité et la couleur ci-dessous.
+	float g = clamp(glow, 0.0, 1.0);
+	float coverage = 1.0 - (1.0 - g) * (1.0 - other);
+	vec3 stacked = edge_color.rgb * g + view.rgb * other * (1.0 - g);
+	COLOR = vec4(coverage > 0.0001 ? stacked / coverage : edge_color.rgb, coverage);
 }

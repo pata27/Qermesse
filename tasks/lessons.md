@@ -252,3 +252,23 @@
 * **Une hystérésis indexée sur un rang suppose que le rang désigne la même chose.** Les cassures se
   renumérotent dès qu'un coureur quitte le champ de course : comparer la cassure `i` à son état
   précédent gardait la scission ouverte sur un peloton pourtant regroupé.
+
+## Lot 5 — deuxième fenêtre (2026-09-01)
+
+* **Godot embarque les fenêtres filles PAR DÉFAUT.** Un nœud `Window` ajouté à l'arbre est dessiné
+  À L'INTÉRIEUR de la fenêtre principale, comme un panneau flottant. La fenêtre spectacle était donc
+  prisonnière de la fenêtre opérateur, et le second écran inatteignable — ce qui est toute sa raison
+  d'être. Il faut `display/window/subwindows/embed_subwindows=false`. Vérifié par `is_embedded()`,
+  pas à l'œil.
+* **`own_world_3d` n'est pas facultatif pour une seconde fenêtre 3D.** Sans lui, elle partage le
+  monde de la fenêtre opérateur, qui se met alors à afficher le vélodrome derrière ses panneaux.
+* **Un halo qui mélange deux couches n'est pas une composition.** La lame de séparation écrivait
+  `mix(vue, couleur_de_lame, halo)` avec une opacité de `halo` : à GAUCHE de la lame, où le volet ne
+  doit rien afficher, elle peignait quand même deux tiers de l'image de l'autre volet. Les lignes de
+  piste semblaient déborder d'un volet sur l'autre. La bonne formule EMPILE les couches —
+  `lame·g + vue·other·(1−g) + fond·(1−g)(1−other)` — au lieu de les moyenner.
+* **Ne pas appeler `get_tree()` dans un `_build`.** L'interface opérateur est construite avant
+  d'entrer dans l'arbre ; `get_tree()` y journalise une erreur, qu'un test existant transforme en
+  échec. La racine se passe en argument, elle ne se cherche pas.
+* **Une fenêtre d'outil doit avoir la taille de son contenu.** Sans taille explicite ni drapeaux
+  d'expansion, l'interface se tassait en haut à gauche d'un immense fond vide.

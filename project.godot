@@ -12,6 +12,17 @@ config/description="Logiciel de course de rouleaux (goldsprints)."
 config/features=PackedStringArray("4.5", "Forward Plus")
 run/main_scene="res://scenes/main.tscn"
 
+[display]
+
+; FENETRES FILLES NATIVES, et non embarquees.
+;
+; Par defaut Godot dessine une fenetre fille A L'INTERIEUR de la fenetre
+; principale, comme un panneau flottant. La fenetre spectacle etait donc
+; prisonniere de la fenetre operateur : impossible de l'envoyer sur le second
+; ecran ni de la passer en plein ecran sur le videoprojecteur, ce qui est
+; exactement sa raison d'etre (docs/03 §6).
+window/subwindows/embed_subwindows=false
+
 [debug]
 
 gdscript/warnings/untyped_declaration=1
