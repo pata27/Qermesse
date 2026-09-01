@@ -135,6 +135,12 @@ func _build_environment() -> void:
 	key.light_color = Color("#CFE0FF")
 	key.rotation_degrees = Vector3(-38.0, 42.0, 0.0)
 	key.shadow_enabled = bool(quality.option("shadows"))
+	# DEUX CASCADES, PAS QUATRE. Le décor tient dans un couloir d'une
+	# cinquantaine de mètres ; les quatre cascades par défaut redessinaient
+	# chaque projeteur quatre fois pour une précision que cette profondeur de
+	# champ ne réclame pas.
+	key.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+	key.directional_shadow_max_distance = 55.0
 	add_child(key)
 
 	# Contre-jour froid depuis l'arrière : il détache les silhouettes du fond
@@ -496,6 +502,54 @@ func _reposition_riders(delta: float) -> void:
 			])
 
 	_split.advance(delta)
+
+
+## Recensement des instances visuelles, par branche de la scène. Sert à savoir
+## d'où viennent les appels de rendu : une scène aussi simple que celle-ci n'a
+## aucune raison d'en demander cinq cents.
+func census() -> String:
+	var counts: Dictionary = {}
+	var surfaces: Dictionary = {}
+	var shadows := 0
+	var stack: Array[Node] = [self]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		for child: Node in node.get_children():
+			stack.append(child)
+		if node is not GeometryInstance3D:
+			continue
+		var branch := "?"
+		var walk := node
+		while walk != null and walk.get_parent() != self:
+			walk = walk.get_parent()
+		if walk != null:
+			branch = walk.name
+		counts[branch] = int(counts.get(branch, 0)) + 1
+		var faces := 0
+		if node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
+			faces = (node as MeshInstance3D).mesh.get_surface_count()
+		elif node is MultiMeshInstance3D:
+			var mm := (node as MultiMeshInstance3D).multimesh
+			faces = 0 if mm == null else 1
+		surfaces[branch] = int(surfaces.get(branch, 0)) + faces
+		if (node as GeometryInstance3D).cast_shadow \
+				!= GeometryInstance3D.SHADOW_CASTING_SETTING_OFF:
+			shadows += 1
+	var lines: Array[String] = ["branche               instances  surfaces"]
+	var keys: Array = counts.keys()
+	keys.sort()
+	var total := 0
+	for key: String in keys:
+		lines.append("%-22s %9d %9d" % [key, counts[key], surfaces[key]])
+		total += int(counts[key])
+	lines.append("%-22s %9d" % ["TOTAL", total])
+	lines.append("dont projetant une ombre : %d" % shadows)
+	return "\n".join(lines)
+
+
+## Nombre de volets affichés, pour les relevés de performance.
+func split_pane_count() -> int:
+	return _split.group_count()
 
 
 ## Tri décroissant par distance parcourue, pour repérer la cassure du peloton.

@@ -58,6 +58,7 @@ func _build() -> void:
 	_build_frame()
 	_build_cyclist()
 	_build_trail()
+	_build_shadow_proxy()
 
 
 func _make_materials() -> void:
@@ -272,6 +273,33 @@ func _build_cyclist() -> void:
 		leg.material_override = _jersey_material
 		_body.add_child(leg)
 		_legs.append(leg)
+
+
+## UNE SEULE OMBRE PAR COUREUR, au lieu d'une par pièce.
+##
+## Un coureur est fait de vingt-six pièces — jantes, rayons, cadre, membres,
+## manivelles. Chacune projetait son ombre, et une lumière directionnelle les
+## redessine une fois par cascade : à quatre coureurs, cela faisait plus de
+## quatre cents appels de rendu rien que pour les ombres, sur les cinq cents que
+## demandait la scène entière. C'est ce coût, multiplié par le nombre de volets,
+## qui empêchait l'image d'être fluide.
+##
+## Les pièces cessent donc de projeter, et un volume approché s'en charge seul,
+## invisible dans la passe principale. Sous les néons d'un vélodrome, l'ombre
+## d'un coureur est une tache douce : personne n'y lit un rayon de roue.
+func _build_shadow_proxy() -> void:
+	for node: Node in _body.find_children("*", "GeometryInstance3D", true, false):
+		(node as GeometryInstance3D).cast_shadow = \
+			GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+	var proxy := MeshInstance3D.new()
+	proxy.name = "ShadowProxy"
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(0.42, 1.05, 1.55)
+	proxy.mesh = mesh
+	proxy.position = Vector3(0.0, 0.62, 0.0)
+	proxy.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	_body.add_child(proxy)
 
 
 func _build_trail() -> void:

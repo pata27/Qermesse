@@ -10,6 +10,9 @@
 class_name RaceHud
 extends CanvasLayer
 
+## Écart minimal, en km/h, pour que le chiffre de vitesse soit RÉÉCRIT. Deux
+## dixièmes : en dessous, on n'affiche plus une mesure mais son bruit.
+const SPEED_STEP_KPH := 0.2
 const BAND_HEIGHT := 132
 const CARD_HEIGHT := 96
 const ALERT := Color("#FF3B30")
@@ -24,7 +27,8 @@ var _tension: ProgressBar
 var _tension_fill: StyleBoxFlat
 var _cards: Dictionary = {}  # lane -> Dictionary de contrôles
 var _target_speed: Dictionary = {}  # lane -> km/h visés
-var _shown_speed: Dictionary = {}  # lane -> km/h affichés
+var _shown_speed: Dictionary = {}  # lane -> km/h lissés
+var _printed_speed: Dictionary = {}  # lane -> km/h effectivement écrits
 var _notice: Label
 
 
@@ -175,6 +179,21 @@ func _process(delta: float) -> void:
 		var shown: float = _shown_speed.get(lane, float(_target_speed[lane]))
 		shown = lerpf(shown, float(_target_speed[lane]), alpha)
 		_shown_speed[lane] = shown
+
+		# HYSTÉRÉSIS SUR LE CHIFFRE, et pas seulement lissage de la valeur.
+		#
+		# Lisser ne suffit pas : la valeur lissée converge vers sa cible, et si
+		# celle-ci oscille de un ou deux dixièmes, le dernier chiffre bascule à
+		# chaque image. C'est ce battement qui se lit comme un scintillement,
+		# quelle que soit la constante de temps.
+		#
+		# Le chiffre affiché ne bouge donc que si la valeur lissée s'en écarte
+		# d'au moins `SPEED_STEP_KPH`. Il reste alors immobile à allure stable,
+		# et suit franchement une accélération réelle.
+		var printed: float = _printed_speed.get(lane, INF)
+		if absf(shown - printed) < SPEED_STEP_KPH:
+			continue
+		_printed_speed[lane] = shown
 		var card: Dictionary = _cards[lane]
 		(card["speed"] as Label).text = "%5.1f km/h" % shown
 

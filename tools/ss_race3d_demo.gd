@@ -23,6 +23,11 @@ var _speed := 1.0
 var _frame_index := 0
 var _race_mode := "distance"
 var _profile := "egaux"
+## Relevé image par image, pour distinguer un coût permanent d'un à-coup.
+var _frames_path := OS.get_environment("SS_FRAMES")
+## Résolution de rendu. Réglable pour distinguer un coût de REMPLISSAGE d'un
+## coût de géométrie : si le temps suit le nombre de pixels, c'est le premier.
+var _render_size := Vector2i(1920, 1080)
 var _last_tick_us := 0
 
 
@@ -39,8 +44,8 @@ func _initialize() -> void:
 		DisplayServer.window_set_size(Vector2i(384, 216))
 		DisplayServer.window_set_position(Vector2i(12, 12))
 	else:
-		DisplayServer.window_set_size(Vector2i(1920, 1080))
-	root.content_scale_size = Vector2i(1920, 1080)
+		DisplayServer.window_set_size(_render_size)
+	root.content_scale_size = _render_size
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
 	root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_IGNORE
 	# Aucun plafond de framerate : on mesure ce que la machine peut donner, pas
@@ -77,6 +82,12 @@ func _parse_args() -> void:
 			"--profil":
 				i += 1
 				_profile = args[i] if i < args.size() else _profile
+			"--rendu":
+				i += 1
+				var wh: PackedStringArray = args[i].split("x") if i < args.size() \
+					else PackedStringArray()
+				if wh.size() == 2:
+					_render_size = Vector2i(int(wh[0]), int(wh[1]))
 			"--vitesse":
 				i += 1
 				_speed = float(args[i]) if i < args.size() else _speed
@@ -144,6 +155,7 @@ func _measure() -> void:
 		warmup += await _step()
 
 	_scene.perf.reset()
+	var trace := PackedStringArray()
 	var elapsed := 0.0
 	while elapsed < MEASURE_WINDOW_S:
 		var delta := await _step()
@@ -153,7 +165,29 @@ func _measure() -> void:
 		# par seconde, si bien qu'un centile calculé dessus porte sur des
 		# valeurs répétées et ne veut rien dire.
 		_scene.perf.sample(delta, 1.0 / maxf(delta, 0.000001))
+		if not _frames_path.is_empty():
+			trace.append("%.6f %d %d %d" % [
+				delta,
+				RenderingServer.get_rendering_info(
+					RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME
+				),
+				RenderingServer.get_rendering_info(
+					RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME
+				),
+				_scene.split_pane_count(),
+			])
 
+	if not _frames_path.is_empty():
+		var file := FileAccess.open(_frames_path, FileAccess.WRITE)
+		if file != null:
+			file.store_string("# delta appels_de_rendu primitives volets\n")
+			file.store_string("\n".join(trace))
+			file.close()
+			print("trace image par image : %s" % _frames_path)
+
+	print("")
+	print("=== recensement des instances ===")
+	print(_scene.census())
 	print("")
 	print("=== budget de rendu — docs/04 §4 ===")
 	print("cible          : 60 fps stables en 1080p sur GPU integre")
