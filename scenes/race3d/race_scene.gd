@@ -16,6 +16,9 @@ const TRACK_SEGMENT_M := TrackBuilder.SEGMENT_LENGTH_M
 ## Constante de temps de la roue libre après l'arrivée. Une seconde et demie :
 ## assez pour que le geste se lise, assez court pour ne pas faire attendre.
 const COAST_TAU_S := 1.5
+## Facteur de ralenti au photo-finish. Un tiers : assez lent pour qu'on voie qui
+## passe devant, assez rapide pour ne pas faire attendre une salle.
+const SLOW_MOTION_SCALE := 0.33
 
 var quality := RenderQuality.new()
 var perf := PerfMonitor.new()
@@ -42,6 +45,7 @@ var _anchor_m := 0.0
 var _last_shape := ""
 var _key_light: DirectionalLight3D
 var _anchor_primed := false
+var _slow_motion := 1.0
 var _coast_speed: Dictionary = {}
 var _coast_extra: Dictionary = {}
 var _load_panes := -1
@@ -347,8 +351,23 @@ func _process(delta: float) -> void:
 	if _controller == null:
 		return
 
-	_reposition_riders(delta)
-	_update_effects(delta)
+	# RALENTI DU PHOTO-FINISH — docs/04 §4.
+	#
+	# Il n'agit QUE sur le temps de la scène : le mouvement des coureurs, les
+	# caméras, la roue libre. Pas sur l'habillage, pas sur le moteur, et surtout
+	# pas sur `Engine.time_scale`, qui ralentirait aussi l'interface opérateur —
+	# elle vit dans le même processus, sur l'autre écran, et n'a aucune raison
+	# de s'engourdir.
+	#
+	# C'est un ralenti d'AFFICHAGE : l'interpolation rejoint sa cible plus
+	# lentement. Il ne se déclenche qu'après la ligne, quand il n'y a plus rien
+	# à suivre en direct.
+	var wanted := SLOW_MOTION_SCALE if _camera_rig.is_photo_finish() else 1.0
+	_slow_motion = move_toward(_slow_motion, wanted, delta * 2.5)
+	var scene_delta := delta * _slow_motion
+
+	_reposition_riders(scene_delta)
+	_update_effects(scene_delta)
 
 	# docs/04 §4 : toute fonctionnalité qui fait passer sous 60 fps est dégradée.
 	# Même remarque que dans l'outil de mesure : on déduit le fps du delta de

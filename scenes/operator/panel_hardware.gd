@@ -26,6 +26,7 @@ var _refresh_button: Button
 var _sensor_button: Button
 var _sensor_labels: Array[Label] = []
 var _roller: SpinBox
+var _development: SpinBox
 var _ticks_label: Label
 var _stats_label: Label
 
@@ -79,6 +80,29 @@ func _build() -> void:
 	_roller.value = _controller.settings.roller_mm
 	_roller.value_changed.connect(_on_roller_changed)
 	roller_row.add_child(_roller)
+
+	# Développement : la donnée que le capteur ne peut PAS fournir.
+	#
+	# Un tick est un tour de rouleau ; aucun rapport de transmission n'y entre
+	# (docs/01 §6). La cadence de pédalage dépend donc du braquet monté, que
+	# seul l'opérateur connaît. Elle ne sert qu'à l'affichage : ni les
+	# distances, ni les temps, ni le classement n'en dépendent.
+	var development_row := HBoxContainer.new()
+	add_child(development_row)
+	var development_label := Label.new()
+	development_label.text = "Developpement (m/tour de manivelle)"
+	development_row.add_child(development_label)
+	_development = SpinBox.new()
+	_development.min_value = 1.0
+	_development.max_value = 20.0
+	_development.step = 0.1
+	_development.value = _controller.settings.development_m
+	_development.tooltip_text = (
+		"Sert UNIQUEMENT a afficher la cadence. Le capteur compte des tours de "
+		+ "rouleau : il ne connait pas le braquet."
+	)
+	_development.value_changed.connect(_on_development_changed)
+	development_row.add_child(_development)
 
 	_ticks_label = Label.new()
 	add_child(_ticks_label)
@@ -213,6 +237,10 @@ func _on_port_selected(index: int) -> void:
 func _on_roller_changed(value: float) -> void:
 	_controller.settings.roller_mm = value
 	_refresh_ticks_label()
+
+
+func _on_development_changed(value: float) -> void:
+	_controller.settings.development_m = value
 
 
 func _on_sensor_test_toggled(pressed: bool) -> void:

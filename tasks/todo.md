@@ -127,11 +127,25 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 
 ## Lot 5 — Habillage, poursuite, audio *(4 j)*
 
-- [ ] Habillage de la fenêtre spectacle (`docs/04` §5)
-- [ ] Décompte plein écran synchronisé sur les trames `CD:`
-- [ ] Poursuite : écart géant au centre, barre de tension, caméra qui décroche
-- [ ] Photo-finish : écart < 1 m → ralenti et plan latéral
-- [ ] Podium et écran de fin
+- [x] Habillage de la fenêtre spectacle (`docs/04` §5) — bandeau, chrono géant, carte par coureur
+      avec nom, piste, vitesse, distance et **cadence**
+      *(la cadence est déduite du développement déclaré par l'opérateur : le capteur compte des tours
+      de rouleau et ne connaît aucun braquet — `docs/01` §6. Deux tests verrouillent le fait qu'elle
+      ne touche à aucun calcul de course.)*
+- [x] Décompte plein écran synchronisé sur les trames `CD:`
+      *(preuve : `tasks/preuves/images/lot5-decompte.png`. Voile plein écran sur sa PROPRE couche :
+      construit avant les cartes, il se retrouvait dessous.)*
+- [x] Poursuite : écart géant au centre, barre de tension, caméra qui décroche
+      *(preuve : `tasks/preuves/images/lot5-poursuite.png`. La barre est SIGNÉE, entre −G et +G : elle
+      se remplit depuis le centre vers celui qui mène et prend sa couleur. Une barre de 0 à G ne
+      disait que la taille de l'écart, pas de quel côté il penche.)*
+- [x] Photo-finish : écart < 1 m → ralenti et plan latéral
+      *(preuve : `tasks/preuves/images/lot5-photo-finish.png`. Le ralenti n'agit que sur le temps de
+      la SCÈNE — pas sur `Engine.time_scale`, qui engourdirait aussi l'interface opérateur, dans le
+      même processus sur l'autre écran.)*
+- [x] Podium et écran de fin — place, coureur, temps, moyenne, pointe
+      *(preuve : `tasks/preuves/images/lot5-podium.png`. Les chiffres viennent du `RaceResult`, donc
+      du moteur : rien n'est recalculé à l'affichage. Il attend 3,2 s que la célébration se joue.)*
 - [ ] Audio complet + coupure globale d'un bouton
 - [x] Deuxième fenêtre : choix de l'écran, plein écran, persistance, mode dégradé mono-écran
       — `scenes/spectacle_window.gd`, `scenes/operator/panel_spectacle.gd`

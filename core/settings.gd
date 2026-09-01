@@ -10,6 +10,16 @@ var preferred_port: String = ""
 var use_simulator: bool = true
 var roller_mm: float = Physics.DEFAULT_ROLLER_MM
 var speed_samples: int = Physics.SPEED_SAMPLES
+## Developpement, en metres parcourus par tour de manivelle.
+##
+## Le capteur compte des tours de ROULEAU : aucun rapport de transmission
+## n'intervient (docs/01 §6). La cadence de pedalage est donc INCALCULABLE a
+## partir de la mesure seule — elle depend du braquet monte sur le velo.
+##
+## Ce reglage est la donnee manquante, declaree par l'operateur. Sept metres est
+## un developpement courant de piste (48 x 15). Il ne sert QU'A l'affichage de
+## la cadence : ni les distances, ni les temps, ni le classement n'en dependent.
+var development_m: float = 7.0
 
 var mode: RaceConfig.Mode = RaceConfig.Mode.DISTANCE
 var distance_m: float = 500.0
@@ -44,6 +54,7 @@ func to_dict() -> Dictionary:
 		"distance_timeout_s": distance_timeout_s,
 		"false_start_policy": int(false_start_policy),
 		"false_start_penalty_m": false_start_penalty_m,
+		"development_m": development_m,
 		"show_window_screen": show_window_screen,
 		"single_window_mode": single_window_mode,
 		"audio_muted": audio_muted,
@@ -70,6 +81,7 @@ func from_dict(data: Dictionary) -> void:
 	)
 	false_start_penalty_m = _clamp_float(data, "false_start_penalty_m", false_start_penalty_m,
 		0.0, 500.0)
+	development_m = _clamp_float(data, "development_m", development_m, 1.0, 20.0)
 	show_window_screen = int(data.get("show_window_screen", show_window_screen))
 	single_window_mode = bool(data.get("single_window_mode", single_window_mode))
 	audio_muted = bool(data.get("audio_muted", audio_muted))

@@ -144,23 +144,26 @@ func aim(focus_x: float, focus_z: float, spread_z: float, lateral_span: float,
 
 		Behaviour.PHOTO_FINISH:
 			# Plan latéral sur la ligne — le moment qui fait crier une salle.
-			# TROIS QUARTS ARRIÈRE SURÉLEVÉ, et non un plan latéral.
+			# PLAN LATÉRAL SUR LA LIGNE — docs/04 §4.
 			#
-			# Le plan latéral est un piège de géométrie : la main courante est à
-			# 4,9 m de l'axe et le groupe occupe déjà ±2,4 m. Six mètres et demi
-			# de côté filmaient donc à travers le rail ; un mètre quatre-vingts
-			# collaient la caméra au premier coureur, qui remplissait la moitié
-			# de l'image. Il n'existe pas de bonne distance latérale.
+			# Il ne se déclenche que sous un mètre d'écart : les coureurs sont
+			# alors alignés sur la ligne, et c'est précisément l'image du
+			# photo-finish — on les voit se départager de profil.
 			#
-			# La caméra recule donc DERRIÈRE la ligne et s'élève : c'est le plan
-			# d'arrivée d'une retransmission, il tient tout le champ, et le
-			# décalage latéral suffit à donner le relief.
+			# La géométrie est étroite : la main courante est à 4,9 m de l'axe.
+			# La caméra se pose donc juste en deçà, légèrement EN AVANT de la
+			# ligne et tournée vers elle, avec une focale longue qui écrase les
+			# distances et resserre les coureurs les uns sur les autres — ce
+			# que fait n'importe quelle caméra d'arrivée.
+			# Réglage arrêté à la capture : plus en arrière, la caméra filmait à
+			# travers le rail ; plus en avant, les coureurs lui arrivaient
+			# dessus et sortaient du bas du cadre.
 			_target_position = Vector3(
-				lateral_span * 0.5 + 2.2, 2.7, focus_z - 7.5
+				lateral_span * 0.5 + 2.1, 1.45, focus_z + 2.4
 			)
-			_target_look = Vector3(focus_x, 1.15, focus_z + 1.0)
+			_target_look = Vector3(focus_x * 0.3, 1.05, focus_z)
 			_dutch = 0.0
-			_target_fov = 46.0
+			_target_fov = 40.0
 
 		Behaviour.PODIUM:
 			_target_position = Vector3(focus_x, 2.2, focus_z - 6.0)
@@ -177,6 +180,12 @@ func consider_photo_finish(gap_m: float, distance_to_finish_m: float) -> bool:
 		behaviour = Behaviour.PHOTO_FINISH
 		return true
 	return false
+
+
+## Vrai quand la caméra est passée en plan d'arrivée serré. C'est ce qui
+## déclenche le ralenti de la scène.
+func is_photo_finish() -> bool:
+	return behaviour == Behaviour.PHOTO_FINISH
 
 
 func punch(strength: float = 1.0) -> void:

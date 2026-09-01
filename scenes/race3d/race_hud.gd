@@ -15,20 +15,50 @@ extends CanvasLayer
 const SPEED_STEP_KPH := 0.2
 const BAND_HEIGHT := 132
 const CARD_HEIGHT := 96
+## Largeur des cartes. Élargies pour que la cadence tienne à droite sans
+## chevaucher la distance, dont la longueur varie avec le mode.
+const CARD_WIDTH := 700.0
 const ALERT := Color("#FF3B30")
 const INK := Color("#F2F5FA")
+## Vert de départ, pour le « PARTEZ ! ». Le décompte doit changer de COULEUR au
+## zéro : un chiffre qui devient un mot se lit trop tard quand on est penché sur
+## son guidon.
+const GO := Color("#2BE08A")
+## Gris de second plan, pour les en-têtes et les mentions secondaires.
+const MUTED := Color("#8A94A6")
+## Colonnes du podium : place, coureur, temps, moyenne, pointe.
+const PODIUM_COLUMNS := 5
+## Délai avant l'apparition du podium, le temps que la célébration se joue.
+const PODIUM_DELAY_S := 3.2
+## Barre de tension : largeur totale, du −G au +G.
+const TENSION_WIDTH := 760.0
+const TENSION_HEIGHT := 26.0
 
 var _controller: AppController
 var _mode_label: Label
 var _objective_label: Label
 var _clock_label: Label
 var _gap_label: Label
-var _tension: ProgressBar
-var _tension_fill: StyleBoxFlat
+var _tension: Control
+var _tension_bar: ColorRect
+var _tension_left: Label
+var _tension_right: Label
 var _cards: Dictionary = {}  # lane -> Dictionary de contrôles
 var _target_speed: Dictionary = {}  # lane -> km/h visés
 var _shown_speed: Dictionary = {}  # lane -> km/h lissés
 var _printed_speed: Dictionary = {}  # lane -> km/h effectivement écrits
+var _overlay: CanvasLayer
+var _countdown_veil: ColorRect
+var _countdown_holder: Control
+var _countdown_label: Label
+var _countdown_pulse := 0.0
+var _countdown_hold_s := 0.0
+var _podium: ColorRect
+var _podium_title: Label
+var _podium_grid: GridContainer
+var _podium_note: Label
+var _podium_delay_s := 0.0
+var _pending_result: RaceResult = null
 var _notice: Label
 
 
@@ -77,23 +107,23 @@ func _build() -> void:
 	_gap_label.visible = false
 	add_child(_gap_label)
 
-	# Barre de tension : elle doit se VOIR. Un ProgressBar par défaut est un
-	# rectangle sombre sur fond sombre, invisible en projection.
-	_tension = ProgressBar.new()
-	_tension.show_percentage = false
-	_tension.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_tension.position = Vector2(-340, 350)
-	_tension.size = Vector2(680, 26)
-	_tension.visible = false
-	var track_style := StyleBoxFlat.new()
-	track_style.bg_color = Color(0.10, 0.12, 0.17, 0.9)
-	track_style.border_color = Color(0.55, 0.62, 0.75)
-	track_style.set_border_width_all(2)
-	_tension.add_theme_stylebox_override("background", track_style)
-	_tension_fill = StyleBoxFlat.new()
-	_tension_fill.bg_color = INK
-	_tension.add_theme_stylebox_override("fill", _tension_fill)
-	add_child(_tension)
+	_build_tension()
+
+	# LES PLEIN-ÉCRANS ONT LEUR PROPRE COUCHE.
+	#
+	# L'ordre de dessin d'un `CanvasLayer` suit l'ordre des enfants, et les
+	# cartes des coureurs sont créées PLUS TARD, par `rebuild_cards`, à chaque
+	# armement. Le décompte et le podium, construits ici, se retrouvaient donc
+	# DESSOUS : le voile assombrissait la scène mais les barres de progression
+	# et les cartes lui passaient par-dessus. Une couche supérieure règle la
+	# question une fois pour toutes, quel que soit l'ordre de construction.
+	_overlay = CanvasLayer.new()
+	_overlay.name = "PleinEcran"
+	_overlay.layer = layer + 1
+	add_child(_overlay)
+
+	_build_countdown()
+	_build_podium()
 
 	_notice = _make_label(44, ALERT)
 	_notice.set_anchors_preset(Control.PRESET_CENTER_TOP)
@@ -118,13 +148,13 @@ func rebuild_cards() -> void:
 
 		var root := Control.new()
 		root.position = Vector2(36, BAND_HEIGHT + 28 + index * (CARD_HEIGHT + 12))
-		root.size = Vector2(560, CARD_HEIGHT)
+		root.size = Vector2(CARD_WIDTH, CARD_HEIGHT)
 		root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(root)
 
 		var backdrop := ColorRect.new()
 		backdrop.color = Color(0.043, 0.055, 0.078, 0.66)
-		backdrop.size = Vector2(560, CARD_HEIGHT)
+		backdrop.size = Vector2(CARD_WIDTH, CARD_HEIGHT)
 		root.add_child(backdrop)
 
 		# Pastille de couleur ET numéro de piste : jamais la couleur seule.
@@ -140,8 +170,16 @@ func rebuild_cards() -> void:
 		root.add_child(name_label)
 
 		var speed_label := _make_label(40, INK)
-		speed_label.position = Vector2(330, 2)
+		speed_label.position = Vector2(440, 2)
 		root.add_child(speed_label)
+
+		# Cadence — docs/04 §5. Déduite du développement déclaré par
+		# l'opérateur, puisque le capteur ne mesure que le rouleau.
+		var cadence_label := _make_label(28, MUTED)
+		cadence_label.position = Vector2(CARD_WIDTH - 176.0, 52)
+		cadence_label.size.x = 160
+		cadence_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		root.add_child(cadence_label)
 
 		var distance_label := _make_label(28, INK)
 		distance_label.position = Vector2(26, 50)
@@ -159,6 +197,7 @@ func rebuild_cards() -> void:
 		_cards[lane] = {
 			"root": root,
 			"speed": speed_label,
+			"cadence": cadence_label,
 			"distance": distance_label,
 			"bar": bar,
 			"name": name_label,
@@ -166,10 +205,40 @@ func rebuild_cards() -> void:
 	_refresh_objective()
 
 
+## Anime le décompte : le chiffre entre agrandi puis se resserre, et l'annonce
+## de départ s'efface d'elle-même.
+## Fait apparaître le podium une fois la célébration jouée.
+func _tick_podium(delta: float) -> void:
+	if _pending_result == null:
+		return
+	_podium_delay_s -= delta
+	if _podium_delay_s <= 0.0:
+		_show_podium(_pending_result)
+		_pending_result = null
+
+
+func _animate_countdown(delta: float) -> void:
+	if _countdown_veil == null or not _countdown_veil.visible:
+		return
+	_countdown_pulse = maxf(0.0, _countdown_pulse - delta * 3.2)
+	var eased := _countdown_pulse * _countdown_pulse
+	var scale := 1.0 + eased * 0.55
+	_countdown_holder.pivot_offset = _countdown_holder.size * 0.5
+	_countdown_holder.scale = Vector2(scale, scale)
+	_countdown_veil.color.a = 0.72 - eased * 0.18
+
+	if _countdown_hold_s > 0.0:
+		_countdown_hold_s -= delta
+		if _countdown_hold_s <= 0.0:
+			_countdown_veil.visible = false
+
+
 ## Rapproche les chiffres affichés de leur cible. Séparé de `_on_progress` :
 ## celui-ci arrive au rythme du boîtier, pas à celui de l'écran, et un lissage
 ## piloté par un signal externe ne serait pas régulier.
 func _process(delta: float) -> void:
+	_animate_countdown(delta)
+	_tick_podium(delta)
 	if _target_speed.is_empty():
 		return
 	var alpha := 1.0 - exp(-delta * 4.0)
@@ -196,6 +265,208 @@ func _process(delta: float) -> void:
 		_printed_speed[lane] = shown
 		var card: Dictionary = _cards[lane]
 		(card["speed"] as Label).text = "%5.1f km/h" % shown
+
+
+## BARRE DE TENSION — docs/04 §5 : « entre −G et +G ».
+##
+## Elle est SIGNÉE, et c'est tout l'intérêt. Une barre de 0 à G ne dit que la
+## taille de l'écart ; celle-ci dit aussi DE QUEL CÔTÉ il penche, en se
+## remplissant depuis le centre vers le coureur qui mène et en prenant sa
+## couleur. On lit d'un coup d'œil qui est en train de prendre le dessus, ce
+## qui est exactement la question du mode poursuite.
+##
+## Le sens suit la position à l'écran : le meneur est-il dans un couloir plus à
+## gauche que le poursuivi ? alors la barre penche à gauche. Sans cela le
+## symbole contredirait ce que montre la scène.
+func _build_tension() -> void:
+	_tension = Control.new()
+	_tension.name = "Tension"
+	_tension.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_tension.position = Vector2(-TENSION_WIDTH * 0.5, 352)
+	_tension.size = Vector2(TENSION_WIDTH, TENSION_HEIGHT)
+	_tension.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tension.visible = false
+	add_child(_tension)
+
+	# Contour clair : sur un fond de piste sombre et animé, un rectangle
+	# anthracite sans bord disparaît, et l'on ne voit plus par rapport à QUOI la
+	# barre se remplit. Le contour est ce qui donne l'échelle du −G au +G.
+	var border := ColorRect.new()
+	border.color = Color(0.55, 0.62, 0.75, 0.95)
+	border.set_anchors_preset(Control.PRESET_FULL_RECT)
+	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tension.add_child(border)
+
+	var track := ColorRect.new()
+	track.color = Color(0.07, 0.09, 0.13, 0.95)
+	track.set_anchors_preset(Control.PRESET_FULL_RECT)
+	track.offset_left = 2.0
+	track.offset_top = 2.0
+	track.offset_right = -2.0
+	track.offset_bottom = -2.0
+	track.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tension.add_child(track)
+
+	_tension_bar = ColorRect.new()
+	_tension_bar.color = INK
+	_tension_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tension.add_child(_tension_bar)
+
+	# Repère central : sans lui, une barre presque vide et une barre penchée à
+	# gauche se ressemblent.
+	var middle := ColorRect.new()
+	middle.color = Color(0.75, 0.80, 0.88)
+	middle.position = Vector2(TENSION_WIDTH * 0.5 - 1.0, -6.0)
+	middle.size = Vector2(2.0, TENSION_HEIGHT + 12.0)
+	middle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tension.add_child(middle)
+
+	_tension_left = _make_label(26, MUTED)
+	_tension_left.position = Vector2(0.0, TENSION_HEIGHT + 6.0)
+	_tension.add_child(_tension_left)
+
+	_tension_right = _make_label(26, MUTED)
+	_tension_right.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_tension_right.position = Vector2(TENSION_WIDTH - 200.0, TENSION_HEIGHT + 6.0)
+	_tension_right.size.x = 200.0
+	_tension.add_child(_tension_right)
+
+
+## Place la barre pour un écart signé, exprimé en fraction de l'objectif.
+func _set_tension(signed_ratio: float, tint: Color) -> void:
+	var half := TENSION_WIDTH * 0.5
+	var span := clampf(signed_ratio, -1.0, 1.0) * half
+	_tension_bar.color = tint
+	if span >= 0.0:
+		_tension_bar.position = Vector2(half, 0.0)
+	else:
+		_tension_bar.position = Vector2(half + span, 0.0)
+	_tension_bar.size = Vector2(absf(span), TENSION_HEIGHT)
+
+
+## PODIUM ET ÉCRAN DE FIN — docs/04 §5 : « temps, vitesse moyenne et vitesse de
+## pointe par rider ».
+##
+## Construit vide et masqué : il se remplit à l'arrivée. Le rendre à ce
+## moment-là éviterait quelques nœuds, mais construire une interface pendant que
+## la scène célèbre une arrivée est le meilleur moyen de faire hoqueter l'image
+## au pire instant — c'est déjà la leçon des confettis et des volets.
+func _build_podium() -> void:
+	_podium = ColorRect.new()
+	_podium.name = "Podium"
+	_podium.color = Color(0.02, 0.03, 0.05, 0.88)
+	_podium.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_podium.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_podium.visible = false
+	_overlay.add_child(_podium)
+
+	var column := VBoxContainer.new()
+	column.set_anchors_preset(Control.PRESET_FULL_RECT)
+	column.add_theme_constant_override("separation", 18)
+	column.alignment = BoxContainer.ALIGNMENT_CENTER
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_podium.add_child(column)
+
+	_podium_title = _make_label(72, INK)
+	_podium_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(_podium_title)
+
+	# Une grille plutôt que des libellés alignés à la main : les colonnes
+	# doivent rester alignées quels que soient la longueur des noms et le
+	# nombre de coureurs.
+	_podium_grid = GridContainer.new()
+	_podium_grid.columns = PODIUM_COLUMNS
+	_podium_grid.add_theme_constant_override("h_separation", 44)
+	_podium_grid.add_theme_constant_override("v_separation", 14)
+	_podium_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	column.add_child(_podium_grid)
+
+	_podium_note = _make_label(30, MUTED)
+	_podium_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(_podium_note)
+
+
+## Remplit et montre le podium. Les temps, la moyenne et la pointe viennent du
+## `RaceResult`, donc du moteur : rien n'est recalculé ici.
+func _show_podium(result: RaceResult) -> void:
+	for child: Node in _podium_grid.get_children():
+		child.queue_free()
+
+	for header: String in ["", "Coureur", "Temps", "Moyenne", "Pointe"]:
+		var cell := _make_label(30, MUTED)
+		cell.text = header
+		_podium_grid.add_child(cell)
+
+	for rank: int in range(result.ranking.size()):
+		var rider: int = result.ranking[rank]
+		var color := Color(_controller.roster.rider(rider).color)
+		# La place et le nom prennent la couleur du coureur : c'est ainsi qu'on
+		# le reconnaît depuis les gradins, pas par son nom.
+		var place := _make_label(44, color)
+		place.text = "%d%s" % [rank + 1, "er" if rank == 0 else "e"]
+		_podium_grid.add_child(place)
+
+		var who := _make_label(44, color)
+		who.text = "P%d  %s" % [rider + 1, _controller.roster.rider(rider).display_name()]
+		_podium_grid.add_child(who)
+
+		var time := _make_label(44, INK)
+		if result.eliminated[rider]:
+			time.text = "éliminé"
+		elif result.finished_ms[rider] > 0:
+			time.text = "%.2f s" % (float(result.finished_ms[rider]) / 1000.0)
+		else:
+			# Un coureur peut ne pas avoir franchi la ligne : course
+			# interrompue, lien perdu. On l'écrit plutôt que d'inventer un temps.
+			time.text = "—"
+		_podium_grid.add_child(time)
+
+		var avg := _make_label(44, INK)
+		avg.text = "%.1f km/h" % result.avg_kph[rider]
+		_podium_grid.add_child(avg)
+
+		var peak := _make_label(44, INK)
+		peak.text = "%.1f km/h" % result.max_kph[rider]
+		_podium_grid.add_child(peak)
+
+	_podium_title.text = "INTERROMPUE" if result.interrupted else "ARRIVÉE"
+	_podium_note.text = (
+		result.interruption_note if result.interrupted
+		else "%s — %s" % [_objective_label.text, result.end_reason_name()]
+	)
+	_podium.visible = true
+
+
+## DÉCOMPTE PLEIN ÉCRAN — docs/04 §5.
+##
+## Synchronisé sur les trames `CD:` du firmware, JAMAIS sur une horloge PC : les
+## LED physiques du boîtier et l'écran doivent annoncer la même chose. Un
+## décompte qui avance d'une demi-seconde sur les LED est pire que pas de
+## décompte du tout, parce qu'il fait partir les coureurs au mauvais moment.
+##
+## Il occupe tout l'écran parce que c'est le seul moment où l'on ne regarde rien
+## d'autre.
+func _build_countdown() -> void:
+	_countdown_veil = ColorRect.new()
+	_countdown_veil.name = "CountdownVeil"
+	_countdown_veil.color = Color(0.02, 0.03, 0.05, 0.72)
+	_countdown_veil.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_countdown_veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_countdown_veil.visible = false
+	_overlay.add_child(_countdown_veil)
+
+	# Le chiffre vit dans un conteneur centré : c'est lui qu'on met à l'échelle,
+	# sinon l'agrandissement se ferait depuis le coin haut-gauche du libellé.
+	_countdown_holder = Control.new()
+	_countdown_holder.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_countdown_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_countdown_veil.add_child(_countdown_holder)
+
+	_countdown_label = _make_label(300, INK)
+	_countdown_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_countdown_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_countdown_holder.add_child(_countdown_label)
 
 
 func _make_label(size: int, color: Color) -> Label:
@@ -229,6 +500,10 @@ func _on_state(_previous: int, current: int) -> void:
 	if current == RaceEngine.State.ARMING:
 		rebuild_cards()
 		_notice.text = ""
+		# Une nouvelle course efface la précédente : le podium ne doit pas
+		# rester par-dessus le décompte suivant.
+		_podium.visible = false
+		_pending_result = null
 	elif current == RaceEngine.State.IDLE:
 		_clock_label.text = ""
 
@@ -237,6 +512,16 @@ func _on_countdown(value: int) -> void:
 	# Décompte synchronisé sur les trames CD:, jamais sur une horloge PC :
 	# les LED physiques et l'écran doivent être d'accord (docs/04 §5).
 	_clock_label.text = str(value) if value > 0 else "PARTEZ"
+	_countdown_label.text = str(value) if value > 0 else "PARTEZ !"
+	_countdown_label.add_theme_color_override(
+		"font_color", GO if value <= 0 else INK
+	)
+	_countdown_veil.visible = true
+	# Chaque annonce repart d'un pic : le chiffre entre gros et se resserre,
+	# ce qui donne le battement du décompte.
+	_countdown_pulse = 1.0
+	# « PARTEZ ! » s'efface tout seul ; les chiffres restent jusqu'au suivant.
+	_countdown_hold_s = 0.9 if value <= 0 else 0.0
 
 
 func _on_progress(state: RaceState) -> void:
@@ -259,6 +544,11 @@ func _on_progress(state: RaceState) -> void:
 		# voisines à chaque rafraîchissement ; c'est ce battement qui se voyait.
 		# Le chiffre affiché rejoint sa cible en continu, il ne s'y pose plus.
 		_target_speed[lane] = state.display_speed_kph[lane]
+
+		# La cadence suit la vitesse d'affichage, donc elle est déjà lissée.
+		var development: float = maxf(_controller.settings.development_m, 0.5)
+		var rpm := state.display_speed_kph[lane] / 3.6 / development * 60.0
+		(card["cadence"] as Label).text = "%.0f tr/min" % rpm
 
 		var done := state.distance_m[lane]
 		match config.mode:
@@ -297,12 +587,14 @@ func _on_progress(state: RaceState) -> void:
 		var gap := state.distance_m[leader] - state.distance_m[trailer]
 		_gap_label.text = "%.1f m" % gap
 		var ratio := clampf(gap / maxf(1.0, config.gap_m), 0.0, 1.0)
-		_tension.value = ratio * 100.0
-		# Vire au rouge à l'approche du seuil — docs/04 §4.
-		var tint := INK.lerp(ALERT, ratio)
-		_gap_label.add_theme_color_override("font_color", tint)
-		if _tension_fill != null:
-			_tension_fill.bg_color = tint
+		# Vire au rouge à l'approche du seuil — docs/04 §4. La barre, elle,
+		# prend la couleur du MENEUR : c'est ce qui dit qui prend le dessus.
+		_gap_label.add_theme_color_override("font_color", INK.lerp(ALERT, ratio))
+		var lanes := _controller.roster.active_lanes()
+		var sign := -1.0 if lanes.find(leader) < lanes.find(trailer) else 1.0
+		_set_tension(ratio * sign, Color(_controller.roster.rider(leader).color))
+		_tension_left.text = "−%.0f m" % config.gap_m
+		_tension_right.text = "+%.0f m" % config.gap_m
 
 
 func _on_eliminated(rider: int, rank: int, _gap_m: float) -> void:
@@ -320,3 +612,7 @@ func _on_finished(result: RaceResult) -> void:
 			"   [INTERROMPUE]" if result.interrupted else "",
 		]
 	)
+	# Le podium laisse d'abord la célébration se jouer : arriver par-dessus les
+	# bras levés et les confettis volerait le moment aux coureurs.
+	_podium_delay_s = PODIUM_DELAY_S
+	_pending_result = result

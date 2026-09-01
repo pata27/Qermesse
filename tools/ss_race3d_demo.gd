@@ -218,6 +218,16 @@ func _capture_stills() -> void:
 	var done: Array[String] = []
 	# `has_run` est indispensable : avant le départ l'état vaut ARMING, et sortir
 	# sur « pas EN_COURSE » quittait la boucle à la première image.
+	# Le décompte se capture AVANT le départ : c'est un état à part entière.
+	var shown_countdown := false
+	while not shown_countdown:
+		await _step()
+		if _controller.engine.state() == RaceEngine.State.COUNTDOWN:
+			await _shoot("decompte")
+			shown_countdown = true
+		elif _controller.engine.state() == RaceEngine.State.RUNNING:
+			shown_countdown = true
+
 	var has_run := false
 	var racing := true
 	while done.size() < marks.size() and racing:
@@ -246,7 +256,7 @@ func _capture_stills() -> void:
 	# chrono : sur une course courte, la ligne tombe avant le premier repère
 	# horaire, et c'est justement le moment qu'on veut regarder.
 	var since := 0.0
-	var after := {"arrivee": 0.9, "celebration": 3.0}
+	var after := {"arrivee": 0.9, "celebration": 3.0, "podium": 4.2}
 	var shot: Array[String] = []
 	while shot.size() < after.size() and since < 8.0:
 		since += await _step()

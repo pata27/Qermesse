@@ -158,3 +158,40 @@ func test_le_roster_alimente_le_csv_avec_noms_et_dossards() -> void:
 	assert_eq(map.size(), 2, "seules les pistes actives")
 	assert_eq((map[0] as Dictionary)["dossard"], "7")
 	assert_eq((map[1] as Dictionary)["name"], "Piste 2")
+
+
+# =============================================================================
+# Developpement — la donnee que le capteur ne peut PAS fournir (docs/01 §6)
+# =============================================================================
+
+
+func test_le_developpement_fait_l_aller_retour_et_reste_borne() -> void:
+	var settings := Settings.new()
+	settings.development_m = 6.4
+	var revived := Settings.new()
+	revived.from_dict(settings.to_dict())
+	assert_almost_eq(revived.development_m, 6.4, 0.001, "persiste tel quel")
+
+	# Un developpement aberrant vient d'un fichier corrompu ou edite a la main :
+	# on le ramene dans les bornes plutot que d'afficher une cadence absurde.
+	var wild := Settings.new()
+	wild.from_dict({"development_m": 900.0})
+	assert_lt(wild.development_m, 21.0, "borne haute appliquee")
+	wild.from_dict({"development_m": -3.0})
+	assert_gt(wild.development_m, 0.0, "borne basse appliquee")
+
+
+func test_le_developpement_ne_touche_a_aucun_calcul_de_course() -> void:
+	# Garde-fou explicite : la cadence est un affichage. Si un jour quelqu'un
+	# fait dependre une distance du developpement, ce test doit tomber.
+	var settings := Settings.new()
+	settings.development_m = 3.0
+	var short_gear := settings.to_race_config([0, 1] as Array[int])
+	settings.development_m = 12.0
+	var long_gear := settings.to_race_config([0, 1] as Array[int])
+	assert_eq(short_gear.distance_m, long_gear.distance_m, "distance inchangee")
+	assert_eq(short_gear.roller_mm, long_gear.roller_mm, "rouleau inchange")
+	assert_eq(
+		short_gear.arming_commands(), long_gear.arming_commands(),
+		"les commandes firmware ne dependent pas du developpement"
+	)
