@@ -172,3 +172,42 @@
 * **Mesurer la secousse en unités par seconde carrée ne veut rien dire à 170 fps.** La normalisation
   par `dt²` amplifie des écarts imperceptibles. Ce qui se voit, c'est la différence seconde PAR
   IMAGE, en unités brutes.
+
+## Lot 4 — mesure de performance et repère de la scène (2026-09-01)
+
+* **Une mesure de performance prise pendant qu'autre chose tourne ne mesure rien.** J'ai lancé un
+  banc en tâche de fond tout en faisant tourner d'autres instances de Godot, et j'en ai tiré des
+  chiffres que j'ai présentés comme des faits : « les lignes de vitesse coûtent 15 ms ». Repris
+  proprement, en alternant les configurations sur plusieurs tours, l'écart entre configurations
+  (19,3 à 22,7 ms) s'est révélé PLUS PETIT que l'écart entre deux relevés d'une même configuration
+  (17,0 à 32,7 ms). L'effet était du bruit. Règle : une seule chose tourne pendant une mesure, les
+  configurations sont alternées, et on ne conclut pas tant que la dispersion intra-configuration
+  n'est pas plus petite que l'écart cherché.
+* **Deux relevés contradictoires ne se départagent pas au jugé.** `glow=0` seul donnait 16,3 ms et
+  `glow=0,msaa=0` en donnait 5,3, alors que `msaa=0` seul ne changeait rien. C'est arithmétiquement
+  impossible : c'était le signal qu'il fallait tout reprendre, pas choisir le chiffre qui arrangeait.
+* **Réduire les appels de rendu n'accélère que si l'on est limité par eux.** Diviser par deux le
+  nombre d'appels (495 → 225, en supprimant 96 projeteurs d'ombre sur 104) n'a rien changé au temps
+  par image. À 76 triangles par appel, cette scène est limitée par le REMPLISSAGE. Le correctif reste
+  bon — il supprime un coût réel sans toucher à l'image — mais il ne visait pas le bon goulot.
+* **Faire pivoter une caméra pour décadrer, c'est regarder le sujet de biais.** Une projection
+  décentrée (`Camera3D` en mode frustum) place le sujet où on veut à l'écran en le montrant DE FACE,
+  et permet en prime de ne rendre que la tranche d'écran utile. C'est ce que fait un vrai écran
+  scindé.
+* **Vérifier le sens du repère plutôt que de le supposer.** La caméra regarde vers les Z croissants ;
+  en repère droitier son axe « droite » est donc −X, et toute la piste était dessinée EN MIROIR
+  depuis le premier jour — piste 1 à droite, piste 4 à gauche. Personne ne l'avait vu parce que rien
+  dans l'image ne trahit un miroir tant qu'on ne connaît pas l'ordre attendu. C'est l'utilisateur qui
+  l'a relevé.
+* **Ordonner les volets par couloir était une fausse bonne idée.** L'utilisateur avait raison de
+  signaler l'inversion, mais la corriger en rangeant les volets par couloir aggravait le cas où un
+  paquet MÊLE des couloirs — aucun rangement ne préserve alors la place de tout le monde. L'ordre du
+  classement, lui, est toujours le même. Motif : quand aucune règle ne satisfait tous les cas,
+  choisir celle qui ne surprend jamais plutôt que celle qui est parfaite sur un exemple.
+* **Ne pas confondre ce qu'une vue REND et ce qu'elle MONTRE.** Depuis que chaque volet déborde de sa
+  bande pour couvrir l'inclinaison de la lame, sa largeur rendue (61 %) n'est plus sa part visible
+  (33 %). Avoir passé la première au calcul de recul faisait cadrer trop serré et sortait du volet
+  les coureurs les plus excentrés.
+* **Terminer un câblage avant de lancer autre chose.** J'ai remplacé le décadrage par rotation dans
+  la caméra sans finir de brancher son remplaçant, et l'utilisateur s'est retrouvé avec un cadrage
+  cassé et plus aucun volet. Un changement d'interface se termine dans la même passe.

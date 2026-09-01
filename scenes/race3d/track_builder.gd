@@ -99,10 +99,17 @@ static func build_mesh(lane_count: int) -> ArrayMesh:
 
 
 ## Abscisse du centre d'un couloir, dans le repère de la piste.
+## Abscisse du couloir `lane` (indice d'AFFICHAGE, pas numéro de piste).
+##
+## Le signe compte, et il était faux depuis le début. La caméra regarde vers les
+## Z croissants ; en repère droitier, son axe « droite » est donc −X, et le
+## monde apparaît en MIROIR à l'écran. La piste 1 se retrouvait à droite de
+## l'image et la piste 4 à gauche. L'indice d'affichage croît maintenant vers
+## les X décroissants, de sorte que le premier couloir soit à gauche.
 static func lane_x(lane: int, lane_count: int) -> float:
 	var lanes := clampi(lane_count, 1, 4)
 	var half := float(lanes) * LANE_WIDTH_M * 0.5
-	return -half + (float(lane) + 0.5) * LANE_WIDTH_M
+	return half - (float(lane) + 0.5) * LANE_WIDTH_M
 
 
 ## Main courante au sommet de chaque relevé. Sans elle, la piste se dissout

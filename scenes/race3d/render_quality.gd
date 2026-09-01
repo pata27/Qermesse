@@ -52,6 +52,8 @@ const PROFILES := {
 	},
 }
 
+static var _override_cache: Variant = null
+
 var level: Level = Level.MEDIUM
 
 
@@ -101,7 +103,32 @@ func profile() -> Dictionary:
 	return PROFILES[level]
 
 
+## Surcharges de diagnostic, lues une fois dans `SS_QOPT` sous la forme
+## `glow=0,msaa=0,crowd_count=0`. Sert à chiffrer un effet à la fois : sans
+## cela, on ne sait pas lequel des six réglages d'un niveau coûte les
+## millisecondes qu'on cherche.
+static func _overrides() -> Dictionary:
+	if _override_cache != null:
+		return _override_cache
+	var parsed: Dictionary = {}
+	for pair: String in OS.get_environment("SS_QOPT").split(",", false):
+		var bits := pair.split("=", false)
+		if bits.size() == 2:
+			parsed[bits[0].strip_edges()] = bits[1].strip_edges()
+	_override_cache = parsed
+	return parsed
+
+
 func option(key: String) -> Variant:
+	var forced := _overrides()
+	if forced.has(key):
+		var raw := str(forced[key])
+		var current: Variant = profile().get(key)
+		if current is bool:
+			return raw != "0"
+		if current is int:
+			return int(raw)
+		return raw
 	return profile().get(key)
 
 

@@ -188,8 +188,15 @@ func _rebuild_track_material() -> void:
 	_rails = TrackBuilder.build_rails(_lane_count)
 	add_child(_rails)
 
+	# Les couleurs sont indexées par BANDE de piste, mesurée depuis le bord le
+	# plus à −X — c'est-à-dire depuis le bord DROIT de l'image. La bande `b`
+	# porte donc le couloir d'affichage `lane_count − 1 − b`, sans quoi les
+	# néons de piste ne seraient plus de la couleur du coureur qui roule dessus.
 	var colors := PackedColorArray()
-	for lane: int in range(Protocol.MAX_RIDERS):
+	var active := _controller.roster.active_lanes()
+	for band: int in range(Protocol.MAX_RIDERS):
+		var shown := _lane_count - 1 - band
+		var lane: int = active[shown] if shown >= 0 and shown < active.size() else band
 		colors.append(Color(_controller.roster.rider(lane).color))
 	_track_material.set_shader_parameter("lane_colors", colors)
 	_track_material.set_shader_parameter("lane_count", _lane_count)
@@ -437,9 +444,16 @@ func _reposition_riders(delta: float) -> void:
 		_camera_rig.consider_photo_finish(spread, _finish_m - leader_m)
 
 	var state_now := _controller.engine.race_state()
-	for group: int in range(bounds.size() - 1):
+	# LES VOLETS SUIVENT L'ORDRE DU CLASSEMENT : le premier à gauche, le dernier
+	# à droite. J'ai essayé de les ranger par couloir pour éviter qu'un coureur
+	# ne change de côté au moment de la scission ; c'était pire, parce qu'un
+	# paquet mélange les couloirs et qu'aucun rangement ne peut alors préserver
+	# la place de tout le monde. L'ordre du classement, lui, est toujours le
+	# même et se lit de gauche à droite.
+	for pane: int in range(bounds.size() - 1):
+		var group := pane
 		var frame := _group_frame(order, bounds[group], bounds[group + 1], positions)
-		var rig := _camera_rig if group == 0 else _split.rig(group)
+		var rig := _camera_rig if pane == 0 else _split.rig(pane)
 		if rig == null:
 			continue
 		# Vitesse du premier du groupe : c'est lui qui donne le rythme du volet.
@@ -458,9 +472,15 @@ func _reposition_riders(delta: float) -> void:
 			group_speed
 		)
 		# Le groupe glisse vers le milieu de SON volet à mesure que les lames
-		# entrent : le décadrage suit l'animation, il n'y saute pas.
-		rig.set_frame_shift(_split.shift_for(group))
-		rig.set_frame_fraction(_split.fraction_for(group))
+		# entrent, et chaque vue ne rend que la tranche d'écran qu'elle occupe.
+		var window := _split.window_for(pane)
+		rig.set_frame_window(window.x, window.y, window.z, _screen_aspect())
+		# La part d'écran RÉELLEMENT VISIBLE du volet, pas la largeur qu'il rend.
+		# Les deux diffèrent depuis que chaque vue déborde de sa bande pour
+		# couvrir l'inclinaison de la lame : croire disposer de 61 % de l'image
+		# quand on n'en montre que 33 % faisait cadrer trop serré, et un groupe
+		# étalé sur toute la largeur de piste sortait du volet.
+		rig.set_frame_fraction(1.0 / float(_split.group_count()))
 		# TOUTES les vues sont amorties, la principale comme les volets.
 		#
 		# Les volets se calaient auparavant sans amortissement, à chaque image :
@@ -475,13 +495,13 @@ func _reposition_riders(delta: float) -> void:
 	# mouvement autrement qu'à l'œil : une caméra qui scintille se voit dans la
 	# dérivée seconde de sa position et de son champ, pas dans une capture fixe.
 	if OS.get_environment("SS_CAMDIAG") == "1":
-		for group: int in range(bounds.size() - 1):
-			var logged := _camera_rig if group == 0 else _split.rig(group)
+		for pane: int in range(bounds.size() - 1):
+			var logged := _camera_rig if pane == 0 else _split.rig(pane)
 			if logged == null:
 				continue
 			var cam := logged.camera
 			print("CAM %d %.5f %.4f %.4f %.4f %.4f %.5f" % [
-				group, delta, cam.fov, cam.global_position.x,
+				pane, delta, cam.fov, cam.global_position.x,
 				cam.global_position.y, cam.global_position.z,
 				cam.global_rotation.z
 			])
@@ -545,6 +565,13 @@ func census() -> String:
 	lines.append("%-22s %9d" % ["TOTAL", total])
 	lines.append("dont projetant une ombre : %d" % shadows)
 	return "\n".join(lines)
+
+
+## Rapport d'image de l'ÉCRAN — pas celui d'une vue de volet, qui n'en couvre
+## qu'une bande. C'est le repère commun dans lequel toutes les caméras cadrent.
+func _screen_aspect() -> float:
+	var size := get_viewport().get_visible_rect().size
+	return 16.0 / 9.0 if size.y <= 0.0 else size.x / size.y
 
 
 ## Nombre de volets affichés, pour les relevés de performance.

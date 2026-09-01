@@ -52,7 +52,10 @@ var _accel := 0.0
 ## Décadrage horizontal, en radians. Sert à l'écran scindé : chaque sujet doit
 ## se placer DANS SA MOITIÉ d'image, sinon la vue du poursuivant recouvre
 ## purement et simplement le leader.
-var _frame_shift := 0.0
+var _subject_u := 0.5
+var _window_u0 := 0.0
+var _window_u1 := 1.0
+var _full_aspect := 16.0 / 9.0
 var _frame_fraction := 1.0
 var _dutch_now := 0.0
 var _snap_pending := false
@@ -194,12 +197,23 @@ func target_position() -> Vector3:
 ## vue apparaît : sans cela, la seconde caméra de l'écran scindé entrait en
 ## volant depuis l'origine du monde et montrait le sol de très près pendant une
 ## bonne seconde.
-## Décadrage voulu, en FRACTION DE LARGEUR D'ÉCRAN (−0,5 à +0,5). La conversion
-## en angle se fait ici parce qu'elle dépend du champ, et que le champ s'ouvre
-## avec la vitesse : une constante calculée ailleurs se trompait d'autant plus
-## que la course allait vite.
-func set_frame_shift(screen_fraction: float) -> void:
-	_frame_shift = screen_fraction
+## Où placer le sujet à l'écran, et quelle TRANCHE d'écran cette vue rend.
+##
+## `subject_u` : abscisse voulue du sujet, en fraction de largeur d'écran.
+## `u0`, `u1`  : bornes de la tranche réellement rendue par cette vue. La vue
+##               principale rend l'écran entier (0 à 1) ; un volet ne rend que
+##               sa bande.
+## `full_aspect` : rapport d'image de l'ÉCRAN, pas celui de la tranche.
+##
+## Remplace la rotation de décadrage. Faire pivoter la caméra plaçait bien le
+## sujet, mais le regardait de biais : une projection décentrée le montre de
+## face, ce qui est exactement ce que fait un vrai écran scindé. Et elle permet
+## de ne rendre que la tranche utile.
+func set_frame_window(subject_u: float, u0: float, u1: float, full_aspect: float) -> void:
+	_subject_u = subject_u
+	_window_u0 = u0
+	_window_u1 = u1
+	_full_aspect = maxf(full_aspect, 0.1)
 
 
 ## Part de la largeur d'écran dont dispose cette vue, entre 0 et 1. Un volet qui
@@ -210,20 +224,24 @@ func set_frame_fraction(fraction: float) -> void:
 	_frame_fraction = clampf(fraction, 0.2, 1.0)
 
 
-## Angle de décadrage correspondant à la fraction d'écran demandée, pour le
-## champ courant. `Camera3D.fov` est le champ VERTICAL : le champ horizontal
-## s'en déduit par le rapport d'image.
-func _shift_angle() -> float:
-	if is_zero_approx(_frame_shift):
-		return 0.0
-	var view := camera.get_viewport()
-	var aspect := 16.0 / 9.0
-	if view != null:
-		var size := view.get_visible_rect().size
-		if size.y > 0.0:
-			aspect = size.x / size.y
-	var half_h := atan(tan(deg_to_rad(camera.fov) * 0.5) * aspect)
-	return atan(2.0 * _frame_shift * tan(half_h))
+## Applique la projection décentrée correspondant à la fenêtre demandée.
+##
+## Le repère est l'image PLEINE que verrait cette caméra si elle occupait tout
+## l'écran, sujet au centre. L'abscisse d'écran `u` y correspond à l'abscisse
+## `(u − subject_u) · 2w` sur le plan proche. Il suffit alors de rendre la
+## portion `[u0, u1]` de ce repère : c'est une fenêtre décentrée, dont le
+## décalage place le sujet et dont la largeur découpe la tranche.
+##
+## `Camera3D.size` est la HAUTEUR de la fenêtre sur le plan proche, et le
+## rapport d'image de la vue lui donne sa largeur — d'où l'exigence que la
+## taille du `SubViewport` soit proportionnelle à la largeur de la tranche.
+func _apply_projection() -> void:
+	var half_h := camera.near * tan(deg_to_rad(camera.fov) * 0.5)
+	var half_w := half_h * _full_aspect
+	var centre := (_window_u0 + _window_u1) * 0.5 - _subject_u
+	camera.projection = Camera3D.PROJECTION_FRUSTUM
+	camera.size = 2.0 * half_h
+	camera.frustum_offset = Vector2(centre * 2.0 * half_w, 0.0)
 
 
 ## Demande un placement immédiat à la PROCHAINE image. À utiliser quand une vue
@@ -239,8 +257,8 @@ func snap() -> void:
 	camera.fov = _target_fov
 	_dutch_now = _dutch
 	camera.look_at(_target_look, Vector3.UP)
-	camera.rotate_object_local(Vector3.UP, _shift_angle())
 	camera.rotate_object_local(Vector3.FORWARD, _dutch_now)
+	_apply_projection()
 
 
 func advance(delta: float) -> void:
@@ -271,9 +289,9 @@ func advance(delta: float) -> void:
 		_shake = maxf(0.0, _shake - delta * 2.5)
 
 	camera.look_at(look, Vector3.UP)
-	camera.rotate_object_local(Vector3.UP, _shift_angle())
 	camera.rotate_object_local(Vector3.FORWARD, _dutch_now)
 	_apply_vibration(delta)
+	_apply_projection()
 
 
 ## Micro-vibration de la caméra, d'autant plus marquée que ça va vite.

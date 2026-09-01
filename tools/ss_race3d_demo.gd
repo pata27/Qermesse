@@ -28,6 +28,10 @@ var _frames_path := OS.get_environment("SS_FRAMES")
 ## Résolution de rendu. Réglable pour distinguer un coût de REMPLISSAGE d'un
 ## coût de géométrie : si le temps suit le nombre de pixels, c'est le premier.
 var _render_size := Vector2i(1920, 1080)
+## Durée de la fenêtre de mesure. Réglable pour pouvoir RÉPÉTER une mesure :
+## sur une machine qui n'est pas au repos, un relevé unique ne distingue pas un
+## effet coûteux d'une charge de fond.
+var _window_s := MEASURE_WINDOW_S
 var _last_tick_us := 0
 
 
@@ -82,6 +86,9 @@ func _parse_args() -> void:
 			"--profil":
 				i += 1
 				_profile = args[i] if i < args.size() else _profile
+			"--fenetre":
+				i += 1
+				_window_s = float(args[i]) if i < args.size() else _window_s
 			"--rendu":
 				i += 1
 				var wh: PackedStringArray = args[i].split("x") if i < args.size() \
@@ -157,7 +164,7 @@ func _measure() -> void:
 	_scene.perf.reset()
 	var trace := PackedStringArray()
 	var elapsed := 0.0
-	while elapsed < MEASURE_WINDOW_S:
+	while elapsed < _window_s:
 		var delta := await _step()
 		elapsed += delta
 		# Le fps se déduit du temps de CETTE image, pas du compteur lissé du

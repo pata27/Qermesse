@@ -44,10 +44,16 @@ const STAGGER_S := 0.14
 ## Vitesse à laquelle une lame glisse vers sa nouvelle place quand le nombre de
 ## volets change. Une lame qui saute de la moitié au tiers casse l'illusion.
 const SLIDE_RATE := 3.0
+## Marge de part et d'autre de la lame, en fraction de largeur d'écran. Doit
+## couvrir l'excursion horizontale de la lame due à son inclinaison — elle
+## déplace sa trace de `slant/2` entre le haut et le bas de l'image — et le
+## halo lumineux qui la borde.
+const SLICE_MARGIN := 0.16
 
 
 ## Un volet : sa vue, sa caméra, sa lame.
 class Pane:
+	var index := 0
 	var viewport: SubViewport
 	var rig: CameraRig
 	var composite: ColorRect
@@ -107,10 +113,11 @@ func prime(riders: int) -> void:
 func _ensure_pane(index: int) -> Pane:
 	while _panes.size() <= index:
 		var pane := Pane.new()
+		pane.index = _panes.size()
 
 		pane.viewport = SubViewport.new()
 		pane.viewport.name = "GroupView%d" % _panes.size()
-		pane.viewport.size = _size
+		pane.viewport.size = _slice_size(_panes.size())
 		pane.viewport.world_3d = _world
 		pane.viewport.own_world_3d = false
 		pane.viewport.transparent_bg = false
@@ -255,13 +262,27 @@ func advance(delta: float) -> void:
 		# La lame s'incline un peu plus au plus fort du mouvement : c'est ce
 		# frémissement qui fait qu'elle semble découper l'image plutôt que
 		# glisser par-dessus.
-		pane.material.set_shader_parameter("slant", 0.16 + sin(eased * PI) * 0.10)
+		pane.material.set_shader_parameter("slant", 0.14 + sin(eased * PI) * 0.06)
+		# La vue ne couvre que sa tranche : le composite doit savoir où elle
+		# commence et quelle largeur elle représente, sinon il l'échantillonne
+		# comme une image plein cadre et tout est décalé.
+		var left: float = pane.line - SLICE_MARGIN
+		pane.material.set_shader_parameter("slice_u0", left)
+		pane.material.set_shader_parameter("slice_w", _slice_width(pane.index))
 
 
 ## Cassures retenues, dans l'ordre du peloton. La scène s'en sert pour découper
 ## les coureurs exactement comme l'image est découpée.
 func cuts() -> Array[bool]:
 	return _cuts
+
+
+## Taille en pixels de la vue d'un volet : sa tranche de largeur, toute la
+## hauteur.
+func _slice_size(pane_index: int) -> Vector2i:
+	return Vector2i(
+		maxi(int(round(float(_size.x) * _slice_width(pane_index))), 16), _size.y
+	)
 
 
 ## Nombre de groupes actuellement montrés — un de plus que le nombre de lames.
@@ -280,24 +301,36 @@ func rig(group: int) -> CameraRig:
 ## Décadrage à appliquer à la caméra du groupe `group` pour qu'il tombe au
 ## milieu de SON volet et non au milieu de l'écran. Suit l'animation : le sujet
 ## glisse vers sa place pendant que la lame entre, il n'y saute pas.
-## Décadrage à appliquer au groupe `group` pour qu'il tombe au milieu de SON
-## volet, exprimé en FRACTION DE LARGEUR D'ÉCRAN (−0,5 à +0,5).
+## Cadrage du groupe `group` : où placer le sujet à l'écran, et quelle tranche
+## d'écran sa vue doit rendre. Rendu sous la forme
+## `Vector3(sujet, bord_gauche, bord_droit)`, en fractions de largeur d'écran.
 ##
-## En fraction et non en radians : la conversion en angle dépend du champ, et le
-## champ de ces caméras s'ouvre avec la vitesse. Une constante ne peut donc pas
-## être juste — c'est la caméra qui convertit, avec son champ du moment.
+## Le sujet vise le milieu de SON volet, et y glisse au rythme de l'ouverture :
+## il ne saute pas à sa place quand la lame entre.
 ##
-## Suit l'animation : le sujet glisse vers sa place pendant que la lame entre,
-## il n'y saute pas.
-func shift_for(group: int) -> float:
+## Le groupe de tête est rendu directement dans la fenêtre : sa tranche est
+## l'écran entier. Les autres ne rendent que leur bande.
+func window_for(group: int) -> Vector3:
 	var slices := float(group_count())
-	return ((float(group) + 0.5) / slices - 0.5) * openness()
+	var subject := lerpf(0.5, (float(group) + 0.5) / slices, openness())
+	if group <= 0 or group > _panes.size():
+		return Vector3(subject, 0.0, 1.0)
+	var pane := _panes[group - 1]
+	var left := pane.line - SLICE_MARGIN
+	return Vector3(subject, left, left + _slice_width(pane.index))
 
 
-## Part de la largeur d'écran dont dispose un volet. La caméra s'en sert pour
-## reculer d'autant plus que sa fenêtre est étroite.
-func fraction_for(_group: int) -> float:
-	return 1.0 / float(group_count())
+## Part de la largeur d'écran qu'un volet doit rendre.
+##
+## Fixée une fois pour toutes, car changer la taille d'une cible de rendu la
+## réalloue — et une réallocation en pleine course, c'est le hoquet qu'on vient
+## de supprimer. Elle est donc dimensionnée pour le PIRE cas de ce volet : sa
+## bande est la plus large quand il est le dernier ouvert, où elle va de sa lame
+## au bord droit de l'écran, soit `1/(p+2)`. La marge couvre l'inclinaison de la
+## lame, qui déplace sa trace horizontale de `slant/2` sur la hauteur, et le
+## halo qui la borde.
+static func _slice_width(pane_index: int) -> float:
+	return 1.0 / float(pane_index + 2) + 2.0 * SLICE_MARGIN
 
 
 ## Avancement global de l'animation, pour tout ce qui doit suivre l'ouverture.
@@ -321,5 +354,5 @@ func resize(size: Vector2i) -> void:
 	if size.x <= 0 or size.y <= 0:
 		return
 	_size = size
-	for pane: Pane in _panes:
-		pane.viewport.size = size
+	for index: int in range(_panes.size()):
+		_panes[index].viewport.size = _slice_size(index)
