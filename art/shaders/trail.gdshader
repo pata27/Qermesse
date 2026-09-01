@@ -2,8 +2,11 @@
 //
 // Longueur et intensité proportionnelles à la vitesse : c'est l'effet qui porte
 // la sensation, pas la géométrie.
+// Mélange ALPHA et non additif : en additif, une traînée un peu dense sature
+// les trois canaux et vire au blanc — elle perdait la couleur du rider, qui est
+// pourtant son unique raison d'être.
 shader_type spatial;
-render_mode blend_add, cull_disabled, unshaded, depth_draw_never;
+render_mode blend_mix, cull_disabled, unshaded, depth_draw_never;
 
 uniform vec4 trail_color : source_color = vec4(0.0, 0.898, 1.0, 1.0);
 uniform float intensity = 1.0;
@@ -15,6 +18,9 @@ void fragment() {
 	// Dense au ras du sol, dissipée vers le haut.
 	float height_fade = pow(1.0 - UV.x, 1.4);
 	float shape = pow(along, 1.5) * height_fade;
+	// Couleur pure et saturée, opacité modérée : c'est l'ALPHA qui module,
+	// jamais la luminance.
 	ALBEDO = trail_color.rgb;
-	ALPHA = clamp(shape * intensity * 1.6, 0.0, 1.0);
+	EMISSION = trail_color.rgb * 0.9;
+	ALPHA = clamp(shape * intensity * 0.85, 0.0, 1.0);
 }

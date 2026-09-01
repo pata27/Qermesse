@@ -16,18 +16,24 @@ void vertex() {
 	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(
 		INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]);
 
-	// Chaque spectateur a sa propre phase, tirée de sa position : sans cela la
-	// tribune ondule comme un seul bloc, ce qui se voit immédiatement.
-	float phase = MODEL_MATRIX[3].x * 3.7 + MODEL_MATRIX[3].z * 1.9;
+	// Phase tirée de l'IDENTIFIANT d'instance, et surtout PAS de la position
+	// monde. Depuis que le décor défile, cette position change à chaque image :
+	// la phase sautait donc en permanence et les spectateurs se réarrangeaient
+	// au hasard plusieurs fois par seconde.
+	float phase = float(INSTANCE_ID) * 0.7391;
 	float bob = sin(TIME * (2.2 + excitement * 5.0) + phase);
 	VERTEX.y += bob * (0.05 + excitement * 0.28) * (UV.y < 0.5 ? 1.0 : 0.2);
 }
 
 void fragment() {
-	// Silhouette : buste arrondi, pas de détail. À cette distance, seule la
-	// masse compte.
+	// Silhouette tête + épaules. Un simple ovale donnait des galets ; deux
+	// formes suffisent à faire lire « quelqu'un d'assis ».
 	vec2 p = UV * 2.0 - 1.0;
-	float body = 1.0 - smoothstep(0.55, 0.85, length(vec2(p.x, (p.y + 0.25) * 0.75)));
+	// Tête : petit disque en haut.
+	float head = 1.0 - smoothstep(0.26, 0.34, length(vec2(p.x * 1.5, p.y + 0.62)));
+	// Buste : ovale large en bas.
+	float torso = 1.0 - smoothstep(0.78, 0.92, length(vec2(p.x * 0.95, (p.y - 0.35) * 0.85)));
+	float body = max(head, torso);
 	if (body < 0.05) {
 		discard;
 	}

@@ -136,3 +136,9 @@ func set_simulation_speed(scale: float) -> void:
 func set_simulator_riders(count: int) -> void:
 	if _impl.has_method("set_wired_riders"):
 		_impl.set_wired_riders(count)
+
+
+## Profil du boîtier SIMULÉ. Sans effet sur le matériel.
+func set_simulator_profile(name: String) -> void:
+	if _impl.has_method("set_profile"):
+		_impl.set_profile(name)

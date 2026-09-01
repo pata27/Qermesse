@@ -7,13 +7,23 @@
 class_name TrackBuilder
 extends RefCounted
 
-## Longueur du morceau de piste réellement affiché. Le monde est recyclé autour
-## de l'ancre : inutile de modéliser cinq kilomètres.
-const SEGMENT_LENGTH_M := 400.0
+## Longueur du morceau de piste réellement affiché, CENTRÉ sur l'ancre. Le monde
+## est recyclé autour d'elle : inutile de modéliser cinq kilomètres.
+##
+## Huit cents mètres, soit ±400 autour du centre du peloton : de quoi absorber
+## un écart de huit cents mètres, très au-delà de tout ce qu'une course de
+## rouleaux peut produire. Le coût est nul — la piste fait six triangles.
+const SEGMENT_LENGTH_M := 800.0
 const LANE_WIDTH_M := 1.6
-## Relevé des bords, qui donne la silhouette de vélodrome sans coûter un mesh.
-const BANK_WIDTH_M := 6.0
-const BANK_HEIGHT_M := 2.4
+## Relevé des bords. Un vélodrome est RAIDE — jusqu'à 45° dans les virages.
+## Six mètres de large pour deux de haut donnait une rampe molle qui remplissait
+## l'écran d'un plan gris sans rien raconter.
+const BANK_WIDTH_M := 1.7
+const BANK_HEIGHT_M := 1.55
+## Pas de répétition du décor. Tout ce qui se répète le long de la piste —
+## poteaux, charpente — utilise ce pas, ce qui permet de faire défiler le décor
+## en le décalant modulo cette valeur : l'illusion est alors continue.
+const SCROLL_PERIOD_M := 10.0
 
 
 ## Surface de roulement plus ses deux relevés, en un seul maillage.
@@ -26,23 +36,41 @@ static func build_mesh(lane_count: int) -> ArrayMesh:
 	var uvs := PackedVector2Array()
 	var indices := PackedInt32Array()
 
-	# Profil transversal : relevé gauche, plat, relevé droit.
+	# Profil transversal : plat extérieur, relevé, piste, relevé, plat.
+	# Les plats terminent la piste au lieu de la laisser flotter dans le noir,
+	# et occupent la place que les relevés dévoraient auparavant.
+	var apron := 9.0
 	var profile := [
+		Vector3(-half - BANK_WIDTH_M - apron, BANK_HEIGHT_M, 0.0),
 		Vector3(-half - BANK_WIDTH_M, BANK_HEIGHT_M, 0.0),
 		Vector3(-half, 0.0, 0.0),
 		Vector3(half, 0.0, 0.0),
 		Vector3(half + BANK_WIDTH_M, BANK_HEIGHT_M, 0.0),
+		Vector3(half + BANK_WIDTH_M + apron, BANK_HEIGHT_M, 0.0),
 	]
 
-	var z_start := -SEGMENT_LENGTH_M * 0.25
-	var z_end := SEGMENT_LENGTH_M * 0.75
+	# Normales calculées d'après le PROFIL, et non forcées vers le haut : les
+	# relevés sont inclinés, et les éclairer comme un sol plat les faisait
+	# ressortir en gris clair uniforme, à contre-emploi de la silhouette de
+	# vélodrome qu'ils sont censés donner.
+	var profile_normals: Array[Vector3] = []
+	for index: int in range(profile.size()):
+		var previous: Vector3 = profile[maxi(index - 1, 0)]
+		var following: Vector3 = profile[mini(index + 1, profile.size() - 1)]
+		var tangent := (following - previous).normalized()
+		# Perpendiculaire au profil, dans le plan transversal, tournée vers le haut.
+		profile_normals.append(Vector3(-tangent.y, tangent.x, 0.0).normalized())
+
+	var z_start := -SEGMENT_LENGTH_M * 0.5
+	var z_end := SEGMENT_LENGTH_M * 0.5
 	var rows := 2
 	for row: int in range(rows):
 		var z: float = lerpf(z_start, z_end, float(row) / float(rows - 1))
-		for point: Vector3 in profile:
+		for index: int in range(profile.size()):
+			var point: Vector3 = profile[index]
 			vertices.append(Vector3(point.x, point.y, z))
 			uvs.append(Vector2(point.x, z))
-			normals.append(Vector3(0.0, 1.0, 0.0))
+			normals.append(profile_normals[index])
 
 	var columns := profile.size()
 	for row: int in range(rows - 1):
@@ -51,7 +79,12 @@ static func build_mesh(lane_count: int) -> ArrayMesh:
 			var b := a + 1
 			var c := a + columns
 			var d := c + 1
-			indices.append_array([a, c, b, b, c, d])
+			# ORDRE HORAIRE vu de dessus. L'ordre inverse produisait des faces
+			# arrière : `cull_disabled` les laissait voir, mais Godot retournait
+			# la normale, le produit N·L devenait négatif, et la piste restait
+			# NOIRE malgré des normales déclarées vers le haut. Symptôme
+			# trompeur — l'émission des lignes s'affichait, elle, parfaitement.
+			indices.append_array([a, b, c, b, d, c])
 
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
@@ -70,6 +103,61 @@ static func lane_x(lane: int, lane_count: int) -> float:
 	var lanes := clampi(lane_count, 1, 4)
 	var half := float(lanes) * LANE_WIDTH_M * 0.5
 	return -half + (float(lane) + 0.5) * LANE_WIDTH_M
+
+
+## Main courante au sommet de chaque relevé. Sans elle, la piste se dissout
+## dans le noir et l'œil ne sait plus où elle s'arrête.
+static func build_rails(lane_count: int) -> Node3D:
+	var lanes := clampi(lane_count, 1, 4)
+	var half := float(lanes) * LANE_WIDTH_M * 0.5 + BANK_WIDTH_M
+	var rails := Node3D.new()
+	rails.name = "Rails"
+
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.16, 0.18, 0.22)
+	material.roughness = 0.5
+	material.metallic = 0.5
+	material.emission_enabled = true
+	material.emission = Color(0.35, 0.45, 0.62)
+	material.emission_energy_multiplier = 0.5
+
+	for side: int in [-1, 1]:
+		var rail := MeshInstance3D.new()
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(0.09, 0.09, SEGMENT_LENGTH_M)
+		rail.mesh = mesh
+		rail.material_override = material
+		rail.position = Vector3(float(side) * half, BANK_HEIGHT_M + 0.55, 0.0)
+		rail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		rails.add_child(rail)
+
+		# Montants réguliers : ils donnent l'échelle et rythment le défilement.
+		# En MultiMesh : couvrir huit cents mètres au pas de dix en demandait
+		# quatre-vingts par côté, soit autant d'appels de rendu pour des boîtes
+		# de six centimètres.
+		var post_count := int(SEGMENT_LENGTH_M / SCROLL_PERIOD_M)
+		var posts := MultiMeshInstance3D.new()
+		var post_mesh := BoxMesh.new()
+		post_mesh.size = Vector3(0.06, 0.60, 0.06)
+		var multimesh := MultiMesh.new()
+		multimesh.transform_format = MultiMesh.TRANSFORM_3D
+		multimesh.mesh = post_mesh
+		multimesh.instance_count = post_count
+		for index: int in range(post_count):
+			multimesh.set_instance_transform(index, Transform3D(
+				Basis.IDENTITY,
+				Vector3(
+					float(side) * half,
+					BANK_HEIGHT_M + 0.25,
+					-SEGMENT_LENGTH_M * 0.5 + float(index) * SCROLL_PERIOD_M
+				)
+			))
+		posts.multimesh = multimesh
+		posts.material_override = material
+		posts.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		rails.add_child(posts)
+
+	return rails
 
 
 ## Portique d'arrivée : deux montants et une poutre. Rendu visible de loin,

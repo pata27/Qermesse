@@ -124,3 +124,51 @@
   fait que les shaders étaient écrits mais pas le code qui les utilise — et j'ai mesuré des fps sur
   une scène amputée de son post-traitement sans m'en apercevoir. Les patchs vérifient désormais leur
   ancrage ET leur nombre d'arguments.
+
+## Lot 4 — écran scindé et fluidité (2026-09-01)
+
+* **`gdlint` n'est pas un analyseur syntaxique Godot.** Il a validé `split_screen.gd` alors que le
+  fichier contenait deux fonctions `resize` et refusait de se charger — écran gris au lancement.
+  Toute modification de script passe désormais par
+  `godot --headless --check-only --script <fichier>` avant d'être considérée comme écrite.
+  Motif : un formateur vérifie la forme, pas la cohérence du programme.
+* **Vérifier qu'une fonction n'existe pas avant de l'ajouter.** `resize` était déjà là — écrite par
+  moi, plus tôt — mais n'était appelée par personne. Le vrai défaut n'était pas son absence mais son
+  inutilisation.
+* **Ancrer le monde sur le leader borne l'écart affichable.** La piste ne s'étendait qu'à un quart
+  de segment derrière l'ancre : à 112 m d'écart les poursuivants pédalaient au-dessus du vide.
+  L'ancre est passée au MILIEU du peloton, ce qui divise par deux l'étendue nécessaire et supprime
+  le cas limite. Corollaire : tout le décor périodique doit alors s'étendre des DEUX côtés.
+* **Une caméra qui vise un sujet ne le cadre pas pour autant.** Sa position en x restait déduite de
+  la largeur de piste ; seule sa visée suivait le couloir. Un leader à droite se retrouvait donc au
+  centre de l'image. C'est l'utilisateur qui a posé le bon diagnostic. Motif : distinguer *où est la
+  caméra* de *ce qu'elle regarde*.
+* **Convertir une position d'écran en angle exige le champ COURANT.** J'avais figé le demi-champ
+  horizontal dans une constante alors que le champ s'ouvre avec la vitesse : le décadrage se
+  trompait d'autant plus que la course allait vite. La conversion appartient à la caméra.
+* **Scinder trop tard revient à ne pas scinder.** Le seuil était à 14 m quand la caméra ne sait
+  cadrer que 13 m d'étalement : au moment de la coupe, le retardataire venait de sortir du champ.
+  Un seuil de déclenchement doit précéder la limite qu'il protège, pas la suivre.
+* **Le bruit d'un signal quantifié ne doit jamais piloter un effet de fond.** Les caméras des volets
+  se calaient sans amortissement, si bien que la dérivée de la vitesse — mesurée en ticks — passait
+  directement dans le champ et le roulis. D'où le scintillement. Champ et roulis s'amortissent
+  désormais plus lentement que la position : ils ont le droit d'être en retard, pas de trembler.
+* **Supprimer le bruit supprime aussi la sensation de vitesse ; il faut la remettre autrement.**
+  Une fois le tremblement parti, l'allure s'est fadeuse. La réponse n'est pas de rendre le bruit
+  mais d'ajouter une vibration DÉTERMINISTE — somme de sinusoïdes à fréquences premières entre
+  elles, indexée sur la vitesse lissée. Une oscillation régulière se lit comme une caméra tenue ;
+  un bruit se lit comme un défaut.
+* **Lisser une valeur au rythme de sa source ne suffit pas.** La vitesse affichée était déjà moyennée
+  sur une seconde côté moteur, et le dixième battait encore parce que le libellé était réécrit à
+  chaque trame du boîtier. Le lissage d'affichage appartient à l'affichage, cadencé par l'écran.
+* **Allouer en pleine action, c'est hoqueter au pire moment.** Les vues des volets étaient créées à
+  leur ouverture : une cible de rendu 1080p et une compilation de shader exactement quand le peloton
+  casse. Elles sont désormais réservées ET rendues une fois au montage.
+* **Une lame qui naît au milieu doit sortir de sa voisine.** Quand un groupe de trois casse en 2+1,
+  la cassure s'insère à GAUCHE des lames déjà ouvertes et tous les volets glissent d'un cran. Faire
+  entrer la nouvelle lame depuis le bord droit laissait un coureur invisible le temps de la
+  traversée. Elle démarre à la place de sa voisine, et les deux s'écartent — la lame se dédouble,
+  ce qui raconte exactement ce que fait la course.
+* **Mesurer la secousse en unités par seconde carrée ne veut rien dire à 170 fps.** La normalisation
+  par `dt²` amplifie des écarts imperceptibles. Ce qui se voit, c'est la différence seconde PAR
+  IMAGE, en unités brutes.

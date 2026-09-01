@@ -138,6 +138,13 @@ Profils prédéfinis (`--profile`) — ce sont ceux exigés par `03` §5 :
 | `domination` | Un rider très supérieur ; en poursuite, fin rapide |
 | `remontee-finale` | Le retardataire repasse devant dans les derniers mètres |
 | `abandon` | Un rider s'arrête net à mi-course |
+| `deux-groupes` | Le peloton casse en deux paquets de deux — cas d'épreuve de l'écran scindé |
+| `eparpille` | Les quatre s'égrènent un à un — cas limite : quatre volets (1+1+1+1) |
+| `trois-plus-un` | Un seul lâché derrière un trio soudé (3+1) |
+| `deux-un-un` | Une paire devant, puis deux isolés (2+1+1) |
+| `un-un-deux` | Un solo, un isolé, une paire (1+1+2) |
+| `casse-par-etapes` | Le peloton se défait par étapes : 4 → 3+1 → 2+1+1 → 1+1+1+1 dans une seule course |
+| `accordeon` | Il se défait PUIS se recolle — vérifie que les volets disparaissent aussi |
 
 `--riders <n>` fixe le nombre de capteurs **câblés**. Les broches au-delà restent bloquées à HIGH,
 comme un connecteur vide. **Le défaut est 2**, qui correspond au boîtier de l'utilisateur et qui est

@@ -68,13 +68,18 @@ func _make_materials() -> void:
 	# émissif n'a pas d'ombrage, donc toute forme pleine devient un aplat —
 	# c'est ce qui donnait des « patates » à la place des cyclistes.
 	_jersey_material.set_shader_parameter("emission_energy", 0.22)
-	_jersey_material.set_shader_parameter("rim_energy", 1.5)
+	# Liseré plus marqué : c'est lui qui détache la silhouette du parquet, dont
+	# la valeur est désormais proche de celle du maillot.
+	_jersey_material.set_shader_parameter("rim_energy", 0.85)
 
+	# Jante lumineuse, mais SANS écraser la teinte : au-delà de ~1,2 les canaux
+	# saturent l'un après l'autre et la couleur dérive vers le blanc — le vert
+	# devenait cyan et l'ambre devenait blanc.
 	_rim_material = StandardMaterial3D.new()
 	_rim_material.albedo_color = color
 	_rim_material.emission_enabled = true
 	_rim_material.emission = color
-	_rim_material.emission_energy_multiplier = 2.6
+	_rim_material.emission_energy_multiplier = 1.15
 	_rim_material.roughness = 0.4
 
 	_frame_material = StandardMaterial3D.new()
@@ -300,7 +305,9 @@ static func _build_trail_mesh(segments: int) -> ArrayMesh:
 	for i: int in range(segments + 1):
 		var t := float(i) / float(segments)
 		# La hauteur décroît en s'éloignant : une flamme qui se dissipe.
-		var h := 0.34 * (1.0 - t) * (1.0 - t * 0.35)
+		# Plus basse et plus effilée : une traînée haute masquait la roue
+		# arrière et se lisait comme une voile.
+		var h := 0.22 * (1.0 - t) * (1.0 - t * 0.5)
 		vertices.append(Vector3(0.0, 0.02, -t))
 		vertices.append(Vector3(0.0, 0.02 + h, -t))
 		uvs.append(Vector2(0.0, 1.0 - t))
@@ -329,7 +336,9 @@ func advance(delta: float, speed_kph: float, eliminated: bool, finished: bool) -
 	_crank_angle += speed_m_s / WHEEL_RADIUS_M * CRANK_RATIO * delta
 	for wheel: Node3D in _wheels:
 		wheel.rotation.x = -_wheel_angle
-	_crank.rotation.x = _crank_angle
+	# MÊME SENS que les roues. Le pédalier tournait à l'endroit pendant que les
+	# roues tournaient à l'envers : les jambes pédalaient en marche arrière.
+	_crank.rotation.x = -_crank_angle
 	_place_legs()
 
 	var target_lean := clampf(speed_m_s / 18.0, 0.0, 1.0) * MAX_LEAN_RAD
@@ -340,9 +349,9 @@ func advance(delta: float, speed_kph: float, eliminated: bool, finished: bool) -
 	_highlight = maxf(0.0, _highlight - delta * 2.0)
 	_jersey_material.set_shader_parameter("dimmed", 1.0 if eliminated else 0.0)
 	_jersey_material.set_shader_parameter("highlight", _highlight)
-	_rim_material.emission_energy_multiplier = 0.5 if eliminated else 2.6
+	_rim_material.emission_energy_multiplier = 0.35 if eliminated else 1.15
 	if finished:
-		_rim_material.emission_energy_multiplier = 4.0
+		_rim_material.emission_energy_multiplier = 1.6
 
 	_update_trail(speed_kph)
 
@@ -354,7 +363,7 @@ func _place_legs() -> void:
 	var bracket := Vector3(0.0, hub_y - 0.06, 0.06)
 	for index: int in range(_legs.size()):
 		var side := -1.0 if index == 0 else 1.0
-		var phase := _crank_angle + (0.0 if index == 0 else PI)
+		var phase := -_crank_angle + (0.0 if index == 0 else PI)
 		# La pédale décrit un cercle dans le plan de marche.
 		var pedal := bracket + Vector3(
 			side * 0.075,
@@ -383,7 +392,8 @@ func _update_trail(speed_kph: float) -> void:
 	# Longueur ET opacité proportionnelles à la vitesse — docs/04 §4. C'est le
 	# principal indice visuel de « ça accélère ».
 	var ratio := clampf(speed_kph / 55.0, 0.0, 1.2)
-	var length := ratio * 7.0
+	# Plus longue : c'est la longueur qui traduit la vitesse à l'œil.
+	var length := ratio * 9.0
 	_trail_material.set_shader_parameter("intensity", clampf(ratio, 0.0, 1.0) * 0.9)
 	_trail.visible = length >= 0.3
 	if _trail.visible:

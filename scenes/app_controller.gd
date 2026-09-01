@@ -251,6 +251,11 @@ func set_simulator_riders(count: int) -> void:
 	_link.set_simulator_riders(count)
 
 
+## Profil du boîtier simulé — démonstrations et cas extrêmes.
+func set_simulator_profile(name: String) -> void:
+	_link.set_simulator_profile(name)
+
+
 # --- Reactions au lien et au moteur ------------------------------------------
 
 func _on_command_requested(command: String) -> void:

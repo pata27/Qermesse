@@ -21,7 +21,10 @@ var _objective_label: Label
 var _clock_label: Label
 var _gap_label: Label
 var _tension: ProgressBar
+var _tension_fill: StyleBoxFlat
 var _cards: Dictionary = {}  # lane -> Dictionary de contrôles
+var _target_speed: Dictionary = {}  # lane -> km/h visés
+var _shown_speed: Dictionary = {}  # lane -> km/h affichés
 var _notice: Label
 
 
@@ -65,17 +68,27 @@ func _build() -> void:
 	_gap_label = _make_label(120, INK)
 	_gap_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_gap_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_gap_label.position = Vector2(-320, 190)
+	_gap_label.position = Vector2(-320, 215)
 	_gap_label.size.x = 640
 	_gap_label.visible = false
 	add_child(_gap_label)
 
+	# Barre de tension : elle doit se VOIR. Un ProgressBar par défaut est un
+	# rectangle sombre sur fond sombre, invisible en projection.
 	_tension = ProgressBar.new()
 	_tension.show_percentage = false
 	_tension.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_tension.position = Vector2(-300, 330)
-	_tension.size = Vector2(600, 18)
+	_tension.position = Vector2(-340, 350)
+	_tension.size = Vector2(680, 26)
 	_tension.visible = false
+	var track_style := StyleBoxFlat.new()
+	track_style.bg_color = Color(0.10, 0.12, 0.17, 0.9)
+	track_style.border_color = Color(0.55, 0.62, 0.75)
+	track_style.set_border_width_all(2)
+	_tension.add_theme_stylebox_override("background", track_style)
+	_tension_fill = StyleBoxFlat.new()
+	_tension_fill.bg_color = INK
+	_tension.add_theme_stylebox_override("fill", _tension_fill)
 	add_child(_tension)
 
 	_notice = _make_label(44, ALERT)
@@ -149,6 +162,23 @@ func rebuild_cards() -> void:
 	_refresh_objective()
 
 
+## Rapproche les chiffres affichés de leur cible. Séparé de `_on_progress` :
+## celui-ci arrive au rythme du boîtier, pas à celui de l'écran, et un lissage
+## piloté par un signal externe ne serait pas régulier.
+func _process(delta: float) -> void:
+	if _target_speed.is_empty():
+		return
+	var alpha := 1.0 - exp(-delta * 4.0)
+	for lane: int in _cards:
+		if not _target_speed.has(lane):
+			continue
+		var shown: float = _shown_speed.get(lane, float(_target_speed[lane]))
+		shown = lerpf(shown, float(_target_speed[lane]), alpha)
+		_shown_speed[lane] = shown
+		var card: Dictionary = _cards[lane]
+		(card["speed"] as Label).text = "%5.1f km/h" % shown
+
+
 func _make_label(size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.add_theme_font_size_override("font_size", size)
@@ -204,7 +234,12 @@ func _on_progress(state: RaceState) -> void:
 
 	for lane: int in _cards:
 		var card: Dictionary = _cards[lane]
-		(card["speed"] as Label).text = "%5.1f km/h" % state.speed_kph[lane]
+		# Vitesse d'AFFICHAGE, lissée sur une seconde côté moteur, puis LISSÉE
+		# ENCORE à l'écran par `_process`. La fenêtre d'une seconde supprime les
+		# paliers de tick mais laisse le dixième battre entre deux valeurs
+		# voisines à chaque rafraîchissement ; c'est ce battement qui se voyait.
+		# Le chiffre affiché rejoint sa cible en continu, il ne s'y pose plus.
+		_target_speed[lane] = state.display_speed_kph[lane]
 
 		var done := state.distance_m[lane]
 		match config.mode:
@@ -245,7 +280,10 @@ func _on_progress(state: RaceState) -> void:
 		var ratio := clampf(gap / maxf(1.0, config.gap_m), 0.0, 1.0)
 		_tension.value = ratio * 100.0
 		# Vire au rouge à l'approche du seuil — docs/04 §4.
-		_gap_label.add_theme_color_override("font_color", INK.lerp(ALERT, ratio))
+		var tint := INK.lerp(ALERT, ratio)
+		_gap_label.add_theme_color_override("font_color", tint)
+		if _tension_fill != null:
+			_tension_fill.bg_color = tint
 
 
 func _on_eliminated(rider: int, rank: int, _gap_m: float) -> void:

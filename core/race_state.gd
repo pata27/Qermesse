@@ -6,6 +6,12 @@
 class_name RaceState
 extends RefCounted
 
+## Fenêtre longue réservée à l'AFFICHAGE. À 47 km/h un tick tombe toutes les
+## 27 ms : sur 200 ms on en compte 7 ou 8, soit 12 % d'écart, et le chiffre
+## sautait visiblement entre 41 et 47 sans que le cycliste change d'allure.
+## Une seconde de moyenne ramène la quantification sous 2 %.
+const DISPLAY_WINDOW_SAMPLES := 100
+
 var physics: Physics
 var config: RaceConfig
 
@@ -16,6 +22,9 @@ var elapsed_ms: int = 0
 var ticks: PackedInt32Array = PackedInt32Array()
 var distance_m: PackedFloat32Array = PackedFloat32Array()
 var speed_kph: PackedFloat32Array = PackedFloat32Array()
+## Vitesse destinée à l'ÉCRAN : plus lissée, donc stable à lire. Le pilotage de
+## la caméra et des effets continue d'utiliser `speed_kph`, plus réactive.
+var display_speed_kph: PackedFloat32Array = PackedFloat32Array()
 var max_speed_kph: PackedFloat32Array = PackedFloat32Array()
 
 ## 0 = pas encore arrive. L'instant du franchissement, en ms firmware.
@@ -28,6 +37,7 @@ var handicap_m: PackedFloat32Array = PackedFloat32Array()
 var false_started: Array[bool] = []
 
 var _smoothers: Array[SpeedSmoother] = []
+var _display_smoothers: Array[SpeedSmoother] = []
 var _previous_ticks: PackedInt32Array = PackedInt32Array()
 var _previous_ms: int = -1
 
@@ -39,6 +49,7 @@ func _init(race_config: RaceConfig) -> void:
 	ticks.resize(n)
 	distance_m.resize(n)
 	speed_kph.resize(n)
+	display_speed_kph.resize(n)
 	max_speed_kph.resize(n)
 	finished_ms.resize(n)
 	rank.resize(n)
@@ -48,6 +59,7 @@ func _init(race_config: RaceConfig) -> void:
 		eliminated.append(false)
 		false_started.append(false)
 		_smoothers.append(SpeedSmoother.new())
+		_display_smoothers.append(SpeedSmoother.new(DISPLAY_WINDOW_SAMPLES))
 	reset()
 
 
@@ -56,6 +68,7 @@ func reset() -> void:
 		ticks[i] = 0
 		distance_m[i] = 0.0
 		speed_kph[i] = 0.0
+		display_speed_kph[i] = 0.0
 		max_speed_kph[i] = 0.0
 		finished_ms[i] = 0
 		rank[i] = 0
@@ -64,6 +77,7 @@ func reset() -> void:
 		false_started[i] = false
 		_previous_ticks[i] = 0
 		_smoothers[i].reset()
+		_display_smoothers[i].reset()
 	elapsed_ms = 0
 	_previous_ms = -1
 
@@ -83,6 +97,8 @@ func apply_sample(accepted_ticks: PackedInt32Array, sample_ms: int) -> void:
 			var instant := physics.speed_kph(value - _previous_ticks[rider], delta_ms)
 			_smoothers[rider].push(instant)
 			speed_kph[rider] = _smoothers[rider].value()
+			_display_smoothers[rider].push(instant)
+			display_speed_kph[rider] = _display_smoothers[rider].value()
 			# La vitesse de POINTE se mesure sur la vitesse lissee, et seulement
 			# une fois la fenetre pleine. La vitesse instantanee ne veut rien
 			# dire a cette echelle : un tick vaut 35,9 cm et une trame 10 ms,

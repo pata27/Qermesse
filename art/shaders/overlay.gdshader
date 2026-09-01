@@ -32,7 +32,7 @@ void fragment() {
 		float streak = smoothstep(0.965, 1.0, cos(angle * 24.0 - jitter * 6.28));
 		float travel = fract(radius * 1.6 - TIME * (1.4 + jitter));
 		streak *= smoothstep(0.0, 0.35, travel) * (1.0 - smoothstep(0.55, 1.0, travel));
-		add = line_color.rgb * streak * edge * intensity * 0.7;
+		add = line_color.rgb * streak * edge * intensity * 0.45;
 	}
 
 	// Un seul quad, deux effets : on assombrit par l'alpha et on ajoute les

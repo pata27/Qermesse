@@ -21,6 +21,8 @@ var _riders := 4
 var _quality := -1
 var _speed := 1.0
 var _frame_index := 0
+var _race_mode := "distance"
+var _profile := "egaux"
 var _last_tick_us := 0
 
 
@@ -29,7 +31,15 @@ func _initialize() -> void:
 	# La RÉSOLUTION DE RENDU est forcée à 1080p, indépendamment de la taille de
 	# la fenêtre : le gestionnaire de fenêtres bride souvent celle-ci, et une
 	# mesure prise à 941x565 ne dirait rien du budget de docs/04 §4.
-	DisplayServer.window_set_size(Vector2i(1920, 1080))
+	# En mode capture, la fenêtre est minuscule mais le rendu reste en 1080p :
+	# l'image enregistrée est en pleine résolution et la fenêtre n'accapare pas
+	# l'écran. En mode mesure, la fenêtre fait la taille demandée — c'est le
+	# coût de pixels qu'on veut mesurer, pas celui d'une vignette.
+	if _mode == "capture":
+		DisplayServer.window_set_size(Vector2i(384, 216))
+		DisplayServer.window_set_position(Vector2i(12, 12))
+	else:
+		DisplayServer.window_set_size(Vector2i(1920, 1080))
 	root.content_scale_size = Vector2i(1920, 1080)
 	root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
 	root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_IGNORE
@@ -61,6 +71,12 @@ func _parse_args() -> void:
 				_mode = "capture"
 				i += 1
 				_video_dir = args[i] if i < args.size() else ""
+			"--mode-course":
+				i += 1
+				_race_mode = args[i] if i < args.size() else _race_mode
+			"--profil":
+				i += 1
+				_profile = args[i] if i < args.size() else _profile
 			"--vitesse":
 				i += 1
 				_speed = float(args[i]) if i < args.size() else _speed
@@ -78,9 +94,18 @@ func _run() -> void:
 	for lane: int in range(Protocol.MAX_RIDERS):
 		_controller.roster.set_active(lane, lane < _riders)
 	_controller.set_simulator_riders(_riders)
+	_controller.set_simulator_profile(_profile)
 	_controller.set_simulation_speed(_speed)
-	_controller.settings.mode = RaceConfig.Mode.DISTANCE
-	_controller.settings.distance_m = 500.0
+	match _race_mode:
+		"temps":
+			_controller.settings.mode = RaceConfig.Mode.TIME
+			_controller.settings.duration_s = 60.0
+		"poursuite":
+			_controller.settings.mode = RaceConfig.Mode.PURSUIT
+			_controller.settings.gap_m = 50.0
+		_:
+			_controller.settings.mode = RaceConfig.Mode.DISTANCE
+			_controller.settings.distance_m = 500.0
 
 	_scene = RaceScene.new()
 	root.add_child(_scene)
@@ -142,13 +167,14 @@ func _measure() -> void:
 ## Quelques images fixes aux moments cles, pour REGARDER le rendu.
 func _capture_stills() -> void:
 	DirAccess.make_dir_recursive_absolute(_video_dir)
-	var marks := {"depart": 5.0, "lancee": 12.0, "pleine": 22.0}
-	var clock := 0.0
+	var marks := {"depart": 3.0, "lancee": 9.0, "pleine": 18.0}
 	var done: Array[String] = []
 	while done.size() < marks.size():
-		clock += await _step()
+		await _step()
+		var state := _controller.engine.race_state()
+		var race_s: float = 0.0 if state == null else float(state.elapsed_ms) / 1000.0
 		for label: String in marks:
-			if done.has(label) or clock < float(marks[label]):
+			if done.has(label) or race_s < float(marks[label]):
 				continue
 			done.append(label)
 			await RenderingServer.frame_post_draw

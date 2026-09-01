@@ -23,6 +23,50 @@ const PROFILES := {
 	"domination": [40.0, 55.0, 41.5, 39.0],
 	"remontee-finale": [48.0, 43.0, 44.0, 43.5],
 	"abandon": [45.0, 46.0, 44.0, 45.5],
+	# Deux paquets nets, pour éprouver le découpage en groupes de l'écran
+	# scindé : la cassure doit tomber entre les pistes 2 et 3, pas ailleurs.
+	"deux-groupes": [52.0, 51.4, 40.0, 39.6],
+	# Quatre coureurs qui s'égrènent : le cas limite de l'écran scindé, quatre
+	# volets. Vingt-cinq mètres entre chacun au bout de dix-huit secondes.
+	"eparpille": [52.0, 47.0, 42.0, 37.0],
+	# Les partitions restantes, pour éprouver l'écran scindé sur tous les cas :
+	# trois ensemble et un lâché, deux ensemble puis deux lâchés séparément,
+	# et un solo devant un isolé devant une paire.
+	"trois-plus-un": [46.0, 46.3, 45.8, 38.0],
+	"deux-un-un": [50.0, 50.3, 44.0, 38.0],
+	"un-un-deux": [52.0, 46.0, 40.0, 40.2],
+	# Le peloton se défait PAR ÉTAPES, pas d'un bloc : les quatre partent
+	# ensemble, puis un coureur cède toutes les huit secondes. La partition
+	# passe donc par 4, 3+1, 2+1+1 et 1+1+1+1 au cours d'une seule course —
+	# c'est le profil qui éprouve les recompositions en cours de route, celles
+	# que les profils à vitesse constante ne produisent jamais puisque tous
+	# leurs écarts se creusent en même temps.
+	"casse-par-etapes": [46.0, 46.0, 46.0, 46.0],
+	"accordeon": [46.0, 46.0, 46.0, 46.0],
+}
+
+## Programmes de vitesse : `profil → piste → [[seconde, km/h], …]`. À partir de
+## la seconde indiquée, le coureur roule à la vitesse donnée ; la dernière
+## consigne atteinte l'emporte.
+##
+## Les profils à vitesse constante creusent tous leurs écarts en même temps et
+## font donc sauter l'affichage directement à quatre volets. Seul un programme
+## échelonné produit les RECOMPOSITIONS en cours de course — dans un sens comme
+## dans l'autre.
+const SCHEDULES := {
+	# Le peloton se défait un coureur à la fois : 4 → 3+1 → 2+1+1 → 1+1+1+1.
+	"casse-par-etapes": {
+		3: [[5.0, 36.0]],
+		2: [[11.0, 40.0]],
+		1: [[17.0, 42.0]],
+	},
+	# Il se défait puis SE RECOLLE : les volets doivent réapparaître en sens
+	# inverse et l'image revenir au plein cadre.
+	"accordeon": {
+		3: [[2.0, 38.0], [14.0, 58.0]],
+		2: [[4.0, 41.0], [17.0, 55.0]],
+		1: [[6.0, 43.0], [20.0, 52.0]],
+	},
 }
 
 @export var wired_riders: int = 2  ## le boitier de l'utilisateur : 2 capteurs
@@ -166,6 +210,11 @@ func _speed_kph(rider: int, race_s: float) -> float:
 	var cruise: float = speeds[rider]
 	if profile == "abandon" and rider == 1 and race_s >= 20.0:
 		return 0.0
+	var schedule: Dictionary = SCHEDULES.get(profile, {})
+	if schedule.has(rider):
+		for step: Array in schedule[rider]:
+			if race_s >= float(step[0]):
+				cruise = float(step[1])
 	var v: float = min(cruise, 22.0 * race_s)  # montee en regime
 	if profile == "remontee-finale":
 		if rider == 0:
@@ -346,6 +395,13 @@ func set_simulation_speed(scale: float) -> void:
 ## HIGH, comme un connecteur vide.
 func set_wired_riders(count: int) -> void:
 	wired_riders = clampi(count, 1, Protocol.MAX_RIDERS)
+
+
+## Profil de course simulé — voir PROFILES. Sert aux démonstrations et à
+## éprouver les cas extrêmes, comme un rider qui prend une avance décisive.
+func set_profile(name: String) -> void:
+	if PROFILES.has(name):
+		profile = name
 
 
 func get_stats() -> Dictionary:

@@ -13,7 +13,7 @@ shader_type spatial;
 uniform vec4 jersey_color : source_color = vec4(0.0, 0.898, 1.0, 1.0);
 // Volontairement faible. Au-delà de ~0.35 la forme s'aplatit.
 uniform float emission_energy = 0.22;
-uniform float rim_energy = 1.5;
+uniform float rim_energy = 0.85;
 // Grisé quand le rider est éliminé — docs/02 §3.
 uniform float dimmed = 0.0;
 // Pulse au franchissement de la ligne.
@@ -29,9 +29,17 @@ void fragment() {
 	vec3 albedo = mix(base * 0.55, vec3(0.42), dimmed * 0.8);
 	float energy = emission_energy * mix(1.0, 0.15, dimmed) + highlight * 2.5;
 
+	// La teinte est PRÉSERVÉE quelle que soit l'intensité. En multipliant
+	// directement la couleur, les canaux saturent indépendamment : le vert
+	// (0, 0.90, 0.46) monté à 2.6 devient (0, 1, 1), c'est-à-dire du CYAN.
+	// Un rider changeait donc de couleur en pleine course — or c'est sa
+	// couleur qui l'identifie (docs/03 §6). On normalise avant de doser.
+	float peak = max(max(base.r, base.g), base.b);
+	vec3 hue = base / max(peak, 0.0001);
+	float total = min(energy + rim * rim_energy * mix(1.0, 0.2, dimmed), 1.0);
+
 	ALBEDO = albedo;
-	// L'émission sert au liseré, pas à la masse : le corps reste ombré.
-	EMISSION = base * (energy + rim * rim_energy * mix(1.0, 0.2, dimmed));
+	EMISSION = hue * total;
 	ROUGHNESS = 0.42;
 	METALLIC = 0.0;
 	SPECULAR = 0.6;
