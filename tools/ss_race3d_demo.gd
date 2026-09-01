@@ -32,6 +32,9 @@ var _render_size := Vector2i(1920, 1080)
 ## sur une machine qui n'est pas au repos, un relevé unique ne distingue pas un
 ## effet coûteux d'une charge de fond.
 var _window_s := MEASURE_WINDOW_S
+## Distance de course. Réglable pour amener la ligne d'arrivée dans la fenêtre
+## de capture : à 500 m elle tombe une quarantaine de secondes après le départ.
+var _distance_m := 0.0
 var _last_tick_us := 0
 
 
@@ -86,6 +89,9 @@ func _parse_args() -> void:
 			"--profil":
 				i += 1
 				_profile = args[i] if i < args.size() else _profile
+			"--distance":
+				i += 1
+				_distance_m = float(args[i]) if i < args.size() else _distance_m
 			"--fenetre":
 				i += 1
 				_window_s = float(args[i]) if i < args.size() else _window_s
@@ -123,7 +129,7 @@ func _run() -> void:
 			_controller.settings.gap_m = 50.0
 		_:
 			_controller.settings.mode = RaceConfig.Mode.DISTANCE
-			_controller.settings.distance_m = 500.0
+			_controller.settings.distance_m = _distance_m if _distance_m > 0.0 else 500.0
 
 	_scene = RaceScene.new()
 	root.add_child(_scene)
@@ -210,19 +216,60 @@ func _capture_stills() -> void:
 	DirAccess.make_dir_recursive_absolute(_video_dir)
 	var marks := {"depart": 3.0, "lancee": 9.0, "pleine": 18.0}
 	var done: Array[String] = []
-	while done.size() < marks.size():
+	# `has_run` est indispensable : avant le départ l'état vaut ARMING, et sortir
+	# sur « pas EN_COURSE » quittait la boucle à la première image.
+	var has_run := false
+	var racing := true
+	while done.size() < marks.size() and racing:
 		await _step()
 		var state := _controller.engine.race_state()
 		var race_s: float = 0.0 if state == null else float(state.elapsed_ms) / 1000.0
+		var running := _controller.engine.state() == RaceEngine.State.RUNNING
+		has_run = has_run or running
+		racing = running or not has_run
+		# Le premier franchissement alors que la course continue : c'est le cas
+		# ou un coureur arrive bien avant les autres, et il faut le regarder.
+		if running and state != null and not done.has("premier"):
+			for lane: int in state.config.active_riders:
+				if state.finished_ms[lane] > 0:
+					done.append("premier")
+					await _shoot("premier")
+					marks["premier"] = 0.0
+					break
 		for label: String in marks:
 			if done.has(label) or race_s < float(marks[label]):
 				continue
 			done.append(label)
-			await RenderingServer.frame_post_draw
-			var image := root.get_texture().get_image()
-			var path := _video_dir.path_join("r3d-%d-%s.png" % [_riders, label])
-			image.save_png(path)
-			print("capture : %s" % path)
+			await _shoot(label)
+
+	# CAPTURES D'APRÈS-LIGNE, déclenchées par la fin de course et non par le
+	# chrono : sur une course courte, la ligne tombe avant le premier repère
+	# horaire, et c'est justement le moment qu'on veut regarder.
+	var since := 0.0
+	var after := {"arrivee": 0.9, "celebration": 3.0}
+	var shot: Array[String] = []
+	while shot.size() < after.size() and since < 8.0:
+		since += await _step()
+		if OS.get_environment("SS_DIAG") == "1":
+			var st := _controller.engine.race_state()
+			print("apres-ligne t=%.2f etat=%s state=%s finis=%s" % [
+				since, _controller.engine.state_name(),
+				"null" if st == null else "ok",
+				"?" if st == null else str(st.finished_ms)])
+		for label: String in after:
+			if shot.has(label) or since < float(after[label]):
+				continue
+			shot.append(label)
+			await _shoot(label)
+
+
+## Enregistre une image sous son libellé.
+func _shoot(label: String) -> void:
+	await RenderingServer.frame_post_draw
+	var image := root.get_texture().get_image()
+	var path := _video_dir.path_join("r3d-%d-%s.png" % [_riders, label])
+	image.save_png(path)
+	print("capture : %s" % path)
 
 
 func _record() -> void:

@@ -13,6 +13,9 @@ extends Node3D
 signal quality_changed(level_name: String)
 
 const TRACK_SEGMENT_M := TrackBuilder.SEGMENT_LENGTH_M
+## Constante de temps de la roue libre après l'arrivée. Une seconde et demie :
+## assez pour que le geste se lise, assez court pour ne pas faire attendre.
+const COAST_TAU_S := 1.5
 
 var quality := RenderQuality.new()
 var perf := PerfMonitor.new()
@@ -37,6 +40,12 @@ var _interpolators: Dictionary = {}  # lane -> RiderInterpolator
 var _lane_count := 2
 var _anchor_m := 0.0
 var _last_shape := ""
+var _key_light: DirectionalLight3D
+var _anchor_primed := false
+var _coast_speed: Dictionary = {}
+var _coast_extra: Dictionary = {}
+var _load_panes := -1
+var _effect_relief := 0.0
 var _finish_m := -1.0
 var _leader_speed_kph := 0.0
 var _auto_degrade := true
@@ -130,6 +139,7 @@ func _build_environment() -> void:
 	# est ÉCLAIRÉ. Avec une seule source rasante et beaucoup d'ambiante, les
 	# cyclistes ressortaient plats.
 	var key := DirectionalLight3D.new()
+	_key_light = key
 	key.name = "KeyLight"
 	key.light_energy = 0.62
 	key.light_color = Color("#CFE0FF")
@@ -357,10 +367,37 @@ func _reposition_riders(delta: float) -> void:
 	var trailer_lane := -1
 	var positions: Dictionary = {}
 
+	# CE QUI COMPTE POUR LE CADRAGE : ceux qui courent encore.
+	#
+	# Un coureur qui a franchi la ligne continue de rouler — le firmware compte
+	# ses ticks jusqu'à ce que tout le monde soit arrivé. Le laisser dans le
+	# calcul le faisait partir au loin, creuser un écart artificiel et déclencher
+	# une scission qui ne racontait plus rien de la course. Il reste dessiné, il
+	# ne dirige plus le cadre.
+	#
+	# Quand plus personne ne court, tout le monde redevient éligible : c'est
+	# l'arrivée, et la caméra doit alors montrer le champ entier.
+	var racing: Array[int] = []
 	for lane: int in _interpolators:
 		var interp: RiderInterpolator = _interpolators[lane]
-		var shown := interp.update(delta)
-		positions[lane] = shown
+		positions[lane] = interp.update(delta)
+		if state == null or (state.finished_ms[lane] == 0 and not state.eliminated[lane]):
+			racing.append(lane)
+	_coast(delta, state, positions)
+	# TOUT LE MONDE EST ARRIVÉ : un seul cadre, jamais de scission.
+	#
+	# La roue libre fait avancer chacun à partir de SON franchissement : le
+	# premier arrivé a roulé plusieurs secondes de plus que le dernier, et les
+	# écarts qui en résultent n'ont aucun sens sportif. Les mesurer rouvrait une
+	# scission en pleine célébration. C'est aussi le moment où l'on veut voir
+	# tout le monde ensemble.
+	var all_done := racing.is_empty()
+	if all_done:
+		for lane: int in _interpolators:
+			racing.append(lane)
+
+	for lane: int in racing:
+		var shown: float = positions[lane]
 		if leader_lane < 0 or shown > leader_m:
 			leader_m = shown
 			leader_lane = lane
@@ -377,7 +414,22 @@ func _reposition_riders(delta: float) -> void:
 	# se retrouvaient à pédaler au-dessus du vide — bien visible dès que l'écran
 	# se scinde. Le milieu du peloton place les deux extrêmes à égale distance
 	# du centre et divise par deux l'étendue nécessaire.
-	_anchor_m = (leader_m + trailer_m) * 0.5
+	# L'ANCRE EST AMORTIE, sinon elle saute quand le peloton change.
+	#
+	# Elle se pose au milieu de ceux qui courent encore. Dès qu'un coureur
+	# franchit la ligne il sort de ce calcul, le leader devient quelqu'un d'autre
+	# et le milieu recule de plusieurs mètres — EN UNE IMAGE. Comme tout le
+	# décor est positionné par rapport à l'ancre, c'est le monde entier qui
+	# sautait au passage de la ligne.
+	#
+	# Le retard introduit est un décalage constant à vitesse constante — deux
+	# mètres et demi environ — et il déplace tout ensemble : rien ne s'en aperçoit.
+	var wanted := (leader_m + trailer_m) * 0.5
+	if _anchor_primed:
+		_anchor_m = lerpf(_anchor_m, wanted, 1.0 - exp(-delta * 5.0))
+	else:
+		_anchor_m = wanted
+		_anchor_primed = true
 	_track.position.z = 0.0
 
 	# LE DÉCOR DÉFILE AVEC. Sans cela, seuls les marquages peints — qui vivent
@@ -422,14 +474,13 @@ func _reposition_riders(delta: float) -> void:
 	# exactement le paquet qui lui correspond : 2 + 2 donne deux volets de deux,
 	# une échappée solo devant un trio donne un volet solo et un volet large, et
 	# quatre coureurs qui s'égrènent donnent quatre volets.
-	var order: Array[int] = []
-	for lane: int in positions:
-		order.append(lane)
+	var order: Array[int] = racing.duplicate()
 	order.sort_custom(_further_first.bind(positions))
 
 	var gaps := PackedFloat32Array()
-	for index: int in range(order.size() - 1):
-		gaps.append(float(positions[order[index]]) - float(positions[order[index + 1]]))
+	if not all_done:
+		for index: int in range(order.size() - 1):
+			gaps.append(float(positions[order[index]]) - float(positions[order[index + 1]]))
 	_split.consider(gaps)
 
 	# Bornes des groupes, déduites des cassures RETENUES par l'écran scindé —
@@ -523,6 +574,7 @@ func _reposition_riders(delta: float) -> void:
 				race_s, _split.group_count(), shape, str(gaps)
 			])
 
+	_relieve_for_panes(_split.group_count())
 	_split.advance(delta)
 
 
@@ -567,6 +619,80 @@ func census() -> String:
 	lines.append("%-22s %9d" % ["TOTAL", total])
 	lines.append("dont projetant une ombre : %d" % shadows)
 	return "\n".join(lines)
+
+
+## Allège la scène à mesure que l'image se scinde.
+##
+## Chaque volet ouvert fait rendre la scène une fois de plus. Ce n'est pas un
+## effet en particulier qui coûte — mesuré réglage par réglage, aucun ne dépasse
+## dix pour cent — c'est le fait de tout redessiner quatre fois. À quatre
+## volets, le niveau « moyen » demande 21,6 ms par image et le niveau « bas »
+## 12,5 : c'est donc l'ENSEMBLE qu'il faut alléger, et `docs/04` §4 le prescrit
+## explicitement — « toute fonctionnalité visuelle qui fait passer sous 60 fps
+## est coupée ou dégradée ».
+##
+## Rien ici ne reconstruit quoi que ce soit : la foule est masquée, pas rebâtie,
+## et les autres réglages sont des bascules. Le changement n'a lieu qu'au
+## franchissement d'un seuil, et le nombre de volets a sa propre hystérésis :
+## il ne peut donc pas battre.
+func _relieve_for_panes(panes: int) -> void:
+	if panes == _load_panes:
+		return
+	_load_panes = panes
+	# Les paliers ont été placés d'après la mesure, pas d'après l'intuition.
+	#
+	# Un premier essai coupait la foule à trois volets et le reste à quatre :
+	# trois volets devenait alors le PIRE cas de tous — 59 images par seconde,
+	# contre 105 à quatre volets qui, lui, était complètement allégé. Un palier
+	# mal placé creuse un trou au lieu de le combler.
+	#
+	# La foule et les lignes de vitesse partent donc dès que l'image se scinde,
+	# et tout le reste au deuxième volet supplémentaire. La scission est déjà un
+	# événement visuel majeur : elle masque le changement.
+	var crowded := panes <= 1
+	var full := panes <= 2
+	_effect_relief = 0.0 if crowded else 1.0
+	if _crowd != null:
+		_crowd.visible = crowded
+	if _environment != null and _environment.environment != null:
+		var env := _environment.environment
+		env.glow_enabled = bool(quality.option("glow")) and full
+		env.volumetric_fog_enabled = bool(quality.option("volumetric_fog")) and full
+		env.ssao_enabled = bool(quality.option("ssao")) and full
+	if _key_light != null:
+		_key_light.shadow_enabled = bool(quality.option("shadows")) and full
+
+
+## Roue libre, coureur par coureur, à partir de SON arrivée.
+##
+## `RaceState.apply_sample` cesse volontairement de mettre à jour un coureur qui
+## a franchi la ligne : son résultat est acquis, et le laisser bouger le
+## fausserait. Conséquence à l'écran : il se FIGEAIT net sur la ligne, à pleine
+## vitesse, pendant que les autres continuaient — ce qui est le contraire de ce
+## qu'on vient de regarder.
+##
+## Chacun se met donc en roue libre dès son propre franchissement, et non quand
+## le dernier arrive. L'avance ajoutée ici est un effet d'AFFICHAGE et rien
+## d'autre : elle ne remonte jamais vers le moteur, ne touche ni aux distances
+## mesurées, ni aux temps, ni au classement. L'habillage continue d'afficher la
+## donnée du boîtier ; c'est la scène 3D, et elle seule, qui laisse rouler.
+func _coast(delta: float, state: RaceState, positions: Dictionary) -> void:
+	if state == null:
+		return
+	for lane: int in _interpolators:
+		var done: bool = state.finished_ms[lane] > 0 or state.eliminated[lane]
+		if not done:
+			continue
+		if not _coast_speed.has(lane):
+			# Vitesse au moment du franchissement : c'est de là que part la
+			# décélération.
+			_coast_speed[lane] = state.display_speed_kph[lane] / 3.6
+		var speed: float = float(_coast_speed[lane]) * exp(-delta / COAST_TAU_S)
+		if speed < 0.25:
+			speed = 0.0
+		_coast_speed[lane] = speed
+		_coast_extra[lane] = float(_coast_extra.get(lane, 0.0)) + speed * delta
+		positions[lane] = float(positions[lane]) + float(_coast_extra[lane])
 
 
 ## Rapport d'image de l'ÉCRAN — pas celui d'une vue de volet, qui n'en couvre
@@ -638,9 +764,10 @@ func _update_effects(delta: float) -> void:
 	# sprinteur sur rouleaux tourne autour de 45. Ils étaient donc absents en
 	# pratique. Ils montent progressivement à partir d'une allure soutenue.
 	var ratio := clampf((_leader_speed_kph - 32.0) / 26.0, 0.0, 1.0)
-	_overlay_material.set_shader_parameter(
-		"intensity", ratio if quality.option("speed_lines") else 0.0
-	)
+	# Les lignes de vitesse s'effacent quand l'image se scinde : voir
+	# `_relieve_for_panes`.
+	var wanted := ratio if quality.option("speed_lines") else 0.0
+	_overlay_material.set_shader_parameter("intensity", wanted * (1.0 - _effect_relief))
 
 	# Le flou n'est présent à l'écran que lorsqu'il sert réellement : c'est le
 	# masquage du noeud, et non un paramètre mis à zéro, qui évite la copie.

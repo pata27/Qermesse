@@ -217,3 +217,38 @@
   sont répartis au hasard : à chaque tour de modulo, la tribune entière se téléportait de dix
   mètres. Ils rebouclent désormais un par un dans leur shader, à l'extrémité du tronçon, hors de vue.
   Motif : le recyclage par modulo est une propriété du MOTIF, pas du nœud qui le porte.
+
+## Lot 4 — fin de course (2026-09-01)
+
+* **LA DERNIÈRE TRAME `R:` N'ARRIVE JAMAIS.** `ss_basic.ino` (`checkDistanceBased`, l. 285-307) met
+  `raceStarted = false` dans la passe même où le dernier tick fait franchir la ligne, et l'émission
+  périodique des `R:` est conditionnée par `raceStarted`. La valeur qui atteint la cible n'est donc
+  jamais transmise. Le PC restait bloqué un tick en dessous et **la course ne se terminait pas** —
+  « reste 1 m » indéfiniment. La règle « les trames `R:` portent un cumul absolu, donc en perdre une
+  est sans conséquence » est vraie de toutes les trames SAUF la dernière. C'est l'émulateur, fidèle,
+  qui a permis de le trouver avant la première course réelle. Trois tests de non-régression écrits.
+* **Ne pas confondre « l'émulateur a un bug » et « l'émulateur reproduit un bug ».** Le réflexe était
+  de corriger `link_sim`. La lecture du firmware réel a montré qu'il fait exactement pareil : le
+  correctif appartenait au PC.
+* **Un état figé volontairement doit être animé à l'affichage.** `RaceState.apply_sample` gèle un
+  coureur arrivé pour ne pas fausser son résultat — c'est juste. Mais à l'écran, il s'arrêtait NET
+  sur la ligne, à pleine vitesse. La roue libre est un effet d'affichage, et elle ne remonte jamais
+  vers le moteur.
+* **Un effet d'affichage ne doit pas nourrir une décision.** La roue libre creusait des écarts entre
+  coureurs déjà arrivés — le premier ayant roulé plusieurs secondes de plus — et ces écarts
+  rouvraient une scission en pleine célébration. Le regroupement se fait sur la donnée, pas sur
+  l'habillage.
+* **Une ancre qui suit un ensemble variable doit être amortie.** L'ancre du monde se pose au milieu
+  de ceux qui courent encore ; dès qu'un coureur franchit la ligne il sort de ce calcul et le milieu
+  recule de plusieurs mètres EN UNE IMAGE — tout le décor sautait au passage de la ligne.
+* **Une rotation d'enfant s'ajoute à celle du parent.** Les bras sont enfants du buste : une valeur
+  pensée comme absolue les envoyait à 200°, repliés en arrière. Seul le complément doit être appliqué.
+* **Un système de particules compile ses shaders au PREMIER tir.** Déclenchée au franchissement, la
+  gerbe de confettis provoquait un à-coup exactement au moment le plus chargé. Elle est désormais
+  tirée une fois au montage, quarante mètres sous la piste.
+* **Il n'existe pas de bonne distance pour un plan latéral sur cette piste.** La main courante est à
+  4,9 m de l'axe et le groupe occupe déjà ±2,4 m : 6,5 m filmait à travers le rail, 1,8 m collait la
+  caméra au premier coureur. Le plan d'arrivée est passé en trois quarts arrière surélevé.
+* **Une hystérésis indexée sur un rang suppose que le rang désigne la même chose.** Les cassures se
+  renumérotent dès qu'un coureur quitte le champ de course : comparer la cassure `i` à son état
+  précédent gardait la scission ouverte sur un peloton pourtant regroupé.

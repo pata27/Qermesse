@@ -16,6 +16,17 @@ extends Node3D
 const WHEEL_RADIUS_M := 0.34
 const WHEELBASE_M := 1.02
 ## Le pédalier tourne plus lentement que la roue — sinon les jambes s'affolent.
+## Durée du redressement à l'arrivée, en secondes.
+const CELEBRATION_S := 0.7
+## Redressement du buste et levée des bras, en radians.
+##
+## Le bras est un enfant du buste : sa rotation S'AJOUTE à celle du buste. Une
+## valeur pensée comme absolue envoyait les bras à près de 200°, c'est-à-dire
+## repliés vers l'arrière et vers le bas. Il ne faut donc ici que le complément.
+## Buste redressé de 66°, bras de 43° de plus : le total dépasse la verticale
+## d'une quinzaine de degrés, ce qui est exactement le geste du vainqueur.
+const TORSO_RISE_RAD := -1.15
+const ARM_RAISE_RAD := -0.75
 const CRANK_RATIO := 0.34
 ## Manivelle de 170 mm, comme sur un vrai vélo de piste.
 const CRANK_LENGTH_M := 0.17
@@ -38,6 +49,11 @@ var _wheel_angle := 0.0
 var _lean := 0.0
 var _highlight := 0.0
 var _trail_segments := 16
+var _torso: Node3D
+var _arms: Array[Node3D] = []
+var _joy := 0.0
+var _confetti: GPUParticles3D
+var _confetti_warmup_s := 0.0
 
 
 func setup(rider_lane: int, jersey: Color, trail_segments: int) -> void:
@@ -59,6 +75,7 @@ func _build() -> void:
 	_build_cyclist()
 	_build_trail()
 	_build_shadow_proxy()
+	_build_confetti()
 
 
 func _make_materials() -> void:
@@ -164,9 +181,13 @@ func _build_frame() -> void:
 
 ## Membre capsulaire entre deux points, orienté le long du segment. Poser les
 ## membres entre des points du vélo évite les proportions devinées.
-func _add_limb(from: Vector3, to: Vector3, radius: float) -> void:
+## Rend le membre créé : la célébration a besoin de reprendre les bras.
+func _add_limb(
+	from: Vector3, to: Vector3, radius: float, parent: Node3D = null
+) -> MeshInstance3D:
 	var span := to - from
 	var limb := MeshInstance3D.new()
+	var host := parent if parent != null else _body
 	var mesh := CapsuleMesh.new()
 	mesh.radius = radius
 	mesh.height = maxf(span.length(), radius * 2.05)
@@ -178,7 +199,8 @@ func _add_limb(from: Vector3, to: Vector3, radius: float) -> void:
 	var axis := Vector3.UP.cross(span.normalized())
 	if axis.length() > 0.0001:
 		limb.rotate(axis.normalized(), Vector3.UP.angle_to(span.normalized()))
-	_body.add_child(limb)
+	host.add_child(limb)
+	return limb
 
 
 ## Tube cylindrique entre deux points — la brique du cadre.
@@ -215,7 +237,18 @@ func _build_cyclist() -> void:
 	# Épaules : en avant et à peine plus haut, dos presque horizontal.
 	var shoulders := Vector3(0.0, hub_y + 0.60, 0.26)
 
-	_add_limb(hips, shoulders, 0.105)  # buste
+	# BUSTE ET BRAS SUR PIVOTS, articulés à la hanche et à l'épaule.
+	#
+	# Tout était posé en coordonnées absolues, ce qui suffit tant que le coureur
+	# reste en position de sprint. Pour qu'il puisse se redresser et lever les
+	# bras à l'arrivée, il faut des articulations : un pivot à la hanche porte
+	# tout le haut du corps, un pivot par épaule porte le bras.
+	_torso = Node3D.new()
+	_torso.name = "Torso"
+	_torso.position = hips
+	_body.add_child(_torso)
+
+	_add_limb(Vector3.ZERO, shoulders - hips, 0.105, _torso)  # buste
 
 	# Tête devant les épaules et plus bas : c'est cette avancée qui dit
 	# « sprint » et qui détache la tête du buste.
@@ -228,15 +261,20 @@ func _build_cyclist() -> void:
 	head.mesh = head_mesh
 	head.material_override = _jersey_material
 	# Tête basse et avancée : c'est la position de recherche de vitesse.
-	head.position = shoulders + Vector3(0.0, -0.01, 0.20)
-	_body.add_child(head)
+	head.position = shoulders - hips + Vector3(0.0, -0.01, 0.20)
+	_torso.add_child(head)
 
 	# Bras : des épaules au guidon, écartés à la largeur des mains. Ils ferment
 	# la silhouette et expliquent la position penchée.
 	for side: int in [-1, 1]:
 		var shoulder := shoulders + Vector3(float(side) * 0.10, -0.02, 0.02)
 		var hand := bars + Vector3(float(side) * 0.16, 0.03, 0.0)
-		_add_limb(shoulder, hand, 0.046)
+		var pivot := Node3D.new()
+		pivot.name = "Arm%d" % side
+		pivot.position = shoulder - hips
+		_torso.add_child(pivot)
+		_add_limb(Vector3.ZERO, hand - shoulder, 0.046, pivot)
+		_arms.append(pivot)
 
 	# --- pédalier -----------------------------------------------------------
 	_crank = Node3D.new()
@@ -374,6 +412,14 @@ func advance(delta: float, speed_kph: float, eliminated: bool, finished: bool) -
 	_lean = lerpf(_lean, target_lean, clampf(delta * 8.0, 0.0, 1.0))
 	_body.rotation.z = _lean
 
+	if _confetti_warmup_s > 0.0:
+		_confetti_warmup_s -= delta
+		if _confetti_warmup_s <= 0.0:
+			_confetti.emitting = false
+			_confetti.position.y = 1.35
+
+	_celebrate(delta, finished)
+
 	_highlight = maxf(0.0, _highlight - delta * 2.0)
 	_jersey_material.set_shader_parameter("dimmed", 1.0 if eliminated else 0.0)
 	_jersey_material.set_shader_parameter("highlight", _highlight)
@@ -382,6 +428,115 @@ func advance(delta: float, speed_kph: float, eliminated: bool, finished: bool) -
 		_rim_material.emission_energy_multiplier = 1.6
 
 	_update_trail(speed_kph)
+
+
+## Gerbe de confettis, tirée une fois au franchissement.
+##
+## `one_shot` et `emitting = false` : rien n'est simulé tant que le coureur n'a
+## pas franchi la ligne, donc rien n'est payé pendant la course. Le tir dure
+## deux secondes et demie et ne se répète pas.
+func _build_confetti() -> void:
+	var particles := GPUParticles3D.new()
+	particles.name = "Confetti"
+	particles.amount = 96
+	particles.lifetime = 2.6
+	particles.one_shot = true
+	particles.emitting = false
+	# Presque tout part au même instant : c'est une gerbe, pas un goutte-à-goutte.
+	particles.explosiveness = 0.88
+	particles.position = Vector3(0.0, 1.35, 0.0)
+	particles.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# Boîte de visibilité explicite : sans elle, Godot recalcule des bornes à
+	# chaque image pour des particules qui n'existent pas la plupart du temps.
+	particles.visibility_aabb = AABB(Vector3(-4.0, -2.0, -4.0), Vector3(8.0, 8.0, 8.0))
+
+	var process := ParticleProcessMaterial.new()
+	process.direction = Vector3(0.0, 1.0, -0.25)
+	process.spread = 55.0
+	process.initial_velocity_min = 4.5
+	process.initial_velocity_max = 8.5
+	process.gravity = Vector3(0.0, -7.5, 0.0)
+	process.damping_min = 0.5
+	process.damping_max = 1.6
+	process.scale_min = 0.55
+	process.scale_max = 1.25
+	# Rotation propre : un confetti qui tombe à plat ne scintille pas.
+	process.angular_velocity_min = -520.0
+	process.angular_velocity_max = 520.0
+	process.particle_flag_disable_z = false
+	# Deux teintes : celle du coureur, pour qu'on sache QUI vient de gagner, et
+	# du blanc pour que la gerbe reste lisible sur un fond sombre.
+	var ramp := Gradient.new()
+	ramp.set_color(0, color)
+	ramp.set_color(1, Color(1.0, 1.0, 1.0))
+	var ramp_texture := GradientTexture1D.new()
+	ramp_texture.gradient = ramp
+	process.color_initial_ramp = ramp_texture
+	particles.process_material = process
+
+	var flake := QuadMesh.new()
+	flake.size = Vector2(0.055, 0.085)
+	particles.draw_pass_1 = flake
+
+	var flake_material := StandardMaterial3D.new()
+	flake_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	flake_material.vertex_color_use_as_albedo = true
+	flake_material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	flake_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	particles.material_override = flake_material
+
+	add_child(particles)
+	_confetti = particles
+
+	# CHAUFFE : un système de particules compile ses shaders au PREMIER tir.
+	# Déclenché au franchissement de la ligne, ce travail tombait exactement au
+	# moment le plus chargé — d'où le à-coup signalé. La gerbe est donc tirée
+	# une fois au montage, quarante mètres SOUS la piste où personne ne la voit,
+	# puis remise en place.
+	particles.position.y = -40.0
+	particles.emitting = true
+	_confetti_warmup_s = 0.5
+
+
+## Arrivée : le coureur se redresse, lâche le guidon et lève les bras.
+##
+## Demandé explicitement : « faut que ça fasse super plaisir d'arriver en 1er ».
+## Un coureur qui franchit la ligne et reste plié sur son guidon comme si de
+## rien n'était vide le moment de tout ce qu'il vaut.
+##
+## Le geste monte en 0,7 s environ et ne redescend pas : le classement est
+## acquis, la joie n'a pas de raison de s'éteindre. Un balancement lent y est
+## superposé, sans quoi la pose se fige en statue.
+func _celebrate(delta: float, finished: bool) -> void:
+	var wanted := 1.0 if finished else 0.0
+	_joy = move_toward(_joy, wanted, delta / CELEBRATION_S)
+	if is_zero_approx(_joy) and _torso != null:
+		_torso.rotation = Vector3.ZERO
+		for arm: Node3D in _arms:
+			arm.rotation = Vector3.ZERO
+		return
+
+	# Adouci en entrée et en sortie : le redressement doit se lire comme un
+	# mouvement, pas comme une bascule.
+	var eased := _joy * _joy * (3.0 - 2.0 * _joy)
+	var sway := sin(Time.get_ticks_msec() * 0.004 + float(lane)) * 0.10 * eased
+
+	if _torso != null:
+		# Le buste se redresse vers l'arrière : il était presque horizontal.
+		_torso.rotation.x = eased * TORSO_RISE_RAD
+		_torso.rotation.z = sway * 0.6
+	for index: int in range(_arms.size()):
+		var arm: Node3D = _arms[index]
+		# Les bras partent vers l'avant-bas : les lever, c'est tourner très en
+		# arrière autour de l'épaule.
+		arm.rotation.x = eased * ARM_RAISE_RAD
+		# Écartés en V : superposés au buste, les bras levés se confondaient
+		# avec lui et le geste ne se lisait pas.
+		arm.rotation.z = (1.0 if index == 0 else -1.0) * (0.6 * eased) + sway
+
+	if _confetti != null and _joy > 0.02 and _confetti_warmup_s <= 0.0 \
+			and not _confetti.emitting:
+		_confetti.restart()
 
 
 ## Replace chaque jambe entre la hanche et sa pédale. Deux transformations par

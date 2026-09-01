@@ -96,15 +96,34 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 
 ## Lot 4 — Scène 3D *(6–8 j)*
 
-- [ ] Piste de vélodrome, couloirs, ligne d'arrivée
-- [ ] Tribunes et foule instanciée réactive
-- [ ] Rider : modèle, pédalage indexé sur la vitesse réelle, inclinaison
-- [ ] Matériaux et shaders néon, bloom, volumétrique, vignettage
-- [ ] Effets de vitesse : traînées, lignes de vitesse, flou radial, FOV dynamique
-- [ ] Rig de caméra + comportements par mode (`docs/04` §4)
-- [ ] Interpolation entre trames — **vérifiée explicitement à basse vitesse**
-- [ ] Trois niveaux de qualité + détection automatique
-- [ ] **J4** — 60 fps stables 1080p sur GPU intégré, 4 riders *(preuve : vidéo 30 s + relevé fps)*
+- [x] Piste de vélodrome, couloirs, ligne d'arrivée — `track_builder.gd`, `track.gdshader`
+      *(preuve : captures de `tasks/preuves/images/`. Le sens des couloirs a été corrigé le
+      2026-09-01 : la caméra regarde vers les Z croissants, son axe droite est donc −X et la piste
+      était dessinée en miroir depuis le premier jour.)*
+- [x] Tribunes et foule instanciée réactive — `crowd.gd`, `crowd.gdshader`, MultiMesh
+      *(la foule défile spectateur par spectateur dans son vertex shader ; un défilement par modulo
+      du nœud entier la téléportait de 10 m toutes les 0,8 s, puisqu'elle n'est pas périodique.)*
+- [x] Rider : modèle, pédalage indexé sur la vitesse réelle, inclinaison — `rider_rig.gd`
+      *(une seule ombre par coureur, en `SHADOWS_ONLY` : les 26 pièces qui projetaient chacune la
+      leur coûtaient plus de 400 appels de rendu sur les 495 de la scène.)*
+- [x] Matériaux et shaders néon, bloom, volumétrique, vignettage — `art/shaders/`
+- [x] Effets de vitesse : traînées, lignes de vitesse, flou radial, FOV dynamique
+      *(seuil des lignes à 32 km/h — à 45 elles n'apparaissaient jamais, un sprinteur sur rouleaux
+      tournant précisément autour de 45.)*
+- [x] Rig de caméra + comportements par mode (`docs/04` §4) — `camera_rig.gd`
+      *(cadrage par projection décentrée et non par rotation : faire pivoter la caméra plaçait bien
+      le sujet mais le regardait de biais.)*
+- [x] Interpolation entre trames — `rider_interpolator.gd`, couverte par `tests/unit/test_interpolation.gd`
+- [x] Trois niveaux de qualité + détection automatique — `render_quality.gd`, `perf_monitor.gd`
+      *(plus un allègement selon le nombre de volets ouverts, voir J4.)*
+- [x] **Hors plan initial — écran scindé à N volets** — `split_screen.gd`
+      *(demandé en séance. Autant de volets que de paquets, jusqu'à 4 ; recomposition dans les deux
+      sens en cours de course. Relevé horodaté : `[4]` à t=0, `[3,1]` à 7,26 s, `[2,1,1]` à 14,66 s,
+      `[1,1,1,1]` à 22,47 s ; en accordéon, retour au plein cadre à 20,82 s.)*
+- [x] **J4** — 60 fps stables 1080p sur GPU intégré, 4 riders
+      *(preuve : `tasks/preuves/J4-scene-3d.md` + `tasks/preuves/j4-course.mp4`. Trois profils,
+      fenêtre de 30 s : 1 % bas à 132–136 fps, budget TENU dans les trois cas. Coût par nombre de
+      volets : 8,4 à 9,7 ms — courbe plate.)*
 
 ## Lot 5 — Habillage, poursuite, audio *(4 j)*
 

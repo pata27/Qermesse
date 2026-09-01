@@ -511,3 +511,72 @@ func test_la_vitesse_de_pointe_reste_plausible() -> void:
 			"la pointe doit encadrer la vitesse reelle de la piste %d" % rider)
 		assert_gt(peak, mean, "la pointe depasse la moyenne")
 		assert_lt(peak, Physics.MAX_PLAUSIBLE_KPH, "et reste sous le plafond du filtre")
+
+
+# =============================================================================
+# La derniere trame `R:` n'arrive JAMAIS — docs/01 §5.4
+#
+# `ss_basic.ino` (`checkDistanceBased`, l. 285-307) met `raceStarted = false`
+# dans la passe meme ou le dernier tick fait franchir la ligne, et l'emission
+# periodique des trames `R:` est conditionnee par `raceStarted`. La valeur qui
+# atteint la cible n'est donc jamais transmise. Sans traitement, le PC reste
+# bloque un tick en dessous et la course ne se termine pas.
+# =============================================================================
+
+
+func test_la_course_se_termine_meme_si_la_derniere_trame_manque() -> void:
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 500.0
+	assert_true(_engine.arm(config, _now_ms), "armement accepte")
+	_countdown()
+
+	var physics := Physics.new()
+	var target := physics.metres_to_ticks(config.distance_m)
+	assert_eq(target, 1392, "500 m valent 1392 ticks au rouleau de 114,3 mm")
+
+	# Le boitier s'arrete un tick avant la cible pour la piste 1 : c'est
+	# exactement ce que fait le firmware reel.
+	_engine.on_progress([target, target - 1, 0, 0], 40_000)
+	assert_eq(_finishes.size(), 1, "seule la piste 0 a franchi la ligne")
+	assert_eq(_engine.state(), RaceEngine.State.RUNNING, "la course attend encore la piste 1")
+
+	# Puis il annonce l'arrivee par `1F:`. C'est la seule trace qu'il reste du
+	# dernier tick.
+	_engine.on_rider_finish(1, 40_000)
+
+	assert_eq(_finishes.size(), 2, "la piste 1 est declaree arrivee")
+	assert_eq(int(_finishes[1]["rider"]), 1, "et c'est bien la piste 1")
+	assert_ne(_engine.state(), RaceEngine.State.RUNNING, "la course ne tourne plus")
+	var state := _engine.race_state()
+	assert_eq(state.ticks[1], target, "son compte est remonte a la cible")
+
+
+func test_une_trame_de_fin_trop_en_avance_est_refusee() -> void:
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 500.0
+	assert_true(_engine.arm(config, _now_ms), "armement accepte")
+	_countdown()
+
+	# A mi-course, une trame `1F:` ne peut etre qu'une aberration : la refuser
+	# vaut mieux que terminer une course sur une donnee douteuse.
+	_engine.on_progress([700, 700, 0, 0], 20_000)
+	_engine.on_rider_finish(1, 20_000)
+
+	assert_eq(_finishes.size(), 0, "aucune arrivee declaree")
+	assert_eq(_engine.state(), RaceEngine.State.RUNNING, "la course continue")
+	assert_eq(_engine.race_state().ticks[1], 700, "le compte n'a pas ete gonfle")
+
+
+func test_une_trame_de_fin_sur_une_piste_inactive_est_ignoree() -> void:
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 500.0
+	assert_true(_engine.arm(config, _now_ms), "armement accepte")
+	_countdown()
+
+	# Le firmware ignore quelles pistes sont actives et annonce les quatre
+	# (docs/01 §5.4) : le PC, lui, ne connait que les siennes.
+	_engine.on_progress([1391, 1391, 0, 0], 40_000)
+	_engine.on_rider_finish(3, 40_000)
+
+	assert_eq(_finishes.size(), 0, "la piste 3 n'est pas de la course")
+	assert_eq(_engine.state(), RaceEngine.State.RUNNING, "la course continue")

@@ -144,10 +144,23 @@ func aim(focus_x: float, focus_z: float, spread_z: float, lateral_span: float,
 
 		Behaviour.PHOTO_FINISH:
 			# Plan latéral sur la ligne — le moment qui fait crier une salle.
-			_target_position = Vector3(lateral_span * 0.5 + 6.5, 1.15, focus_z + 0.4)
-			_target_look = Vector3(focus_x, 1.0, focus_z)
+			# TROIS QUARTS ARRIÈRE SURÉLEVÉ, et non un plan latéral.
+			#
+			# Le plan latéral est un piège de géométrie : la main courante est à
+			# 4,9 m de l'axe et le groupe occupe déjà ±2,4 m. Six mètres et demi
+			# de côté filmaient donc à travers le rail ; un mètre quatre-vingts
+			# collaient la caméra au premier coureur, qui remplissait la moitié
+			# de l'image. Il n'existe pas de bonne distance latérale.
+			#
+			# La caméra recule donc DERRIÈRE la ligne et s'élève : c'est le plan
+			# d'arrivée d'une retransmission, il tient tout le champ, et le
+			# décalage latéral suffit à donner le relief.
+			_target_position = Vector3(
+				lateral_span * 0.5 + 2.2, 2.7, focus_z - 7.5
+			)
+			_target_look = Vector3(focus_x, 1.15, focus_z + 1.0)
 			_dutch = 0.0
-			_target_fov = 38.0
+			_target_fov = 46.0
 
 		Behaviour.PODIUM:
 			_target_position = Vector3(focus_x, 2.2, focus_z - 6.0)

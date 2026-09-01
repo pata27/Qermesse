@@ -44,5 +44,14 @@ func evaluate(_state: RaceState) -> Verdict:
 
 
 ## Classement final, du premier au dernier. Appelee une fois la course finie.
+## Le boitier signale qu'un coureur a franchi la ligne (trame `<idx>F:`).
+##
+## Ce n'est PAS une condition de fin — le firmware ignore quelles pistes sont
+## actives — mais c'est une observation de capteur, et une regle peut choisir de
+## s'en servir. Rend `true` si l'etat a ete corrige et merite une reevaluation.
+func note_hardware_finish(_state: RaceState, _rider: int) -> bool:
+	return false
+
+
 func final_ranking(_state: RaceState) -> Array[int]:
 	return []

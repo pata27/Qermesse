@@ -185,9 +185,18 @@ func _ensure_pane(index: int) -> Pane:
 func consider(gaps: PackedFloat32Array) -> void:
 	var was_open := _live_panes > 0
 
+	# UN CHANGEMENT DE PELOTON REMET LES COMPTEURS À ZÉRO.
+	#
+	# L'hystérésis compare chaque cassure à son état précédent, ce qui suppose
+	# que la cassure d'indice `i` désigne la même chose d'une image à l'autre.
+	# Dès qu'un coureur franchit la ligne il sort du champ de course, les
+	# cassures se renumérotent, et cette comparaison n'a plus de sens : la
+	# scission restait ouverte sur un peloton pourtant regroupé. Quand le
+	# nombre de cassures change, on rejuge donc au seuil haut.
+	var reshuffled := gaps.size() != _cuts.size()
 	var cuts: Array[bool] = []
 	for index: int in range(gaps.size()):
-		var previously: bool = index < _cuts.size() and _cuts[index]
+		var previously: bool = not reshuffled and index < _cuts.size() and _cuts[index]
 		var threshold := CLOSE_BELOW_M if previously else OPEN_ABOVE_M
 		cuts.append(gaps[index] > threshold)
 	_cuts = cuts

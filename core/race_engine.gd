@@ -169,8 +169,16 @@ func on_false_start(rider: int) -> void:
 
 ## Trame `<idx>F:` — CONFIRMATION uniquement. Jamais une condition de fin :
 ## le firmware ne connait pas les pistes actives (docs/01 §5.4).
-func on_rider_finish(_rider: int, _elapsed_ms: int) -> void:
-	pass
+func on_rider_finish(rider: int, _elapsed_ms: int) -> void:
+	if _state != State.RUNNING or _rule == null or _race_state == null:
+		return
+	# L'horodatage du boitier est ignore : le classement et les temps restent
+	# calcules par le PC, sur son propre relevé. Seule l'information « ce
+	# coureur a franchi la ligne » est retenue.
+	if not _rule.note_hardware_finish(_race_state, rider):
+		return
+	progress_updated.emit(_race_state)
+	_apply_verdict(_rule.evaluate(_race_state))
 
 
 ## Arret demande par l'operateur, ou impose (lien perdu, faux depart).
