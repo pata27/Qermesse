@@ -11,6 +11,7 @@ signal spectacle_changed()
 var controller: AppController
 var operator: OperatorPanel
 var spectacle: SpectacleWindow
+var audio: RaceAudio
 
 
 func _ready() -> void:
@@ -21,6 +22,11 @@ func _ready() -> void:
 	operator = OperatorPanel.new()
 	operator.name = "OperatorPanel"
 	add_child(operator)
+	audio = RaceAudio.new()
+	audio.name = "RaceAudio"
+	add_child(audio)
+	audio.setup(controller)
+
 	operator.setup(controller, self)
 
 	var window := get_window()

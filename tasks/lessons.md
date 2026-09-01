@@ -272,3 +272,26 @@
   échec. La racine se passe en argument, elle ne se cherche pas.
 * **Une fenêtre d'outil doit avoir la taille de son contenu.** Sans taille explicite ni drapeaux
   d'expansion, l'interface se tassait en haut à gauche d'un immense fond vide.
+
+## Lot 5 — habillage et audio (2026-09-01)
+
+* **`set_anchors_preset` ne suffit pas : il faut `set_anchors_and_offsets_preset`.** Le premier pose
+  les ancres et LAISSE les marges d'origine. Un `Control` neuf ayant une taille nulle, le panneau
+  opérateur gardait 109 pixels de large dans une fenêtre de 1261, et l'interface se réduisait à ses
+  titres. C'est ce que signalait depuis le début l'avertissement « non-equal opposite anchors » de
+  Godot, que j'avais laissé passer comme du bruit.
+* **L'ordre de dessin d'un `CanvasLayer` suit l'ordre des enfants.** Le décompte plein écran,
+  construit au montage, passait sous les cartes des coureurs, recréées à chaque armement. Un
+  plein-écran appartient à sa propre couche : la question ne se pose alors plus jamais.
+* **Un ralenti ne se fait pas avec `Engine.time_scale` quand deux fenêtres partagent le processus.**
+  Il aurait engourdi l'interface opérateur sur l'autre écran. Le ralenti n'agit que sur le temps de
+  la scène 3D.
+* **Une barre signée dit deux fois plus qu'une barre positive.** De 0 à G, on ne lit que la taille de
+  l'écart ; de −G à +G, on lit aussi de quel côté il penche — qui est la question du mode poursuite.
+* **Afficher une grandeur qu'on ne mesure pas exige de déclarer d'où elle vient.** La cadence dépend
+  du braquet, que le capteur ignore : elle est déduite d'un développement DÉCLARÉ par l'opérateur, et
+  deux tests verrouillent le fait qu'aucun calcul de course n'en dépend.
+* **Synthétiser le son plutôt que l'embarquer.** Aucun fichier audio, donc rien à télécharger, rien
+  qui manque à l'export, et une synthèse qui se teste en headless sans carte son. Deux pièges :
+  une boucle doit contenir un nombre ENTIER de périodes de chacun de ses partiels sous peine de
+  claquer à chaque tour, et le bruit — qui n'a pas de période — se raccorde par fondu croisé.

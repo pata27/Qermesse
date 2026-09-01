@@ -35,10 +35,17 @@ func setup(app_controller: AppController, root: Node = null) -> void:
 
 
 func _build() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	# `set_anchors_AND_OFFSETS_preset`, et non `set_anchors_preset`.
+	#
+	# Le premier pose les ancres ET remet les marges à zéro ; le second laisse
+	# les marges telles quelles. Un `Control` neuf a une taille nulle : ancré
+	# sans remise à zéro des marges, il gardait 109 pixels de large dans une
+	# fenêtre de 1261, et l'interface se réduisait à ses titres. C'est aussi ce
+	# que signalait l'avertissement « non-equal opposite anchors » de Godot.
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var scroll := ScrollContainer.new()
-	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
 

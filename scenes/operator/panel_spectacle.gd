@@ -16,6 +16,8 @@ var _toggle: Button
 var _screens: OptionButton
 var _fullscreen: CheckBox
 var _quality: OptionButton
+var _mute: Button
+var _volume: HSlider
 var _status: Label
 
 
@@ -68,6 +70,32 @@ func _build() -> void:
 	_quality.item_selected.connect(_on_quality_selected)
 	quality_row.add_child(_quality)
 
+	# --- Son ----------------------------------------------------------------
+	var sound_title := Label.new()
+	sound_title.text = "Son"
+	sound_title.add_theme_font_size_override("font_size", 20)
+	add_child(sound_title)
+
+	# UN bouton, gros, qui dit l'état plutôt que l'action à faire — docs/04 §6.
+	_mute = Button.new()
+	_mute.custom_minimum_size = Vector2(220, 44)
+	_mute.pressed.connect(_on_mute_pressed)
+	add_child(_mute)
+
+	var volume_row := HBoxContainer.new()
+	add_child(volume_row)
+	var volume_label := Label.new()
+	volume_label.text = "Volume"
+	volume_label.custom_minimum_size = Vector2(90, 0)
+	volume_row.add_child(volume_label)
+	_volume = HSlider.new()
+	_volume.min_value = -40.0
+	_volume.max_value = 6.0
+	_volume.step = 1.0
+	_volume.custom_minimum_size = Vector2(260, 0)
+	_volume.value_changed.connect(_on_volume_changed)
+	volume_row.add_child(_volume)
+
 	_status = Label.new()
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_status.custom_minimum_size = Vector2(360, 0)
@@ -105,6 +133,17 @@ func refresh() -> void:
 				break
 	_quality.disabled = window == null or window.scene == null
 
+	var audio: Node = _root.get("audio")
+	if audio != null:
+		var muted: bool = audio.call("is_muted")
+		_mute.text = "SON COUPÉ — cliquer pour activer" if muted \
+			else "SON ACTIF — cliquer pour couper"
+		_mute.add_theme_color_override(
+			"font_color", Color("#FF3B30") if muted else Color("#2BE08A")
+		)
+		_volume.set_value_no_signal(float(audio.call("volume_db")))
+		_volume.editable = not muted
+
 	var open: bool = _root.call("spectacle_visible")
 	_toggle.text = "Fermer la fenêtre spectacle" if open else "Ouvrir la fenêtre spectacle"
 	_fullscreen.button_pressed = bool(_root.call("spectacle_fullscreen"))
@@ -118,6 +157,19 @@ func refresh() -> void:
 			"Un seul écran détecté : la fenêtre spectacle s'ouvrira en fenêtré "
 			+ "par-dessus. Branchez le projecteur puis rouvrez-la pour l'y envoyer."
 		)
+
+
+func _on_mute_pressed() -> void:
+	var audio: Node = _root.get("audio")
+	if audio != null:
+		audio.call("set_muted", not bool(audio.call("is_muted")))
+	refresh()
+
+
+func _on_volume_changed(value: float) -> void:
+	var audio: Node = _root.get("audio")
+	if audio != null:
+		audio.call("set_volume_db", value)
 
 
 func _on_toggle() -> void:

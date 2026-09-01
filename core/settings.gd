@@ -35,7 +35,13 @@ var false_start_penalty_m: float = 10.0
 ## Ecran de destination de la fenetre spectacle — docs/03 §6.
 var show_window_screen: int = -1
 var single_window_mode: bool = true
-var audio_muted: bool = false
+## Coupure audio globale — docs/04 §6.
+##
+## MUET PAR DEFAUT, et c'est un choix, pas un oubli. En evenementiel la sono est
+## presque toujours gerec separement : un logiciel qui se met a sonner par-dessus
+## la musique de la salle des la premiere course est un probleme, pas une
+## fonctionnalite. L'operateur allume le son quand il a verifie ou il sort.
+var audio_muted: bool = true
 
 
 func to_dict() -> Dictionary:
