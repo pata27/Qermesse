@@ -48,6 +48,8 @@ décrit le déroulé normal d'une soirée.
    * **Poursuite** — le dernier est éliminé dès que son retard sur le premier atteint l'écart ;
      le survivant gagne. À l'écran, la barre se remplit vers celui qui mène, une barre par
      poursuivant.
+     Deux **plafonds** bornent la poursuite — durée (défaut 300 s) et distance (défaut 5000 m) :
+     atteint, celui qui mène gagne. L'écran public affiche « décision dans … » sous la barre.
 3. **Faux départ** : choisir la politique (ignorer, avertir, relancer, pénaliser).
 4. **START**. Le décompte `3 · 2 · 1 · PARTEZ` est piloté par le boîtier : les LED et l'écran
    sont d'accord. Ne pas compter à haute voix sur une autre cadence.

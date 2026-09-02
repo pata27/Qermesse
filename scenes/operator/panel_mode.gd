@@ -13,6 +13,8 @@ var _mode_button: OptionButton
 var _distance: SpinBox
 var _duration: SpinBox
 var _gap: SpinBox
+var _time_cap: SpinBox
+var _distance_cap: SpinBox
 var _policy: OptionButton
 var _penalty: SpinBox
 var _rows: Dictionary = {}
@@ -45,6 +47,10 @@ func _build() -> void:
 	_distance = _spin(grid, "distance", "Distance (m)", 50.0, 5000.0, 10.0)
 	_duration = _spin(grid, "duration", "Duree (s)", 10.0, 3600.0, 5.0)
 	_gap = _spin(grid, "gap", "Ecart decisif (m)", 10.0, 500.0, 5.0)
+	# docs/02 §3 : les deux plafonds qui empechent une poursuite infinie. Ce
+	# sont les seuls a le faire — ils se reglent ici, pas dans un fichier.
+	_time_cap = _spin(grid, "time_cap", "Plafond de duree (s)", 10.0, 3600.0, 10.0)
+	_distance_cap = _spin(grid, "distance_cap", "Plafond de distance (m)", 100.0, 100000.0, 100.0)
 
 	var policy_label := Label.new()
 	policy_label.text = "Faux depart"
@@ -66,6 +72,8 @@ func refresh() -> void:
 	_distance.set_value_no_signal(settings.distance_m)
 	_duration.set_value_no_signal(settings.duration_s)
 	_gap.set_value_no_signal(settings.gap_m)
+	_time_cap.set_value_no_signal(settings.pursuit_time_cap_s)
+	_distance_cap.set_value_no_signal(settings.pursuit_distance_cap_m)
 	_policy.select(_policy.get_item_index(int(settings.false_start_policy)))
 	_penalty.set_value_no_signal(settings.false_start_penalty_m)
 
@@ -74,6 +82,8 @@ func refresh() -> void:
 	_set_row_visible("distance", settings.mode == RaceConfig.Mode.DISTANCE)
 	_set_row_visible("duration", settings.mode == RaceConfig.Mode.TIME)
 	_set_row_visible("gap", settings.mode == RaceConfig.Mode.PURSUIT)
+	_set_row_visible("time_cap", settings.mode == RaceConfig.Mode.PURSUIT)
+	_set_row_visible("distance_cap", settings.mode == RaceConfig.Mode.PURSUIT)
 	_set_row_visible(
 		"penalty", settings.false_start_policy == RaceConfig.FalseStartPolicy.PENALTY
 	)
@@ -89,6 +99,14 @@ func distance_field() -> SpinBox:
 
 func gap_field() -> SpinBox:
 	return _gap
+
+
+func time_cap_field() -> SpinBox:
+	return _time_cap
+
+
+func distance_cap_field() -> SpinBox:
+	return _distance_cap
 
 
 func policy_selector() -> OptionButton:
@@ -138,6 +156,10 @@ func _on_value_changed(value: float, key: String) -> void:
 			_controller.settings.duration_s = value
 		"gap":
 			_controller.settings.gap_m = value
+		"time_cap":
+			_controller.settings.pursuit_time_cap_s = value
+		"distance_cap":
+			_controller.settings.pursuit_distance_cap_m = value
 		"penalty":
 			_controller.settings.false_start_penalty_m = value
 	mode_changed.emit()

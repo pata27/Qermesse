@@ -236,6 +236,17 @@ func test_le_panneau_mode_ne_montre_que_les_reglages_du_mode_choisi() -> void:
 	_select_option(mode_panel.mode_selector(), RaceConfig.Mode.PURSUIT)
 	assert_false(mode_panel.distance_field().visible)
 	assert_true(mode_panel.gap_field().visible)
+	# docs/02 §3 : les plafonds de securite sont des reglages de la poursuite.
+	assert_true(mode_panel.time_cap_field().visible)
+	assert_true(mode_panel.distance_cap_field().visible)
+	mode_panel.time_cap_field().value = 120.0
+	mode_panel.distance_cap_field().value = 2000.0
+	assert_eq(_controller.settings.pursuit_time_cap_s, 120.0)
+	assert_eq(_controller.settings.pursuit_distance_cap_m, 2000.0)
+	assert_eq(_controller.current_config().pursuit_time_cap_s, 120.0, "la course suivante l'applique")
+
+	_select_option(mode_panel.mode_selector(), RaceConfig.Mode.DISTANCE)
+	assert_false(mode_panel.time_cap_field().visible, "sans effet hors poursuite : cache")
 
 
 func test_le_panneau_materiel_explique_pourquoi_un_port_est_ignore() -> void:
