@@ -153,7 +153,7 @@ func test_link_sim_produit_la_meme_suite_de_trames_que_ss_emu() -> void:
 	)
 
 	# 2. Le même bug de dernière trame, DES DEUX CÔTÉS : la valeur qui atteint la
-	#    cible n'est jamais transmise (docs/01 §5.4, ss_basic.ino l. 285-307).
+	#    cible n'est jamais transmise (docs/01 §5.6, ss_basic.ino l. 285-307).
 	var emu_ticks := _ticks_before_first_finish(emu)
 	var sim_ticks := _ticks_before_first_finish(sim)
 	assert_eq(sim_ticks, emu_ticks, "mêmes compteurs dans la dernière R: avant l'arrivée")

@@ -221,7 +221,7 @@ Recette d'exploitation qui en découle :
 
 | Mode de jeu | Ce qu'on envoie au firmware | Qui décide la fin |
 |---|---|---|
-| Distance | `d` + `l<ticks>` + `g` | **le PC** (dès que les riders *actifs* ont fini). Le firmware peut aussi émettre ses `<i>F:` — on les utilise comme confirmation, jamais comme condition. |
+| Distance | `d` + `l<ticks>` + `g` | **le PC** (dès que les riders *actifs* ont fini), sur son propre compte de ticks. Les `<i>F:` du firmware sont lues comme une **observation bornée** — voir §5.6 : sans elles, le PC ne verrait jamais le dernier tick. Jamais un `F:` seul ne termine une course. |
 | Temps | `x` + **`t60`** (constante, voir §5.5) + `g` | **le PC exclusivement.** La redondance firmware est illusoire, et une mauvaise valeur de `t` couperait le flux `R:` en pleine course. |
 | **Poursuite** | `x` + **`t60`** (constante, voir §5.5) + `g` | **le PC exclusivement**, sur le critère d'écart. Le garde-fou anti-course-infinie est entièrement côté PC. |
 
@@ -283,6 +283,38 @@ Conséquences normatives :
 Le firmware n'étant pas modifié en v3, ce bug est une contrainte permanente, pas un incident.
 
 ---
+
+### 5.6 La dernière trame `R:` n'est jamais émise — trouvé à l'émulateur, vérifié dans la source
+
+`checkDistanceBased()` (`ss_basic.ino`, l. 285-307) est appelée dans la même passe de `loop()` que
+l'incrément de tick. Quand le dernier tick fait franchir la ligne à la dernière piste, elle met
+`raceStarted = false` **immédiatement** — et l'émission périodique des trames `R:` est conditionnée
+par `raceStarted`. La valeur de compteur qui atteint `raceLengthTicks` n'est donc **jamais
+transmise** : la dernière `R:` reçue par le PC porte un tick de moins.
+
+Conséquence sans traitement : le PC, autoritaire sur son propre compte, reste un tick sous la cible,
+indéfiniment. « Reste 1 m », et une course qui ne se termine pas. La règle « les `R:` portent un
+cumul absolu, donc en perdre une est sans conséquence » (§6) est vraie de toutes les trames **sauf
+la dernière**.
+
+**Traitement normatif.** La trame `<idx>F:` est lue pour ce qu'elle est : le capteur affirme que
+*son* compteur a atteint la valeur que le PC lui a donnée par `l<ticks>` — le critère du PC
+lui-même, rapporté par le capteur. Le PC l'accepte à deux conditions :
+
+1. la piste est active, ni arrivée ni éliminée ;
+2. le compte du PC est **au plus 8 ticks** (2,9 m) sous la cible. Au-delà, la trame est
+   incohérente — parasite, ou piste que le PC ne suit pas — et elle est refusée.
+
+Il remonte alors son compte à la cible et laisse la règle de course conclure avec **sa** horloge.
+Classement et temps restent calculés par le PC ; l'horodatage du `F:` est ignoré.
+
+Vérifié par `test_la_course_se_termine_meme_si_la_derniere_trame_manque` et ses deux garde-fous
+(trame trop en avance refusée, piste inactive ignorée), par le test de conformité
+`link_sim` ↔ `ss_emu` — les deux reproduisent le bug, 277/277 avant l'arrivée — et à vérifier sur
+le matériel réel au point §5 de `docs/RECETTE.md`.
+
+Ce point est un cas d'école de ce que l'émulateur devait apporter : le défaut aurait été découvert à
+la première course réelle, avec un public.
 
 ## 6. Robustesse exigée du driver
 
