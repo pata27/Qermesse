@@ -137,8 +137,15 @@ func aim(focus_x: float, focus_z: float, spread_z: float, lateral_span: float,
 			var gap := framed
 			var back := 5.0 + gap * 1.05
 			var height := 1.8 + gap * 0.30
-			_target_position = Vector3(lateral_span * 0.35 + 1.8, height, focus_z - back)
-			_target_look = Vector3(0.0, 1.0, focus_z - gap * 0.5)
+			# PAR RAPPORT AU SUJET, pas au centre de piste — la même correction
+			# que la branche peloton, oubliée ici. La caméra se plaçait à une
+			# abscisse fixe et visait x = 0 : dès que l'écran se scindait, le
+			# leader seul dans son volet, décalé de 2,4 m dans le couloir 1,
+			# sortait du cadre et le volet de gauche était vide.
+			_target_position = Vector3(
+				focus_x + lateral_span * 0.35 + 1.8, height, focus_z - back
+			)
+			_target_look = Vector3(focus_x, 1.0, focus_z - gap * 0.5)
 			_dutch = -MAX_DUTCH_RAD * 0.5 * speed_ratio
 			_target_fov = BASE_FOV + clampf(gap * 0.25, 0.0, 12.0)
 

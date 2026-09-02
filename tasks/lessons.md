@@ -321,3 +321,9 @@
   distance est figée — toujours trop basse. Le commentaire du code disait pourtant l'intention
   juste. Un test verrouille désormais que la moyenne s'arrête à l'élimination.
 * **Ce que l'écran affirme, le CSV doit le porter aussi.** `temps_ms` valait 0 pour un éliminé.
+* **Une correction faite dans une branche d'un `match` doit être cherchée dans les autres.** La
+  caméra du mode peloton avait été corrigée pour se placer par rapport à son SUJET et non au centre
+  de piste ; la branche poursuite, trois lignes plus bas, gardait l'ancien code. Dès que l'écran se
+  scindait, le leader seul dans son volet — décalé de 2,4 m dans le couloir 1 — sortait du cadre et
+  le volet de gauche était vide. Repéré sur capture, confirmé par l'utilisateur, reproduit avant
+  d'être corrigé.
