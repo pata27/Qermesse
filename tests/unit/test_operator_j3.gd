@@ -380,6 +380,73 @@ func test_un_tick_fantome_est_loggue_et_compte_au_panneau_materiel() -> void:
 	assert_string_contains(_panel.hardware_panel().stats_text(), "piste 2")
 
 
+# =============================================================================
+# Ce qui tourne mal se dit a l'operateur — jamais en silence
+# =============================================================================
+
+
+func test_des_reglages_corrompus_demarrent_par_defaut_et_le_disent() -> void:
+	var settings_path := ProjectSettings.globalize_path(TEST_ROOT).path_join("settings-casse.json")
+	var file := FileAccess.open(settings_path, FileAccess.WRITE)
+	file.store_string("{ \"mode\": 2, \"distance_m\": ")  # coupe en pleine ecriture
+	file.close()
+
+	var controller := AppController.new()
+	controller.preferences_enabled = true
+	controller.settings_path = settings_path
+	controller.roster_path = ProjectSettings.globalize_path(TEST_ROOT).path_join("roster-absent.json")
+	controller.recorder_logs_dir = _logs
+	controller.recorder_races_dir = _races
+	add_child_autofree(controller)
+	var panel := OperatorPanel.new()
+	add_child_autofree(panel)
+	panel.setup(controller)
+
+	assert_eq(controller.settings.mode, RaceConfig.Mode.DISTANCE, "valeurs par defaut")
+	assert_eq(controller.startup_problems().size(), 1, "le roster absent n'est pas un probleme")
+	assert_string_contains(panel.race_panel().notice_text(), "REGLAGES")
+	assert_string_contains(panel.race_panel().notice_text(), "JSON invalide")
+	DirAccess.remove_absolute(settings_path)
+
+
+func test_un_journal_impossible_a_ecrire_est_signale_en_fin_de_course() -> void:
+	# Un FICHIER a la place du dossier des journaux : le disque plein en
+	# miniature. Le classement doit s'afficher, et l'operateur doit savoir
+	# qu'il n'est pas sur disque.
+	var blocked := ProjectSettings.globalize_path(TEST_ROOT).path_join("logs-bloque")
+	var file := FileAccess.open(blocked, FileAccess.WRITE)
+	file.store_string("pas un dossier")
+	file.close()
+
+	var controller := AppController.new()
+	controller.preferences_enabled = false
+	controller.recorder_logs_dir = blocked
+	controller.recorder_races_dir = _races
+	add_child_autofree(controller)
+	var notices: Array[String] = []
+	controller.notice.connect(func(text: String) -> void: notices.append(text))
+	controller.set_simulation_speed(10.0)
+	for i: int in range(120):
+		await wait_frames(1)
+		if controller.link_state() == Protocol.State.IDENTIFIED:
+			break
+	controller.settings.distance_m = 100.0
+	assert_true(controller.start_race())
+	var finished: Array[RaceResult] = []
+	controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
+	for i: int in range(900):
+		await wait_frames(1)
+		if not finished.is_empty():
+			break
+	assert_false(finished.is_empty(), "la course se termine et se classe")
+	var said := false
+	for text: String in notices:
+		if text.begins_with("ENREGISTREMENT"):
+			said = true
+	assert_true(said, "l'operateur sait que rien n'est ecrit")
+	DirAccess.remove_absolute(blocked)
+
+
 func test_l_interface_construite_avant_l_entree_dans_l_arbre_fonctionne() -> void:
 	# Regression : Godot ne declenche ni _enter_tree ni _ready de facon
 	# synchrone quand on ajoute un noeud depuis SceneTree._initialize(). Un

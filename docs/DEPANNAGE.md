@@ -147,6 +147,19 @@ Le dossier `races/` voisin contient un JSON par course, avec la trace complète 
 qu'il faut envoyer au développeur en cas de résultat suspect : la course peut être rejouée à
 l'identique.
 
+**Si l'écriture échoue** — disque plein, dossier interdit —, le panneau **Course** l'affiche en fin
+de course : `ENREGISTREMENT : …`. Le logiciel ne s'arrête pas pour autant ; le classement reste à
+l'écran, mais il n'est **pas** sur disque. Libérer de la place ou changer de dossier, puis relancer.
+
+---
+
+## Les noms des riders et les réglages ont disparu au lancement
+
+Le fichier `settings.json` ou `roster.json` est illisible — édité à la main, disque coupé pendant
+l'écriture. Le logiciel démarre quand même, **avec les valeurs par défaut**, et le dit dans le
+panneau **Course** au lancement : `REGLAGES : JSON invalide ligne N …`. Le fichier fautif est
+remplacé à la prochaine sauvegarde ; le message donne son chemin.
+
 ---
 
 ## Il n'y a pas de son

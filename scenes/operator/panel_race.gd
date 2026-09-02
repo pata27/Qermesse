@@ -28,6 +28,9 @@ func setup(controller: AppController) -> void:
 	_controller.rider_eliminated.connect(_on_rider_eliminated)
 	_controller.false_start_detected.connect(_on_false_start)
 	refresh()
+	# Ce qui a mal tourne au chargement se dit ici, au premier regard.
+	if not _controller.startup_problems().is_empty():
+		_notice.text = "\n".join(_controller.startup_problems())
 
 
 func _build() -> void:

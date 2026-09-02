@@ -33,6 +33,14 @@ const LINK_GRACE_MS := 3000
 ## gardent leurs valeurs par defaut ; en test elles evitent d'ecrire dans les
 ## donnees de l'utilisateur et de dependre de ses reglages.
 var preferences_enabled := true
+## Coutures de test : fichiers de reglages et de roster. Vides = chemins de
+## l'utilisateur.
+var settings_path := ""
+var roster_path := ""
+## Ce qui a mal tourne au chargement des fichiers de l'utilisateur. Un fichier
+## illisible remet tout a zero SANS empecher le demarrage — mais pas en
+## silence : le panneau course le dit. « Bruyamment », comme promis.
+var _startup_problems: Array[String] = []
 var recorder_logs_dir := ""
 var recorder_races_dir := ""
 
@@ -73,8 +81,8 @@ func initialize() -> void:
 	_initialized = true
 
 	if preferences_enabled:
-		settings.load_from()
-		roster.load_from()
+		_load_user_file(settings.load_from.bind(settings_path), "REGLAGES")
+		_load_user_file(roster.load_from.bind(roster_path), "ROSTER")
 
 	_link = Link.new()
 	_link.name = "Link"
@@ -346,6 +354,22 @@ func _on_race_finished(result: RaceResult) -> void:
 	recorder.finish_race(result)
 	_history.append(result)
 	race_finished.emit(result)
+	# Le classement est a l'ecran ; s'il n'est PAS sur disque, l'operateur
+	# doit le savoir maintenant, pas en cherchant le CSV a la fin de la soiree.
+	if not recorder.problems().is_empty():
+		notice.emit("ENREGISTREMENT : %s" % recorder.problems()[recorder.problems().size() - 1])
+
+
+func startup_problems() -> Array[String]:
+	return _startup_problems
+
+
+func _load_user_file(loader: Callable, label: String) -> void:
+	loader.call()
+	var error: String = JsonStore.last_error
+	# Un fichier absent est le premier lancement, pas un probleme.
+	if not error.is_empty() and not error.begins_with("fichier absent"):
+		_startup_problems.append("%s : %s" % [label, error])
 
 
 ## docs/01 §6.3 : loggue au CSV, compte pour le panneau materiel, et dit a
