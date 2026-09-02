@@ -18,6 +18,7 @@
 | Bout en bout série | `tools/ss_emu` sur pseudo-terminal | ouverture de port, handshake, threading, watchdog, reconnexion — la partie risquée |
 | Unitaire GDScript | GUT headless | `physics`, `race_engine`, les trois règles, `recorder`, `settings` |
 | Rejeu | GUT + courses JSON | une course enregistrée rejouée doit donner exactement le même classement — **y compris interrompue**, où le rejeu reproduit l'interruption et rend le classement partiel |
+| Traces de référence | GUT + `tests/fixtures/` | deux courses réelles enregistrées **avant** plusieurs changements du moteur, rejouées à chaque exécution : le format d'hier reste lisible et l'arbitrage n'a pas dérivé. Un test généré ne le prouve pas — il produit sa trace avec le code du jour |
 | Injection de pannes | `link_sim` | trame corrompue, perte de lien, tick fantôme, faux départ |
 | Manuel matériel | checklist `docs/RECETTE.md` | avant chaque release |
 
