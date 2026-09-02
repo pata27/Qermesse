@@ -147,6 +147,20 @@ et sera une vraie scène (lot 4).
 
 Un seul sens de circulation. Le rendu **lit** l'état, ne l'écrit jamais.
 
+### Un écran qui montre une course terminée lit le résultat, jamais l'état courant
+
+Le `RaceResult` porte tout ce qu'il faut pour être affiché seul : classement, temps, distances,
+**et les noms des riders tels qu'ils étaient au départ**. Les écrans qui montrent une course finie —
+podium et bandeau vainqueur côté spectacle, bandeau et tableau côté opérateur — s'y tiennent.
+
+Ce n'est pas un raffinement : dès que l'opérateur saisit les noms de la course suivante, le roster
+courant est celui d'une **autre** course, et le podium encore affiché se met à mentir. Le défaut a
+été trouvé et corrigé trois fois, sur trois consommateurs différents, parce qu'il avait été réparé
+à la source sans qu'on cherche tous ses lecteurs.
+
+Seules les **couleurs** viennent encore du roster : la palette est figée par piste (`04` §2) et ne
+change jamais.
+
 ### Interpolation
 
 Les trames arrivent à 100 Hz, le rendu tourne à 60–144 Hz. La position 3D d'un rider est

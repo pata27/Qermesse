@@ -433,3 +433,8 @@
   la carte en offre 414 : mon estimation « une vingtaine de caractères » était fausse d'un facteur
   1,5, et le test écrit avec les vraies métriques de police l'a dit tout de suite. Ce qui doit tenir
   dans une place se borne en PIXELS ; la borne en caractères ne vaut que pour des colonnes de texte.
+* **Réparer la source ne suffit pas : il faut chercher tous les lecteurs.** « Le résultat porte les
+  noms du départ » a été corrigé trois fois, à trois tours différents — tableau opérateur, puis
+  podium et bandeau spectacle, puis bandeau du panneau course — parce que chaque fois je m'étais
+  arrêté au consommateur que j'avais sous les yeux. Après une correction de ce genre, faire le
+  `grep` de l'ancienne source d'information sur tout le dépôt AVANT de refermer.

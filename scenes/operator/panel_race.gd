@@ -192,7 +192,9 @@ func _on_race_finished(result: RaceResult) -> void:
 		"Termine — vainqueur piste %d (%s)%s"
 		% [
 			winner + 1,
-			_controller.roster.rider(winner).display_name(),
+			# LES NOMS DU DEPART, portes par le resultat. Le roster courant est
+			# deja celui de la course SUIVANTE des que l'operateur le saisit.
+			Roster.shorten(result.rider_name(winner)),
 			"  [INTERROMPUE]" if result.interrupted else "",
 		]
 	)

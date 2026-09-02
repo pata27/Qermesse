@@ -635,6 +635,27 @@ func test_l_interface_construite_avant_l_entree_dans_l_arbre_fonctionne() -> voi
 # =============================================================================
 
 
+func test_le_panneau_course_nomme_le_vainqueur_du_depart() -> void:
+	# Troisieme lecteur du meme fil : le bandeau « Termine » lisait le roster
+	# COURANT. Renommer les pistes pour la course suivante rebaptisait donc le
+	# vainqueur de la precedente, encore affiche.
+	var roster_panel := _panel.roster_panel()
+	_type_into(roster_panel.name_field(0), "Carole")
+	var result := RaceResult.new()
+	result.mode = "distance"
+	result.ranking = [0, 1]
+	result.end_reason = RaceRule.EndReason.ALL_FINISHED
+	result.finished_ms[0] = 8000
+	result.rider_names = {0: "Alice", 1: "Bob"}
+	_controller.race_finished.emit(result)
+
+	assert_string_contains(_panel.race_panel().notice_text(), "Alice")
+	assert_false(
+		_panel.race_panel().notice_text().contains("Carole"),
+		"le roster courant ne rebaptise pas le vainqueur"
+	)
+
+
 func test_un_nom_long_ne_desaligne_pas_le_tableau_des_resultats() -> void:
 	# Les colonnes du tableau operateur sont a largeur fixe : un nom plus long
 	# que sa colonne poussait tout le reste de la ligne vers la droite, et le
