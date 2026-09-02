@@ -148,6 +148,13 @@ qu'il faut envoyer au développeur en cas de résultat suspect : la course peut 
 l'identique. **Une course arrêtée en a un aussi** — c'est même le fichier le plus utile après un
 incident, puisqu'il contient les trames reçues jusqu'à la coupure.
 
+Le rejeu se fait avec `tools/ss_replay.gd` : il repousse les trames dans un moteur neuf, recalcule
+tout et compare au classement enregistré. Une divergence est un bug du logiciel, pas de la course.
+
+```sh
+godot --headless --script tools/ss_replay.gd -- --dossier <dossier races>
+```
+
 **Si l'écriture échoue** — disque plein, dossier interdit —, le panneau **Course** l'affiche en fin
 de course : `ENREGISTREMENT : …`. Le logiciel ne s'arrête pas pour autant ; le classement reste à
 l'écran, mais il n'est **pas** sur disque. Libérer de la place ou changer de dossier, puis relancer.

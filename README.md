@@ -90,12 +90,17 @@ Preuves dans `tasks/preuves/`.
 |---|---|
 | `tools/ss_emu/` | émulateur du firmware sur pseudo-terminal — permet de développer et de tester tout le lien série sans matériel branché |
 | `tools/ss_probe.py` | sonde console indépendante : handshake, ticks en direct, watchdog. Témoin croisé, sans code commun avec l'émulateur |
+| `tools/ss_replay.gd` | rejoue une course enregistrée et vérifie qu'elle redonne le même classement. Sur un dossier, chaque course réelle devient un cas de test permanent |
 
 ```sh
 cmake -S tools/ss_emu -B tools/ss_emu/build && cmake --build tools/ss_emu/build -j
 ./tools/ss_emu/build/ss_emu_tests
 ./tools/ss_emu/build/ss_emu --pty --link ./.run/ttyEMU --riders 2 --profile egaux
 python3 tools/ss_probe.py ./.run/ttyEMU
+
+# Rejeu : recalcule tout depuis les trames et compare au classement enregistré.
+# Code 0 si tout concorde, 1 si une course diverge.
+godot --headless --script tools/ss_replay.gd -- --dossier ~/.local/share/silversprint/races
 ```
 
 ## Historique
