@@ -81,3 +81,17 @@ func test_le_son_est_coupe_par_defaut() -> void:
 	# sonne par-dessus la musique de la salle dès la première course est un
 	# problème, pas une fonctionnalité.
 	assert_true(Settings.new().audio_muted, "muet au premier lancement")
+
+
+func test_le_faux_depart_a_son_buzzer() -> void:
+	# docs/02 §4, AVERTISSEMENT : « bandeau + son ». Le son reste sur le bus
+	# coupe par defaut : ici on verifie l'intention, pas le haut-parleur.
+	var controller := AppController.new()
+	controller.preferences_enabled = false
+	add_child_autofree(controller)
+	var audio := RaceAudio.new()
+	add_child_autofree(audio)
+	audio.setup(controller)
+	assert_true(audio.is_muted(), "le son reste coupe : on travaille en open space")
+	controller.false_start_detected.emit(0, RaceConfig.FalseStartPolicy.WARN)
+	assert_eq(audio.last_cue, "faux-depart")

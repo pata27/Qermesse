@@ -31,6 +31,9 @@ var _wind: AudioStreamPlayer
 var _beep: AudioStreamPlayer
 var _horn: AudioStreamPlayer
 var _bell: AudioStreamPlayer
+var _buzzer: AudioStreamPlayer
+## Dernier son déclenché — pour les tests, qui tournent sans carte son.
+var last_cue := ""
 var _crowd: AudioStreamPlayer
 
 var _running := false
@@ -53,6 +56,7 @@ func setup(controller: AppController) -> void:
 	_controller.progress_updated.connect(_on_progress)
 	_controller.rider_finished.connect(_on_rider_finished)
 	_controller.race_finished.connect(_on_race_finished)
+	_controller.false_start_detected.connect(_on_false_start)
 
 
 ## Coupure globale — docs/04 §6 : « en événementiel, la sono est souvent gérée
@@ -95,6 +99,10 @@ func _build_players() -> void:
 	_beep = _make_player(SoundForge.beep(), -6.0)
 	_horn = _make_player(SoundForge.horn(), -4.0)
 	_bell = _make_player(SoundForge.bell(), -7.0)
+	# Le buzzer du faux départ est le klaxon, une octave sous le départ : le
+	# même timbre dit « ligne de départ », la hauteur dit « pas comme ça ».
+	_buzzer = _make_player(SoundForge.horn(0.5), -4.0)
+	_buzzer.pitch_scale = 0.5
 	_crowd = _make_player(SoundForge.crowd(), -9.0)
 
 
@@ -115,6 +123,12 @@ func _on_countdown(value: int) -> void:
 		_beep.play()
 	else:
 		_horn.play()
+
+
+## docs/02 §4, AVERTISSEMENT : « bandeau + son ».
+func _on_false_start(_rider: int, _policy: int) -> void:
+	_buzzer.play()
+	last_cue = "faux-depart"
 
 
 func _on_race_state(_previous: int, current: int) -> void:

@@ -43,6 +43,7 @@ const TENSION_HEIGHT := 26.0
 ## Raideur du lissage des barres, en 1/s. Dix : elles suivent un écart qui se
 ## creuse sans traîner, mais ne rendent plus le pas des ticks.
 const TENSION_SMOOTHING := 10.0
+const LINK_LOST_TEXT := "LIEN PERDU"
 ## Le chiffre d'écart ne bouge que si l'écart lissé s'en éloigne d'autant. Un
 ## tick vaut ~0,3 m et arrive tantôt pour l'un, tantôt pour l'autre : brut, le
 ## chiffre battait entre deux valeurs à chaque trame — un stroboscope.
@@ -86,6 +87,8 @@ var _podium_note: Label
 var _podium_delay_s := 0.0
 var _pending_result: RaceResult = null
 var _notice: Label
+## Ce que le bandeau « lien perdu » a recouvert, à rendre au retour du lien.
+var _covered_notice := ""
 
 
 func setup(controller: AppController) -> void:
@@ -97,6 +100,12 @@ func setup(controller: AppController) -> void:
 	_controller.race_state_changed.connect(_on_state)
 	_controller.race_finished.connect(_on_finished)
 	_controller.rider_eliminated.connect(_on_eliminated)
+	# Les alertes — docs/04 : le rouge est réservé au faux départ, à la perte
+	# de lien et au seuil de poursuite. Le public doit savoir pourquoi la
+	# course se fige ou s'arrête ; un écran qui se tait passe pour planté.
+	_controller.false_start_detected.connect(_on_false_start)
+	_controller.link_state_changed.connect(_on_link_state)
+	_controller.race_aborted.connect(_on_aborted)
 	rebuild_cards()
 
 
@@ -696,6 +705,8 @@ func _on_state(_previous: int, current: int) -> void:
 	if current == RaceEngine.State.ARMING:
 		rebuild_cards()
 		_notice.text = ""
+		_covered_notice = ""
+		_notice.add_theme_color_override("font_color", ALERT)
 		# Une nouvelle course efface la précédente : le podium ne doit pas
 		# rester par-dessus le décompte suivant — et ce qu'il avait effacé
 		# revient. Les cartes viennent d'être reconstruites ; l'écart et la
@@ -822,6 +833,43 @@ func _on_progress(state: RaceState) -> void:
 
 func _on_eliminated(rider: int, rank: int, _gap_m: float) -> void:
 	_notice.text = "PISTE %d ELIMINEE — rang %d" % [rider + 1, rank]
+	_covered_notice = ""
+
+
+## docs/02 §4 : « bandeau + son ». Quelle que soit la politique — sous
+## RELANCE, l'abandon qui suit reprendra la parole.
+func _on_false_start(rider: int, _policy: int) -> void:
+	_notice.add_theme_color_override("font_color", ALERT)
+	_notice.text = "FAUX DEPART — PISTE %d" % (rider + 1)
+	_covered_notice = ""
+
+
+## docs/01 §6.2 : la course se fige sur la dernière valeur connue, le bandeau
+## le dit. Au retour du lien, il rend ce qu'il avait recouvert — une
+## élimination survenue juste avant ne doit pas disparaître avec l'alerte.
+func _on_link_state(state: int) -> void:
+	if state == Protocol.State.LINK_LOST:
+		if _notice.text != LINK_LOST_TEXT:
+			_covered_notice = _notice.text
+		_notice.add_theme_color_override("font_color", ALERT)
+		_notice.text = LINK_LOST_TEXT
+	elif _notice.text == LINK_LOST_TEXT:
+		_notice.text = _covered_notice
+		_covered_notice = ""
+
+
+func _on_aborted(_note: String) -> void:
+	_notice.add_theme_color_override("font_color", ALERT)
+	_notice.text = "COURSE INTERROMPUE"
+	_covered_notice = ""
+
+
+func notice_text() -> String:
+	return _notice.text
+
+
+func notice_color() -> Color:
+	return _notice.get_theme_color("font_color")
 
 
 func _on_finished(result: RaceResult) -> void:
