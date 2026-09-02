@@ -89,7 +89,10 @@ Le panneau matériel affiche `Trames …, inconnues …, perdues …`.
   aimant est mal fixé. Le filtre écarte les valeurs impossibles, mais **il ne peut pas rattraper un tick fantôme
   isolé** — resserrer la fixation avant la course suivante.
 - **`perdues` non nulle** : la machine n'arrive plus à suivre le flux. Fermer les autres
-  applications ; c'est le seul cas qui fausse réellement une mesure.
+  applications ; c'est le seul cas qui fausse réellement une mesure. Le logiciel le dit sans
+  attendre qu'on lise ce compteur : `TRAMES PERDUES : la machine ne suit plus le flux du boîtier.`
+  apparaît dans le panneau **Course** dès la première perte, une fois par course. La course qui la
+  subit est à refaire.
 
 ---
 

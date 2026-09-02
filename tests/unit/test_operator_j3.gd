@@ -567,6 +567,38 @@ func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interro
 	assert_does_not_have(events, "RACE_ABORTED")
 
 
+func test_des_trames_perdues_sont_signalees_pendant_la_course() -> void:
+	# DEPANNAGE : « `perdues` non nulle : la machine n'arrive plus a suivre le
+	# flux. C'est LE SEUL CAS qui fausse reellement une mesure. » Le compteur
+	# vivait dans une ligne de statistiques que personne ne lit pendant une
+	# soiree — le defaut le plus grave etait le plus discret.
+	assert_true(await _await_identified())
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+	_controller.settings.distance_m = 500.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+
+	_controller.simulate_dropped_frames(3)
+	var warned := ""
+	for i: int in range(120):
+		await wait_frames(1)
+		for text: String in notices:
+			if text.begins_with("TRAMES PERDUES"):
+				warned = text
+		if not warned.is_empty():
+			break
+	assert_false(warned.is_empty(), "la perte est signalee : %s" % str(notices))
+	assert_string_contains(warned, "fausse")
+
+	# Une seule alerte par course : le compteur ne redescend jamais.
+	var before := notices.size()
+	_controller.simulate_dropped_frames(2)
+	await wait_frames(10)
+	assert_eq(notices.size(), before, "on ne repete pas a chaque image")
+	_controller.stop_race()
+
+
 func test_une_pointe_suspecte_remonte_a_l_operateur() -> void:
 	var notices: Array[String] = []
 	_controller.notice.connect(func(text: String) -> void: notices.append(text))

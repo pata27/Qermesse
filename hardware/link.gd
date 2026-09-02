@@ -159,3 +159,8 @@ func inject_link_return() -> void:
 func inject_phantom_tick(rider: int) -> void:
 	if _impl.has_method("inject_phantom_tick"):
 		_impl.inject_phantom_tick(rider)
+
+
+func inject_dropped_frames(count: int) -> void:
+	if _impl.has_method("inject_dropped_frames"):
+		_impl.inject_dropped_frames(count)

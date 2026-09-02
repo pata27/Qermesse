@@ -83,6 +83,7 @@ const SCHEDULES := {
 var _frames_total := 0
 var _frames_progress := 0
 var _frames_unknown := 0
+var _frames_dropped := 0
 var _connects := 0
 var _watchdog_trips := 0
 var _state: int = Protocol.State.DISCONNECTED
@@ -430,7 +431,7 @@ func get_stats() -> Dictionary:
 		"frames_total": _frames_total,
 		"frames_progress": _frames_progress,
 		"frames_unknown": _frames_unknown,
-		"frames_dropped": 0,
+		"frames_dropped": _frames_dropped,
 		"lines_overlong": 0,
 		"connects": _connects,
 		"handshake_failures": 0,
@@ -461,6 +462,12 @@ func inject_corrupt_frame() -> void:
 
 
 ## Coupure du lien : le simulateur cesse d'emettre, comme un cable arrache.
+## Trames perdues : la file deborde, la machine ne suit plus le flux. C'est
+## `DEPANNAGE` qui le dit : le seul cas qui fausse reellement une mesure.
+func inject_dropped_frames(count: int) -> void:
+	_frames_dropped += maxi(count, 0)
+
+
 func inject_link_loss() -> void:
 	_watchdog_trips += 1
 	_set_state(Protocol.State.LINK_LOST)

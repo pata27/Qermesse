@@ -60,6 +60,7 @@ var recorder: Recorder = null
 var _startup_problems: Array[String] = []
 ## Pistes deja signalees comme muettes, pour ne le dire qu'une fois par course.
 var _silent_lanes_warned: Array[int] = []
+var _dropped_warned := false
 var _link: Link = null
 var _link_lost_since_ms: int = -1
 var _rejected_ticks: int = 0
@@ -129,6 +130,7 @@ func _process(_delta: float) -> void:
 	if _link_lost_since_ms >= 0 and now - _link_lost_since_ms > LINK_GRACE_MS:
 		_link_lost_since_ms = -1
 		engine.on_link_lost_beyond_grace()
+	_watch_dropped_frames()
 
 
 # --- Intentions de l'interface -----------------------------------------------
@@ -225,6 +227,7 @@ func start_race() -> bool:
 	# terminer d'abord, sinon `g` tomberait sur un firmware deja parti.
 	end_sensor_test()
 	_silent_lanes_warned.clear()
+	_dropped_warned = false
 	# NEW RACE : la course precedente, terminee, est acquittee. Elle reste a
 	# l'ecran public jusqu'au decompte suivant — c'est le HUD qui decide.
 	acknowledge_results()
@@ -355,6 +358,11 @@ func simulate_phantom_tick(rider: int) -> void:
 	_link.inject_phantom_tick(rider)
 
 
+## Des trames perdues faute d'avoir suivi le flux — sur le boîtier SIMULÉ.
+func simulate_dropped_frames(count: int) -> void:
+	_link.inject_dropped_frames(count)
+
+
 # --- Reactions au lien et au moteur ------------------------------------------
 
 func _on_command_requested(command: String) -> void:
@@ -470,6 +478,25 @@ func _on_tick_rejected(rider: int, description: String) -> void:
 	_last_rejection = description
 	recorder.record_tick_rejected(rider, description)
 	notice.emit("tick rejete : %s" % description)
+
+
+## `DEPANNAGE` : des trames perdues sont LE SEUL CAS qui fausse reellement une
+## mesure — la machine ne suit plus le flux et des ticks manquent pour de bon.
+## Le compteur vivait dans une ligne de statistiques que personne ne lit
+## pendant une soiree : le defaut le plus grave etait le plus discret.
+##
+## Signale UNE FOIS par course : le compteur ne redescend jamais, repeter a
+## chaque image noierait le reste.
+func _watch_dropped_frames() -> void:
+	if _dropped_warned or not race_in_progress():
+		return
+	if int(_link.get_stats().get("frames_dropped", 0)) <= 0:
+		return
+	_dropped_warned = true
+	notice.emit(
+		"TRAMES PERDUES : la machine ne suit plus le flux du boitier."
+		+ " Fermer les autres applications — c'est le seul cas qui fausse une mesure."
+	)
 
 
 ## La pointe est RETENUE — elle est peut-etre vraie —, seulement signalee.
