@@ -364,6 +364,48 @@ func test_rejeu_d_une_poursuite_les_eliminations_sont_identiques() -> void:
 	assert_eq(replayed.eliminated, original.eliminated)
 
 
+func test_rejeu_d_une_course_interrompue_rend_le_classement_partiel() -> void:
+	# Une course arretee laisse desormais sa trace ; encore faut-il pouvoir en
+	# tirer quelque chose. Le moteur n'y atteint jamais sa condition de fin, et
+	# le rejeu rendait `null` : le fichier le plus utile apres un incident
+	# etait le seul qu'on ne pouvait pas rejouer.
+	var config := _config()
+	config.distance_m = 500.0
+	var engine := RaceEngine.new()
+	_recorder.begin_race(config, {0: {"name": "Alice"}, 1: {"name": "Bob"}})
+	engine.arm(config, 0)
+	for value: int in [3, 2, 1, 0]:
+		engine.on_countdown(value)
+
+	var physics := Physics.new(config.roller_mm)
+	var distances := [0.0, 0.0, 0.0, 0.0]
+	var ms := 0
+	while ms < 5000:
+		ms += 10
+		var ticks: Array = []
+		for rider: int in range(Protocol.MAX_RIDERS):
+			var kph: float = [45.0, 40.0][rider] if rider < 2 else 0.0
+			distances[rider] += kph * Physics.KPH_TO_MM_PER_MS * 10.0
+			ticks.append(int(floor(distances[rider] / physics.circumference_mm)))
+		engine.on_progress(ticks, ms)
+		_recorder.record_sample(engine.race_state().ticks, ms)
+
+	engine.abort("arret operateur")
+	var original := engine.result()
+	assert_not_null(original, "l'abandon produit un resultat partiel")
+	assert_false(_recorder.finish_race(original).is_empty())
+
+	var loaded := Replay.load_file(_races.path_join("%s.json" % original.uuid))
+	assert_true(loaded.ok, loaded.error)
+	var replayed := Replay.replay(loaded)
+	assert_not_null(replayed, "une course interrompue se rejoue aussi")
+	assert_true(replayed.interrupted, "et se declare interrompue")
+	assert_string_contains(replayed.interruption_note, "operateur")
+	assert_eq(replayed.ranking, original.ranking, "meme classement partiel")
+	assert_almost_eq(replayed.distance_m[0], original.distance_m[0], 0.01)
+	assert_almost_eq(replayed.distance_m[1], original.distance_m[1], 0.01)
+
+
 func test_un_json_de_format_inconnu_est_refuse_proprement() -> void:
 	AppPaths.ensure_dir(_races)
 	var path := _races.path_join("bidon.json")

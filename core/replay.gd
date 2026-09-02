@@ -25,6 +25,9 @@ class Loaded:
 	var recorded_ranking: Array[int] = []
 	var recorded_elapsed_ms: int = 0
 	var recorded_end_reason: int = 0
+	## Course arretee avant son terme, et pourquoi — docs/02 §5.
+	var recorded_interrupted: bool = false
+	var recorded_interruption_note: String = ""
 
 
 static func load_file(path: String) -> Loaded:
@@ -64,6 +67,8 @@ static func load_file(path: String) -> Loaded:
 	out.recorded_ranking = ranking
 	out.recorded_elapsed_ms = int(result.get("elapsed_ms", 0))
 	out.recorded_end_reason = int(result.get("end_reason", 0))
+	out.recorded_interrupted = bool(result.get("interrupted", false))
+	out.recorded_interruption_note = str(result.get("interruption_note", ""))
 	out.ok = true
 	return out
 
@@ -108,6 +113,13 @@ static func replay(loaded: Loaded) -> RaceResult:
 	while next_finish < finishes.size() and engine.state() == RaceEngine.State.RUNNING:
 		engine.on_rider_finish(int(finishes[next_finish][0]), int(finishes[next_finish][1]))
 		next_finish += 1
+
+	# LA TRACE S'ARRETE SANS QUE LA COURSE SE TERMINE : elle a ete interrompue.
+	# On l'interrompt de la meme facon plutot que de rendre `null` — sinon le
+	# fichier le plus utile apres un incident serait le seul inexploitable.
+	if engine.state() == RaceEngine.State.RUNNING and loaded.recorded_interrupted:
+		engine.abort(loaded.recorded_interruption_note)
+		return engine.result()
 	return produced[0] if not produced.is_empty() else null
 
 
