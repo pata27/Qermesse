@@ -78,14 +78,18 @@ fixe le plafond.
 ## 5. Habillage à l'écran (fenêtre spectacle)
 
 * **Bandeau haut** — mode de course, objectif (`500 m` / `60 s` / `écart 50 m`), chrono en chiffres géants.
+  Écran scindé : bandeau, chrono et titres réduits d'un peu moins de moitié, comme les cartes — à
+  pleine taille ils mangeaient le haut de chaque volet.
 * **Par rider** — nom, numéro de piste, vitesse instantanée en km/h, distance parcourue, cadence.
 * **Poursuite** — l'écart occupe le centre de l'écran, avec la barre de tension entre `−G` et `+G`.
 * **Décompte** — plein écran, `3 / 2 / 1 / GO`, synchronisé sur les trames `CD:` du firmware
   (jamais sur une horloge PC : les LED physiques et l'écran doivent être d'accord).
-* **Arrivée** — ralenti, podium, temps, vitesse moyenne et vitesse de pointe par rider. Si l'écran
-  était scindé au moment où tout le monde finit — le gong du mode temps —, il le reste pour la
-  célébration : chacun lève les bras dans son volet. Il ne se replie que quand le champ de fin ne
-  correspond plus aux cassures (arrivées une à une, vainqueur seul d'une poursuite).
+* **Arrivée** — ralenti, podium, temps, vitesse moyenne et vitesse de pointe par rider. Un rider
+  arrivé ne s'arrête pas : il décélère vers une allure de croisière et continue de rouler sous la
+  célébration et le podium — le sol défile. Une fois tout le monde arrivé, les suivants accélèrent
+  pour revenir se placer derrière le premier, dans l'ordre d'arrivée, à quelques mètres — jamais
+  devant lui — et la caméra retrouve tout le monde dans un seul cadre ; si l'écran était scindé au
+  gong du mode temps, les volets se referment en les voyant se rapprocher.
 
 ## 6. Audio
 

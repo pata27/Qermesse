@@ -324,9 +324,9 @@ func _capture_stills() -> void:
 	# chrono : sur une course courte, la ligne tombe avant le premier repère
 	# horaire, et c'est justement le moment qu'on veut regarder.
 	var since := 0.0
-	var after := {"arrivee": 0.9, "celebration": 3.0, "podium": 4.2}
+	var after := {"arrivee": 0.9, "celebration": 3.0, "regroupe": 4.6, "podium": 6.0}
 	var shot: Array[String] = []
-	while shot.size() < after.size() and since < 8.0:
+	while shot.size() < after.size() and since < 10.0:
 		since += await _step()
 		if OS.get_environment("SS_DIAG") == "1":
 			var st := _controller.engine.race_state()

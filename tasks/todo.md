@@ -154,7 +154,7 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
       même processus sur l'autre écran.)*
 - [x] Podium et écran de fin — place, coureur, temps, moyenne, pointe
       *(preuve : `tasks/preuves/images/lot5-podium.png`. Les chiffres viennent du `RaceResult`, donc
-      du moteur : rien n'est recalculé à l'affichage. Il attend 3,2 s que la célébration se joue.)*
+      du moteur : rien n'est recalculé à l'affichage. Il attend 5 s que la célébration et le regroupement se jouent.)*
 - [x] Audio complet + coupure globale d'un bouton — `audio/sound_forge.gd`, `audio/race_audio.gd`
       *(nappe indexée sur la vitesse — sur l'ÉCART en poursuite —, bips de décompte montant d'un
       demi-ton, klaxon, cloche des 50 derniers mètres, clameurs sur dépassement, accélération et

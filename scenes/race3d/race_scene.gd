@@ -16,6 +16,23 @@ const TRACK_SEGMENT_M := TrackBuilder.SEGMENT_LENGTH_M
 ## Constante de temps de la roue libre après l'arrivée. Une seconde et demie :
 ## assez pour que le geste se lise, assez court pour ne pas faire attendre.
 const COAST_TAU_S := 1.5
+## Un coureur arrivé ne s'arrête pas : il décélère vers une vitesse de
+## croisière — un tiers de sa vitesse de passage, jamais moins qu'une allure
+## de promenade — et la garde sous la célébration et le podium. Une roue
+## libre qui tombait à zéro en trois secondes se lisait comme un arrêt net,
+## et le sol cessait de défiler sous la caméra de fin. Les éliminés, eux,
+## s'arrêtent : ils sont sortis de la course.
+const COAST_CRUISE_FRACTION := 0.35
+const COAST_MIN_CRUISE_M_S := 2.5
+## REGROUPEMENT. Une fois tout le monde arrivé, les suivants accélèrent pour
+## revenir se placer derrière le premier, dans l'ordre d'arrivée, à quelques
+## mètres — jamais devant lui : une contrainte de position le garantit. La
+## caméra retrouve tout le monde dans un seul cadre pour la célébration, et
+## la scission se referme d'elle-même en les voyant se rapprocher.
+const REGROUP_SPACING_M := 2.5
+const REGROUP_MIN_SPACING_M := 1.5
+const REGROUP_GAIN := 1.2
+const REGROUP_EXTRA_M_S := 16.0
 ## Facteur de ralenti au photo-finish. Un tiers : assez lent pour qu'on voie qui
 ## passe devant, assez rapide pour ne pas faire attendre une salle.
 const SLOW_MOTION_SCALE := 0.33
@@ -51,6 +68,7 @@ var _key_light: DirectionalLight3D
 var _anchor_primed := false
 var _slow_motion := 1.0
 var _coast_speed: Dictionary = {}
+var _coast_cruise: Dictionary = {}
 var _coast_extra: Dictionary = {}
 var _load_panes := -1
 var _effect_relief := 0.0
@@ -338,6 +356,14 @@ func _on_race_state_changed(_previous: int, current: int) -> void:
 	if current == RaceEngine.State.ARMING:
 		rebuild_riders()
 		_anchor_m = 0.0
+		# LA ROUE LIBRE REPART DE ZÉRO. Jamais remise, elle reprenait à la
+		# deuxième course la vitesse résiduelle de la première — nulle — et
+		# ajoutait d'un coup au passage de la ligne les mètres accumulés la
+		# fois d'avant : un arrêt sec et un saut, à chaque course sauf la
+		# première.
+		_coast_speed.clear()
+		_coast_cruise.clear()
+		_coast_extra.clear()
 		var config := _controller.current_config()
 		_camera_rig.set_behaviour_for_mode(config.mode)
 		_finish_m = config.distance_m if config.mode == RaceConfig.Mode.DISTANCE else -1.0
@@ -552,9 +578,9 @@ func _reposition_riders(delta: float) -> void:
 	var gaps := PackedFloat32Array()
 	for index: int in range(order.size() - 1):
 		gaps.append(float(positions[order[index]]) - float(positions[order[index + 1]]))
-	if not all_done:
+	if not all_done or _split.cuts().size() == gaps.size():
 		_split.consider(gaps)
-	elif _split.cuts().size() != gaps.size():
+	else:
 		_split.consider(PackedFloat32Array())
 	# L'ANIMATION DES LAMES EST AVANCÉE ICI, avant que les caméras ne cadrent.
 	#
@@ -768,20 +794,55 @@ func _relieve_for_panes(panes: int) -> void:
 func _coast(delta: float, state: RaceState, positions: Dictionary) -> void:
 	if state == null:
 		return
+	# Les arrivés dans l'ORDRE D'ARRIVÉE : chacun se règle sur celui qui le
+	# précède, dont la position de cette image est déjà connue.
+	var finished: Array[int] = []
+	var everyone_done := true
 	for lane: int in _interpolators:
-		var done: bool = state.finished_ms[lane] > 0 or state.eliminated[lane]
-		if not done:
-			continue
+		if state.finished_ms[lane] > 0:
+			finished.append(lane)
+		elif not state.eliminated[lane]:
+			everyone_done = false
+	finished.sort_custom(func(a: int, b: int) -> bool: return state.finished_ms[a] < state.finished_ms[b])
+
+	var order: Array[int] = finished.duplicate()
+	for lane: int in _interpolators:
+		if state.eliminated[lane] and state.finished_ms[lane] == 0:
+			order.append(lane)
+
+	var ahead := -1
+	for lane: int in order:
 		if not _coast_speed.has(lane):
 			# Vitesse au moment du franchissement : c'est de là que part la
 			# décélération.
 			_coast_speed[lane] = state.display_speed_kph[lane] / 3.6
-		var speed: float = float(_coast_speed[lane]) * exp(-delta / COAST_TAU_S)
+			_coast_cruise[lane] = (
+				0.0 if state.eliminated[lane]
+				else maxf(float(_coast_speed[lane]) * COAST_CRUISE_FRACTION, COAST_MIN_CRUISE_M_S)
+			)
+		var cruise: float = float(_coast_cruise[lane])
+		var base := float(positions[lane])
+		var shown := base + float(_coast_extra.get(lane, 0.0))
+		var target := cruise
+		if everyone_done and ahead >= 0 and state.finished_ms[lane] > 0:
+			# Revenir se placer derrière celui de devant, à REGROUP_SPACING_M,
+			# en accélérant — sans jamais le rattraper.
+			var wanted := float(positions[ahead]) - REGROUP_SPACING_M
+			var error := wanted - shown
+			target = float(_coast_speed[ahead]) + clampf(error * REGROUP_GAIN, -1.0, REGROUP_EXTRA_M_S)
+			target = maxf(target, 0.0)
+		var speed: float = target + (float(_coast_speed[lane]) - target) * exp(-delta / COAST_TAU_S)
 		if speed < 0.25:
 			speed = 0.0
 		_coast_speed[lane] = speed
-		_coast_extra[lane] = float(_coast_extra.get(lane, 0.0)) + speed * delta
-		positions[lane] = float(positions[lane]) + float(_coast_extra[lane])
+		shown += speed * delta
+		if ahead >= 0 and state.finished_ms[lane] > 0:
+			# L'ordre d'arrivée est une contrainte, pas un souhait.
+			shown = minf(shown, float(positions[ahead]) - REGROUP_MIN_SPACING_M)
+		_coast_extra[lane] = shown - base
+		positions[lane] = shown
+		if state.finished_ms[lane] > 0:
+			ahead = lane
 
 
 ## Rapport d'image de l'ÉCRAN — pas celui d'une vue de volet, qui n'en couvre

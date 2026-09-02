@@ -14,6 +14,10 @@ extends CanvasLayer
 ## dixièmes : en dessous, on n'affiche plus une mesure mais son bruit.
 const SPEED_STEP_KPH := 0.2
 const BAND_HEIGHT := 132
+## Bannière en écran scindé : les titres pleine taille mangeaient le haut de
+## chaque volet, déjà étroit. Bande, chrono et titres réduits d'un peu moins
+## de moitié — comme les cartes.
+const BAND_HEIGHT_COMPACT := 72
 const CARD_HEIGHT := 96
 ## Largeur des cartes. Élargies pour que la cadence tienne à droite sans
 ## chevaucher la distance, dont la longueur varie avec le mode.
@@ -31,7 +35,7 @@ const MUTED := Color("#8A94A6")
 ## Colonnes du podium : place, coureur, temps, moyenne, pointe.
 const PODIUM_COLUMNS := 5
 ## Délai avant l'apparition du podium, le temps que la célébration se joue.
-const PODIUM_DELAY_S := 3.2
+const PODIUM_DELAY_S := 5.0
 ## Milieu de l'espace libre à droite des cartes, en 1080p : là où vont la
 ## bannière et tout ce qui se centre quand les cartes occupent la gauche.
 const CLEAR_CENTRE_X := (36.0 + CARD_WIDTH + 1920.0) * 0.5
@@ -87,6 +91,7 @@ var _podium_note: Label
 var _podium_delay_s := 0.0
 var _pending_result: RaceResult = null
 var _notice: Label
+var _band: ColorRect
 ## Ce que le bandeau « lien perdu » a recouvert, à rendre au retour du lien.
 var _covered_notice := ""
 
@@ -110,13 +115,13 @@ func setup(controller: AppController) -> void:
 
 
 func _build() -> void:
-	var band := ColorRect.new()
-	band.color = Color(0.043, 0.055, 0.078, 0.82)
-	band.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	band.custom_minimum_size.y = BAND_HEIGHT
-	band.size.y = BAND_HEIGHT
-	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(band)
+	_band = ColorRect.new()
+	_band.color = Color(0.043, 0.055, 0.078, 0.82)
+	_band.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_band.custom_minimum_size.y = BAND_HEIGHT
+	_band.size.y = BAND_HEIGHT
+	_band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_band)
 
 	_mode_label = _make_label(28, INK)
 	_mode_label.position = Vector2(36, 18)
@@ -662,7 +667,7 @@ func _layout_cards() -> void:
 		var root := entry["root"] as Control
 		var index := int(root.get_meta("index", 0))
 		root.scale = Vector2(scale, scale)
-		root.position = Vector2(36, BAND_HEIGHT + 28 + index * step)
+		root.position = Vector2(36, band_height() + 28 + index * step)
 
 
 ## Active ou non le mode compact ; appelé par la scène selon le nombre de volets.
@@ -670,7 +675,26 @@ func set_compact(compact: bool) -> void:
 	if compact == _compact:
 		return
 	_compact = compact
+	_layout_banner()
 	_layout_cards()
+
+
+func band_height() -> float:
+	return float(BAND_HEIGHT_COMPACT if _compact else BAND_HEIGHT)
+
+
+## La bannière suit le mode compact : titres, chrono et bande réduits.
+func _layout_banner() -> void:
+	var height := band_height()
+	_band.custom_minimum_size.y = height
+	_band.size.y = height
+	_mode_label.add_theme_font_size_override("font_size", 18 if _compact else 28)
+	_mode_label.position = Vector2(36, 8 if _compact else 18)
+	_objective_label.add_theme_font_size_override("font_size", 24 if _compact else 40)
+	_objective_label.position = Vector2(36, 32 if _compact else 56)
+	_clock_label.add_theme_font_size_override("font_size", 48 if _compact else 84)
+	_clock_label.position.y = 8 if _compact else 14
+	_notice.position.y = height + 16
 
 
 func _make_label(size: int, color: Color) -> Label:
