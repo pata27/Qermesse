@@ -70,14 +70,14 @@ func to_dict() -> Dictionary:
 		"use_simulator": use_simulator,
 		"roller_mm": roller_mm,
 		"speed_samples": speed_samples,
-		"mode": int(mode),
+		"mode": RaceConfig.mode_name_of(mode),
 		"distance_m": distance_m,
 		"duration_s": duration_s,
 		"gap_m": gap_m,
 		"pursuit_time_cap_s": pursuit_time_cap_s,
 		"pursuit_distance_cap_m": pursuit_distance_cap_m,
 		"distance_timeout_s": distance_timeout_s,
-		"false_start_policy": int(false_start_policy),
+		"false_start_policy": RaceConfig.policy_name(false_start_policy),
 		"false_start_penalty_m": false_start_penalty_m,
 		"development_m": development_m,
 		"show_window_screen": show_window_screen,
@@ -94,7 +94,14 @@ func from_dict(data: Dictionary) -> void:
 	use_simulator = bool(data.get("use_simulator", use_simulator))
 	roller_mm = _clamp_float(data, "roller_mm", roller_mm, 20.0, 500.0)
 	speed_samples = int(clampf(float(data.get("speed_samples", speed_samples)), 1.0, 240.0))
-	mode = _clamp_enum(data, "mode", int(mode), 0, 2) as RaceConfig.Mode
+	# NOM OU ENTIER. Les fichiers ecrits par les versions precedentes portent un
+	# entier : les refuser perdrait les reglages d'un operateur a la mise a
+	# jour. On lit donc les deux, on n'ecrit plus que des noms.
+	var raw_mode: Variant = data.get("mode", int(mode))
+	mode = (
+		RaceConfig.mode_from_name(str(raw_mode), mode) if raw_mode is String
+		else _clamp_enum(data, "mode", int(mode), 0, 2) as RaceConfig.Mode
+	)
 	distance_m = _clamp_float(data, "distance_m", distance_m, 50.0, 5000.0)
 	duration_s = _clamp_float(data, "duration_s", duration_s, 10.0, 3600.0)
 	gap_m = _clamp_float(data, "gap_m", gap_m, 10.0, 500.0)
@@ -103,8 +110,10 @@ func from_dict(data: Dictionary) -> void:
 		data, "pursuit_distance_cap_m", pursuit_distance_cap_m, 100.0, 100000.0
 	)
 	distance_timeout_s = _clamp_float(data, "distance_timeout_s", distance_timeout_s, 30.0, 3600.0)
+	var raw_policy: Variant = data.get("false_start_policy", int(false_start_policy))
 	false_start_policy = (
-		_clamp_enum(data, "false_start_policy", int(false_start_policy), 0, 3)
+		RaceConfig.policy_from_name(str(raw_policy), false_start_policy) if raw_policy is String
+		else _clamp_enum(data, "false_start_policy", int(false_start_policy), 0, 3)
 		as RaceConfig.FalseStartPolicy
 	)
 	false_start_penalty_m = _clamp_float(data, "false_start_penalty_m", false_start_penalty_m,

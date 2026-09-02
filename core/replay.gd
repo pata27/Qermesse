@@ -127,7 +127,7 @@ static func replay(loaded: Loaded) -> RaceResult:
 ## jour en ont le meme besoin.
 static func config_from_dict(raw_config: Dictionary) -> RaceConfig:
 	var config := RaceConfig.new()
-	config.mode = _mode_from_name(str(raw_config.get("mode", "distance")))
+	config.mode = RaceConfig.mode_from_name(str(raw_config.get("mode", "distance")))
 	var riders: Array[int] = []
 	for value: Variant in raw_config.get("active_riders", []):
 		riders.append(int(value))
@@ -141,12 +141,3 @@ static func config_from_dict(raw_config: Dictionary) -> RaceConfig:
 	config.pursuit_distance_cap_m = float(raw_config.get("pursuit_distance_cap_m", 5000.0))
 	config.distance_timeout_s = float(raw_config.get("distance_timeout_s", 600.0))
 	return config
-
-
-static func _mode_from_name(name: String) -> RaceConfig.Mode:
-	match name:
-		"temps":
-			return RaceConfig.Mode.TIME
-		"poursuite":
-			return RaceConfig.Mode.PURSUIT
-	return RaceConfig.Mode.DISTANCE

@@ -95,6 +95,40 @@ func test_tous_les_reglages_declares_font_l_aller_retour() -> void:
 			assert_eq(got, want, "reglage %s : absent de to_dict ou de from_dict ?" % name)
 
 
+func test_le_fichier_de_reglages_se_lit_sans_connaitre_les_enumerations() -> void:
+	# `"mode": 2` ne dit rien a qui ouvre le fichier — et `DEPANNAGE` donne son
+	# chemin a l'operateur. La trace d'une course ecrit deja « poursuite » en
+	# toutes lettres ; les reglages faisaient autrement.
+	var settings := Settings.new()
+	settings.mode = RaceConfig.Mode.PURSUIT
+	settings.false_start_policy = RaceConfig.FalseStartPolicy.PENALTY
+	assert_true(settings.save(_path("lisible.json")))
+
+	var written := FileAccess.get_file_as_string(_path("lisible.json"))
+	assert_string_contains(written, '"mode": "poursuite"')
+	assert_string_contains(written, '"false_start_policy": "penalite"')
+
+	var reloaded := Settings.new()
+	assert_true(reloaded.load_from(_path("lisible.json")))
+	assert_eq(reloaded.mode, RaceConfig.Mode.PURSUIT)
+	assert_eq(reloaded.false_start_policy, RaceConfig.FalseStartPolicy.PENALTY)
+
+
+func test_un_ancien_fichier_de_reglages_en_chiffres_se_relit_encore() -> void:
+	# Les fichiers deja ecrits par les versions precedentes portent des
+	# entiers : les refuser reviendrait a perdre les reglages d'un operateur a
+	# la mise a jour, ce que docs/02 §5 interdit en substance.
+	var file := FileAccess.open(_path("ancien.json"), FileAccess.WRITE)
+	file.store_string('{"version": 1, "mode": 2, "false_start_policy": 3, "gap_m": 75.0}')
+	file.close()
+
+	var settings := Settings.new()
+	assert_true(settings.load_from(_path("ancien.json")))
+	assert_eq(settings.mode, RaceConfig.Mode.PURSUIT, "2 valait poursuite")
+	assert_eq(settings.false_start_policy, RaceConfig.FalseStartPolicy.PENALTY, "3 valait penalite")
+	assert_almost_eq(settings.gap_m, 75.0, 0.001, "et le reste suit")
+
+
 func test_couper_les_preferences_isole_aussi_les_courses_enregistrees() -> void:
 	# `preferences_enabled = false` protegeait les reglages et le roster, mais
 	# le recorder continuait de viser les dossiers de l'operateur : les demos

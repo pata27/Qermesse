@@ -82,8 +82,52 @@ func arming_commands() -> Array[String]:
 	return ["x", Protocol.TIME_COMMAND, "g"]
 
 
-func mode_name() -> String:
-	match mode:
+## Nom d'un mode et son inverse. Les fichiers ecrivent des NOMS, pas des
+## entiers : `"mode": 2` ne dit rien a qui ouvre le fichier, et `DEPANNAGE`
+## en donne le chemin a l'operateur. La trace d'une course le faisait deja ;
+## les reglages le font aussi, et la conversion vit ici plutot qu'en deux
+## exemplaires.
+static func mode_from_name(name: String, fallback: Mode = Mode.DISTANCE) -> Mode:
+	match name:
+		"distance":
+			return Mode.DISTANCE
+		"temps":
+			return Mode.TIME
+		"poursuite":
+			return Mode.PURSUIT
+	return fallback
+
+
+static func policy_name(value: FalseStartPolicy) -> String:
+	match value:
+		FalseStartPolicy.IGNORE:
+			return "ignorer"
+		FalseStartPolicy.WARN:
+			return "avertissement"
+		FalseStartPolicy.RESTART:
+			return "relance"
+		FalseStartPolicy.PENALTY:
+			return "penalite"
+	return "avertissement"
+
+
+static func policy_from_name(
+	name: String, fallback: FalseStartPolicy = FalseStartPolicy.WARN
+) -> FalseStartPolicy:
+	match name:
+		"ignorer":
+			return FalseStartPolicy.IGNORE
+		"avertissement":
+			return FalseStartPolicy.WARN
+		"relance":
+			return FalseStartPolicy.RESTART
+		"penalite":
+			return FalseStartPolicy.PENALTY
+	return fallback
+
+
+static func mode_name_of(value: Mode) -> String:
+	match value:
 		Mode.DISTANCE:
 			return "distance"
 		Mode.TIME:
@@ -91,6 +135,10 @@ func mode_name() -> String:
 		Mode.PURSUIT:
 			return "poursuite"
 	return "distance"
+
+
+func mode_name() -> String:
+	return mode_name_of(mode)
 
 
 func duplicate_config() -> RaceConfig:

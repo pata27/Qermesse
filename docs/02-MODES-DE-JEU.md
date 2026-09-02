@@ -214,7 +214,10 @@ Un résultat porte **les noms des riders tels qu'ils étaient au départ** : l'�
 l'historique affichent ceux-là, jamais le roster courant — renommer les pistes entre deux courses
 ne réécrit pas l'histoire.
 
-**Réglages** — JSON, chemins standards par OS :
+**Réglages** — JSON **lisible sans connaître le code** : le mode et la politique de faux départ y
+sont écrits en toutes lettres (`"mode": "poursuite"`), comme dans la trace d'une course. Les
+fichiers écrits par une version antérieure, qui portaient des entiers, restent relus — une mise à
+jour ne fait pas perdre ses réglages à l'opérateur. Chemins standards par OS :
 * Linux `~/.config/silversprint/settings.json`
 * macOS `~/Library/Application Support/SilverSprint/settings.json`
 * Windows `%APPDATA%\SilverSprint\settings.json`
