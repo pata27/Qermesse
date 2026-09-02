@@ -541,11 +541,21 @@ func _reposition_riders(delta: float) -> void:
 	var order: Array[int] = racing.duplicate()
 	order.sort_custom(_further_first.bind(positions))
 
+	# TOUT LE MONDE ARRIVÉ, LA SCISSION EST GELÉE, pas repliée — docs/04 §5.
+	#
+	# Au gong du mode temps, trois coureurs à 25 m les uns des autres finissent
+	# ensemble : replier en un seul cadre ne montrait que celui du milieu, le
+	# vainqueur célébrait hors champ. Les cassures restent ce qu'elles étaient
+	# à l'arrivée, et chacun lève les bras dans son volet. Le repli n'a lieu
+	# que si le champ de fin ne correspond plus aux cassures gelées : arrivées
+	# une à une en distance, vainqueur seul d'une poursuite.
 	var gaps := PackedFloat32Array()
+	for index: int in range(order.size() - 1):
+		gaps.append(float(positions[order[index]]) - float(positions[order[index + 1]]))
 	if not all_done:
-		for index: int in range(order.size() - 1):
-			gaps.append(float(positions[order[index]]) - float(positions[order[index + 1]]))
-	_split.consider(gaps)
+		_split.consider(gaps)
+	elif _split.cuts().size() != gaps.size():
+		_split.consider(PackedFloat32Array())
 	# L'ANIMATION DES LAMES EST AVANCÉE ICI, avant que les caméras ne cadrent.
 	#
 	# `advance` déplace chaque lame ET transmet au composite la tranche d'écran

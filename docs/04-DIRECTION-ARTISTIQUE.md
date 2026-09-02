@@ -82,7 +82,10 @@ fixe le plafond.
 * **Poursuite** — l'écart occupe le centre de l'écran, avec la barre de tension entre `−G` et `+G`.
 * **Décompte** — plein écran, `3 / 2 / 1 / GO`, synchronisé sur les trames `CD:` du firmware
   (jamais sur une horloge PC : les LED physiques et l'écran doivent être d'accord).
-* **Arrivée** — ralenti, podium, temps, vitesse moyenne et vitesse de pointe par rider.
+* **Arrivée** — ralenti, podium, temps, vitesse moyenne et vitesse de pointe par rider. Si l'écran
+  était scindé au moment où tout le monde finit — le gong du mode temps —, il le reste pour la
+  célébration : chacun lève les bras dans son volet. Il ne se replie que quand le champ de fin ne
+  correspond plus aux cassures (arrivées une à une, vainqueur seul d'une poursuite).
 
 ## 6. Audio
 
