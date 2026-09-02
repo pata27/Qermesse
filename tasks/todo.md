@@ -180,7 +180,8 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
       dépendent d'un compte développeur Apple *(décision `docs/06` §5, toujours ouverte)*
 - [~] Release automatique par la CI sur tag — `.github/workflows/release.yml` écrit, YAML validé,
       **jamais exécuté** : il ne se déclenche que sur un tag `v*`
-- [ ] Manuel opérateur
+- [x] Manuel opérateur — `docs/MANUEL-OPERATEUR.md` *(court, panneau par panneau, écrit d'après ce
+      que l'application fait ; les pannes renvoient à `DEPANNAGE.md`)*
 - [x] `docs/DEPANNAGE.md` — dépannage terrain, écrit pour l'opérateur
 - [x] `docs/RECETTE.md` — checklist matériel du jalon J1, à dérouler avant chaque release
 - [ ] **J6** — un tiers installe sur machine vierge et fait courir deux personnes sans aide
