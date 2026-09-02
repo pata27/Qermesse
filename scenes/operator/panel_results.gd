@@ -69,20 +69,33 @@ func show_result(result: RaceResult) -> void:
 			"  [INTERROMPUE : %s]" % result.interruption_note if result.interrupted else "",
 		]
 	)
-	lines.append("rang  piste  nom            distance   temps     moy      max")
+	lines.append("rang  piste  nom            distance   temps       moy      max")
 	for rider: int in result.ranking:
+		# MEME LECTURE QUE LE PODIUM SPECTACLE. Le temps est le temps COURU :
+		# l'arrivee pour un classe, l'elimination — marquee — pour un elimine.
+		# Imprimer `finished_ms` pour tout le monde donnait 0,00 s a un elimine,
+		# sans dire ni quand ni pourquoi, alors que l'ecran public disait juste.
+		var timing := "    —    "
+		if result.finished_ms[rider] > 0:
+			timing = "%6.2f s  " % (result.finished_ms[rider] / 1000.0)
+		elif result.eliminated[rider] and result.eliminated_ms[rider] > 0:
+			timing = "%6.2f s x" % (result.eliminated_ms[rider] / 1000.0)
+		elif result.eliminated[rider]:
+			timing = " elimine "
 		lines.append(
-			"%4d  %5d  %-14s %7.1f m  %6.2f s  %5.1f  %5.1f"
+			"%4d  %5d  %-14s %7.1f m  %s  %5.1f  %5.1f"
 			% [
 				result.rank_of(rider),
 				rider + 1,
 				_controller.roster.rider(rider).display_name(),
 				result.distance_m[rider],
-				result.finished_ms[rider] / 1000.0,
+				timing,
 				result.avg_kph[rider],
 				result.max_kph[rider],
 			]
 		)
+	if result.mode == "poursuite":
+		lines.append("x = elimine a cet instant ; distance et moyenne arretees la")
 	_table.text = "\n".join(lines)
 	# Le chemin du CSV est affiche en clair : un operateur doit pouvoir le
 	# retrouver sans deviner ou le logiciel range ses fichiers.

@@ -38,6 +38,9 @@ var _distance_m := 0.0
 ## Durée du mode temps, pour la même raison que la distance : amener la fin
 ## dans la fenêtre de capture.
 var _duration_s := 0.0
+## Longueur de la vidéo, en images à 30 i/s. 900 = les trente secondes exigées
+## par J4 ; une preuve par mode peut être plus courte.
+var _video_frames := 900
 var _last_tick_us := 0
 
 
@@ -92,6 +95,9 @@ func _parse_args() -> void:
 			"--profil":
 				i += 1
 				_profile = args[i] if i < args.size() else _profile
+			"--images":
+				i += 1
+				_video_frames = int(args[i]) if i < args.size() else _video_frames
 			"--duree":
 				i += 1
 				_duration_s = float(args[i]) if i < args.size() else _duration_s
@@ -301,7 +307,7 @@ func _record() -> void:
 
 	# 30 s a 30 images par seconde : 900 images. La cadence de capture est
 	# imposee, elle ne suit pas le framerate reel.
-	var target_frames := 900
+	var target_frames := _video_frames
 	var next_capture := 0.0
 	var clock := 0.0
 	while _frame_index < target_frames:

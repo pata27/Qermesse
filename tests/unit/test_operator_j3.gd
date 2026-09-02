@@ -303,3 +303,37 @@ func test_l_interface_construite_avant_l_entree_dans_l_arbre_fonctionne() -> voi
 
 	panel.free()
 	controller.free()
+
+
+# =============================================================================
+# Le tableau operateur lit les memes donnees que le podium spectacle
+# =============================================================================
+
+
+func test_le_tableau_marque_l_instant_d_elimination_au_lieu_de_zero() -> void:
+	# Un resultat de poursuite construit a la main : le survivant a un temps
+	# d'arrivee, l'elimine n'en a pas mais a un instant d'elimination.
+	var result := RaceResult.new()
+	result.mode = "poursuite"
+	result.config = RaceConfig.new()
+	result.config.mode = RaceConfig.Mode.PURSUIT
+	result.config.active_riders = [0, 1] as Array[int]
+	result.ranking = [0, 1] as Array[int]
+	result.finished_ms[0] = 15540
+	result.distance_m[0] = 214.0
+	result.avg_kph[0] = 49.6
+	result.max_kph[0] = 58.8
+	result.eliminated[1] = true
+	result.eliminated_ms[1] = 14010
+	result.distance_m[1] = 135.0
+	result.avg_kph[1] = 34.7
+	result.max_kph[1] = 41.1
+
+	var panel := _panel.results_panel()
+	panel._on_race_finished(result)
+	var text := panel.table_text()
+
+	assert_string_contains(text, "15.54 s", "le survivant a son temps d'arrivee")
+	assert_string_contains(text, "14.01 s x", "l'elimine a son instant, marque")
+	assert_false(text.contains("0.00 s"), "jamais 0,00 s pour un elimine")
+	assert_string_contains(text, "x = elimine", "la marque est expliquee")
