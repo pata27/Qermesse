@@ -157,8 +157,18 @@ Colonnes : `timestamp_iso, event, mode, rider, dossard, distance_m, temps_ms, vi
 Événements écrits : `RACE_START`, `FALSE_START`, `RIDER_FINISH`, `RIDER_ELIMINATED`,
 `RACE_FINISH`, `RACE_ABORTED`, `LINK_LOST`.
 
+**Sens des colonnes sur une ligne `RACE_FINISH` — une par rider.** `temps_ms` est le **temps
+couru** par ce rider : son temps d'arrivée s'il a fini, l'instant de son élimination s'il a été
+éliminé (en mode temps, l'instant du gong pour tout le monde). Jamais 0 pour un éliminé.
+`vitesse_moy_kph` est calculée sur ce temps couru — et sur la distance figée à cet instant —, jamais
+sur la durée totale de la course : la moyenne d'un rider éliminé à 14 s n'est pas diluée par les
+25 s pendant lesquelles il regardait les autres. `distance_m` est la distance à cet instant.
+Une ligne `RIDER_ELIMINATED` porte, en `note`, l'écart au leader au moment de l'élimination.
+
 **JSON** — un fichier par course dans `<données_app>/races/<uuid>.json`, contenant en plus
-**la trace complète des trames `R:`** (ticks + elapsedMs). Permet le rejeu d'une course, le débogage
+**la trace complète des trames `R:`** (ticks + elapsedMs). Le résultat y est porté par rider :
+`finished_ms`, `eliminated_ms` (0 tant que le rider court), `distance_m`, `avg_kph`, `max_kph`,
+`eliminated`, `false_started`, avec les mêmes conventions que le CSV. Permet le rejeu d'une course, le débogage
 post-événement, et la génération de replays. ~100 Hz × 60 s × 4 riders ≈ 6000 échantillons,
 soit quelques centaines de Ko : négligeable.
 

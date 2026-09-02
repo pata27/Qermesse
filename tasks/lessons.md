@@ -365,3 +365,7 @@
 * **En mode scindé, l'habillage doit s'effacer.** Le volet du leader — le plus important — tenait
   tout entier sous la colonne de cartes. Une vérification « jusqu'au podium » sur 1 et 3 coureurs
   n'a rien trouvé côté données, mais a montré ça côté lisibilité.
+* **Un renvoi vers une section qu'on n'a pas écrite se lit comme une preuve.** Trois commits citaient
+  « `docs/01` §5.4 » pour la dernière trame `R:` jamais émise ; la section ne contenait pas ce que je
+  lui faisais dire, et affirmait même le contraire (« `F:` jamais une condition »). Le document
+  normatif se corrige AVANT le code — c'est la règle — et un renvoi se vérifie en ouvrant la section.
