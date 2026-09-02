@@ -134,6 +134,12 @@ vérifier d'ailleurs que le roster ne contient pas une piste cochée sans cyclis
 Le chemin complet est affiché **en clair** sous l'écran de résultats, et le bouton
 *Ouvrir le dossier du CSV* y mène.
 
+Les **outils de démonstration** (`tools/ss_operator_demo.gd`, `tools/ss_race3d_demo.gd`) font de
+vraies courses et enregistrent donc de vrais fichiers. Ils écrivent dans un dossier séparé —
+`<données Godot>/SilverSprint v3/demo/` — et **jamais** dans celui de l'opérateur, sauf si on le leur
+demande avec `--donnees <dossier>`. Une course apparue dans « Courses du jour » sans que personne
+n'ait couru vient d'un outil lancé avant ce cloisonnement.
+
 | Système | Emplacement |
 |---|---|
 | Linux | `~/.local/share/silversprint/logs/` |

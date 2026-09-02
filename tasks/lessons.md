@@ -442,3 +442,8 @@
   treize violations de `gdlint` — la CI aurait été rouge dès la première tentative, et le diagnostic
   aurait porté sur du code écrit deux semaines plus tôt. Un tour de boucle qui touche du GDScript
   finit par `gdlint core hardware scenes tests tools`, au même titre que la suite de tests.
+* **Un outil de preuve ne doit jamais écrire dans les données de l'utilisateur.** Les démos font de
+  vraies courses, donc de vrais enregistrements : elles ont déposé 63 courses dans la liste
+  « Courses du jour » de l'opérateur en une journée, et la CI en ajoutait à chaque exécution. Les
+  réglages étaient protégés (`preferences_enabled = false`), pas le dossier des courses — la moitié
+  d'un cloisonnement n'en est pas un. Vérifier ce qu'un outil écrit, pas seulement ce qu'il lit.

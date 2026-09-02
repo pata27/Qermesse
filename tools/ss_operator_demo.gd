@@ -13,6 +13,15 @@ const STEPS := ["configure", "countdown", "course", "resultats"]
 var _controller: AppController
 var _panel: OperatorPanel
 var _capture_dir := ""
+## Dossier de donnees des outils de preuve — JAMAIS celui de l'operateur.
+##
+## Les demos font des courses completes : elles enregistrent donc un CSV et un
+## JSON par course, comme le logiciel. Ecrivant par defaut dans les donnees de
+## l'utilisateur, elles ont rempli sa liste « Courses du jour » de dizaines de
+## courses qu'il n'a jamais faites — et la CI en ajoute a chaque execution.
+## `--donnees <dossier>` vise ailleurs, y compris les vraies donnees si on veut
+## les inspecter.
+var _data_dir := ProjectSettings.globalize_path("user://demo")
 var _speed := 4.0
 var _shots: Array[String] = []
 var _finished: Array[RaceResult] = []
@@ -23,6 +32,8 @@ func _initialize() -> void:
 
 	_controller = AppController.new()
 	_controller.preferences_enabled = false
+	_controller.recorder_logs_dir = _data_dir.path_join("logs")
+	_controller.recorder_races_dir = _data_dir.path_join("races")
 	root.add_child(_controller)
 
 	_panel = OperatorPanel.new()
@@ -47,6 +58,10 @@ func _parse_args() -> void:
 	var i := 0
 	while i < args.size():
 		match args[i]:
+			"--donnees":
+				i += 1
+				if i < args.size():
+					_data_dir = args[i]
 			"--capture":
 				i += 1
 				_capture_dir = args[i] if i < args.size() else ""
