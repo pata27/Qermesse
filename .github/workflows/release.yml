@@ -69,6 +69,12 @@ jobs:
           SCONS_CACHE: ${{ github.workspace }}/.scons-cache
         run: scons target=template_release -j2
 
+      # Compiler ne suffit pas : un module qui ne se CHARGE pas donne une release
+      # ou tout marche sauf le lien serie, et rien ne rougit. Chargement par
+      # ctypes et resolution du point d'entree, identiques sur les trois OS.
+      - name: Verifier que le module natif se charge
+        run: python scripts/check_extension_binary.py --target template_release
+
       - name: Recuperer Godot ${{ env.GODOT_VERSION }}
         shell: bash
         run: |
