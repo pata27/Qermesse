@@ -405,3 +405,7 @@
   second appel à `_run_race` repartait de zéro — chaque trame rejetée par le filtre, en silence.
   Trois défauts invisibles derrière un test vert. Un test se relit comme une phrase : sujet, verbe,
   nombre attendu.
+* **Un accesseur « pour les tests » qu'aucun test n'appelle cache une fonctionnalité jamais exercée.**
+  `sensor_button()` existait, personne ne l'appelait, et le bouton ne pouvait pas marcher sur le vrai
+  boîtier — le firmware ne lit ses capteurs qu'en course. Le balayage du code mort a trouvé un
+  bloqueur J1 sans matériel. Chaque accesseur de widget doit avoir son test, ou disparaître.

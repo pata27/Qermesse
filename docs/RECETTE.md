@@ -94,7 +94,8 @@ Noter le nombre de capteurs câblés — il conditionne la configuration par dé
 
 > **Piège classique : le câblage inversé.** Si tourner le rouleau 1 fait monter la piste 2, ce n'est
 > pas un bug logiciel. Le panneau matériel de la fenêtre opérateur a un bouton *Test capteurs* fait
-> exactement pour ça, à utiliser avant chaque événement.
+> exactement pour ça, à utiliser avant chaque événement. Il lance une course à blanc sur le boîtier
+> (`01` §5.7) : les ticks n'apparaissent qu'après son décompte de ~4 s.
 
 ---
 

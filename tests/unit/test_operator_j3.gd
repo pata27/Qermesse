@@ -487,6 +487,34 @@ func test_un_journal_impossible_a_ecrire_est_signale_en_fin_de_course() -> void:
 	DirAccess.remove_absolute(blocked)
 
 
+func test_le_test_capteurs_fait_vraiment_bouger_les_pistes() -> void:
+	# docs/01 §5.7 : le firmware ne lit ses capteurs qu'en course. Le bouton
+	# lance une course a blanc (x, t60, g) que le moteur n'arbitre pas, et
+	# l'arrete par s. La premiere version attendait des R: au repos : elle
+	# n'aurait jamais rien affiche sur le vrai boitier.
+	assert_true(await _await_identified())
+	var hardware := _panel.hardware_panel()
+	hardware.sensor_button().button_pressed = true
+	assert_true(_controller.sensor_test_active())
+	# Le decompte firmware dure ~4 s ; le simulateur est a x10.
+	var moved := false
+	for i: int in range(300):
+		await wait_frames(1)
+		if hardware.sensor_text(0).contains("ticks") and not hardware.sensor_text(0).contains(" 0 ticks"):
+			moved = true
+			break
+	assert_true(moved, "la piste 1 s'anime : %s" % hardware.sensor_text(0))
+	assert_eq(_controller.engine.state(), RaceEngine.State.IDLE, "le moteur n'arbitre rien")
+	assert_eq(_controller.history().size(), 0, "rien n'est enregistre")
+
+	hardware.sensor_button().button_pressed = false
+	assert_false(_controller.sensor_test_active())
+	await wait_frames(5)
+	assert_string_contains(hardware.sensor_text(0), "—", "affichage remis a zero")
+	assert_eq(_controller.link_state(), Protocol.State.IDENTIFIED, "le lien est pret pour une vraie course")
+	assert_true(_controller.can_start_race(), "et START est possible")
+
+
 func test_l_interface_construite_avant_l_entree_dans_l_arbre_fonctionne() -> void:
 	# Regression : Godot ne declenche ni _enter_tree ni _ready de facon
 	# synchrone quand on ajoute un noeud depuis SceneTree._initialize(). Un

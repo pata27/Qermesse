@@ -198,6 +198,9 @@ func start_race() -> bool:
 	if not reason.is_empty():
 		notice.emit("depart impossible : %s" % reason)
 		return false
+	# Un test capteurs en cours est une course a blanc cote boitier : la
+	# terminer d'abord, sinon `g` tomberait sur un firmware deja parti.
+	end_sensor_test()
 	var config := current_config()
 	recorder.begin_race(config, roster.to_recorder_map())
 	if not engine.arm(config, Time.get_ticks_msec()):
@@ -224,18 +227,35 @@ func acknowledge_results() -> void:
 	engine.acknowledge_results()
 
 
-## Test capteurs — docs/05 lot 3. Fait tourner chaque rouleau et verifie que les
-## ticks arrivent sur la bonne piste. Sans lui, une inversion de cablage ne se
-## decouvre qu'en pleine course.
+## Test capteurs — docs/05 lot 3, docs/01 §5.7. Fait tourner chaque rouleau et
+## verifie que les ticks arrivent sur la bonne piste. Sans lui, une inversion
+## de cablage ne se decouvre qu'en pleine course.
+##
+## LE FIRMWARE NE LIT SES CAPTEURS QU'EN COURSE : au repos, un rouleau qui
+## tourne ne produit rien. Le test est donc une course a blanc en mode temps —
+## `x`, `t60`, `g`, la sequence sure de docs/01 §5.5 —, que le moteur n'arbitre
+## pas : les CD: sont ignores (il est IDLE), les R: sont detournees vers
+## `sensor_activity` avant lui, rien n'est journalise, et `s` y met fin.
 func begin_sensor_test() -> void:
+	if engine.state() != RaceEngine.State.IDLE and engine.state() != RaceEngine.State.RESULTS:
+		notice.emit("test capteurs : impossible pendant une course")
+		return
 	_sensor_test_active = true
 	for i: int in range(Protocol.MAX_RIDERS):
 		_sensor_baseline[i] = 0
-	notice.emit("test capteurs : tournez chaque rouleau, une piste a la fois")
+	for command: String in ["x", "t60", "g"]:
+		if not _link.send_command(command):
+			notice.emit("test capteurs : commande refusee par le lien : %s" % command)
+			_sensor_test_active = false
+			return
+	notice.emit("test capteurs : apres le decompte du boitier, tournez chaque rouleau, une piste a la fois")
 
 
 func end_sensor_test() -> void:
+	if not _sensor_test_active:
+		return
 	_sensor_test_active = false
+	_link.send_command("s")
 
 
 func sensor_test_active() -> bool:

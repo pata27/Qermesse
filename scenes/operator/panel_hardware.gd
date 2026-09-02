@@ -179,6 +179,10 @@ func backend_toggle() -> CheckButton:
 	return _backend_toggle
 
 
+func sensor_text(lane: int) -> String:
+	return _sensor_labels[lane].text
+
+
 func sensor_button() -> Button:
 	return _sensor_button
 

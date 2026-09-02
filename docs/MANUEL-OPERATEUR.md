@@ -23,8 +23,9 @@ décrit le déroulé normal d'une soirée.
    l'interrupteur **Simulateur** sur arrêt.
 3. Attendre `Lien : IDENTIFIED` et la ligne **Firmware : SS_v0.1.7**. Tant que ce n'est pas le cas,
    le bouton START reste grisé, et son infobulle dit pourquoi.
-4. **Test capteurs** : faire tourner chaque rouleau à la main. Chaque piste doit s'animer dans
-   l'ordre attendu. Une piste qui reste à zéro, ou qui bouge quand on tourne le rouleau d'à côté,
+4. **Test capteurs** : le boîtier ne lit ses capteurs qu'en course — le bouton en lance une, à
+   blanc, que le logiciel n'arbitre pas. Attendre **~4 s** (son décompte), puis faire tourner chaque
+   rouleau à la main. Chaque piste doit s'animer dans l'ordre attendu. Ré-appuyer pour arrêter. Une piste qui reste à zéro, ou qui bouge quand on tourne le rouleau d'à côté,
    c'est un câblage à reprendre **avant** la première course — pas pendant.
 5. Débrancher puis rebrancher l'USB une fois : le bandeau **LIEN PERDU** doit apparaître en moins
    d'une seconde, puis disparaître à la reconnexion.

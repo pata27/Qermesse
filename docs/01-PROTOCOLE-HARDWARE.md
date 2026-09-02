@@ -316,6 +316,19 @@ le matériel réel au point §5 de `docs/RECETTE.md`.
 Ce point est un cas d'école de ce que l'émulateur devait apporter : le défaut aurait été découvert à
 la première course réelle, avec un public.
 
+### 5.7 Le firmware ne lit ses capteurs qu'en course — le test capteurs est une course
+
+`loop()` n'appelle `updateRacerTicks()` et n'émet `R:` que sous `if (raceStarted)`. Au repos, un
+rouleau qui tourne ne produit **rien** sur le port série. Un « test capteurs » qui attendrait des
+trames hors course n'afficherait jamais un tick — c'est ce que faisait la première version du
+bouton, jamais exercée faute de boîtier.
+
+**Traitement normatif.** Le test capteurs est une course en mode temps que le PC n'arbitre pas :
+`x` → `t60` → `g` (la séquence sûre de §5.5, qui ne se termine jamais d'elle-même), les `CD:` sont
+ignorés, les `R:` alimentent l'affichage brut par piste, et `s` y met fin. Le décompte firmware
+s'applique : les ticks n'apparaissent qu'**après ~4 s**. Rien n'est écrit au journal, le moteur de
+course reste `IDLE`, le watchdog n'est pas armé.
+
 ## 6. Robustesse exigée du driver
 
 ### 6.1 Threading
