@@ -3,6 +3,10 @@
 ##   godot --script tools/ss_race3d_demo.gd -- --mesure [--riders 4] [--qualite moyen]
 ##   godot --script tools/ss_race3d_demo.gd -- --video <dossier>
 ##
+## Codes de sortie : 0 fait, 1 depart refuse, 2 scene impossible a charger,
+## 3 delai maximal depasse (`--delai N`, 300 s par defaut). L'outil ne pend
+## jamais : une course qui ne se termine pas est un bug a signaler, pas a subir.
+##
 ## **Deux passes, et c'est délibéré.** Lire l'image du viewport pour la filmer
 ## impose une lecture retour GPU par image, ce qui détruit précisément la
 ## grandeur qu'on prétend mesurer. La passe `--mesure` ne capture rien : c'est
@@ -21,6 +25,8 @@ var _riders := 4
 var _quality := -1
 var _speed := 1.0
 var _render_factor := 1.0
+var _deadline_s := 300.0
+var _deadline_us := 0
 var _frame_index := 0
 var _race_mode := "distance"
 var _profile := "egaux"
@@ -47,6 +53,18 @@ var _last_tick_us := 0
 
 func _initialize() -> void:
 	_parse_args()
+	# ÉCHEC IMMÉDIAT si la scène ne se charge pas. Une erreur de parse dans
+	# `race_scene.gd` laissait l'outil tourner à vide jusqu'au timeout externe.
+	var scene_script := load("res://scenes/race3d/race_scene.gd") as GDScript
+	if scene_script == null or not scene_script.can_instantiate():
+		printerr("ECHEC : scenes/race3d/race_scene.gd ne se charge pas — voir les erreurs ci-dessus")
+		quit(2)
+		return
+	# DÉLAI MAXIMAL. Un outil de preuve ne pend jamais : passé `--delai`
+	# secondes de temps mur, il s'arrête avec un code non nul, quoi qu'il
+	# attende — une course qui ne se termine pas est exactement le genre de
+	# bug qu'il doit signaler, pas subir.
+	_deadline_us = Time.get_ticks_usec() + int(_deadline_s * 1000000.0)
 	# La RÉSOLUTION DE RENDU est forcée à 1080p, indépendamment de la taille de
 	# la fenêtre : le gestionnaire de fenêtres bride souvent celle-ci, et une
 	# mesure prise à 941x565 ne dirait rien du budget de docs/04 §4.
@@ -117,6 +135,9 @@ func _parse_args() -> void:
 			"--vitesse":
 				i += 1
 				_speed = float(args[i]) if i < args.size() else _speed
+			"--delai":
+				i += 1
+				_deadline_s = float(args[i]) if i < args.size() else _deadline_s
 			"--facteur-3d":
 				# Ce que la fenêtre spectacle applique d'elle-même sur un
 				# projecteur plus petit que 1080p (docs/04) : 0.667 pour du 720p.
@@ -344,6 +365,7 @@ func _record() -> void:
 ## avec le fps.
 func _step() -> float:
 	await process_frame
+	_check_deadline()
 	var now := Time.get_ticks_usec()
 	var delta := 0.0 if _last_tick_us == 0 else float(now - _last_tick_us) / 1000000.0
 	_last_tick_us = now
@@ -355,3 +377,11 @@ func _until(condition: Callable, max_frames: int) -> void:
 		if condition.call():
 			return
 		await process_frame
+		_check_deadline()
+
+
+func _check_deadline() -> void:
+	if _deadline_us > 0 and Time.get_ticks_usec() > _deadline_us:
+		var state := "?" if _controller == null else str(_controller.engine.state())
+		printerr("DELAI DEPASSE : %.0f s de temps mur, etat moteur %s — l'outil s'arrete" % [_deadline_s, state])
+		quit(3)

@@ -396,3 +396,7 @@
   pas de plus d'un tick » tolérait `vitesse × 1 s + un tick`, soit 12,9 m — écrit pour passer sur
   un `minf(x, x + borne)` qui ne bornait rien. Relire la borne d'un test contre la phrase de son
   nom : si le nombre ne correspond pas au mot, l'un des deux ment.
+* **Un outil de preuve qui peut pendre n'est pas un outil de preuve.** Le démo 3D a tourné à vide
+  deux minutes sur une scène qui ne se chargeait pas, jusqu'au `timeout` externe, sans un mot.
+  Tout outil qui attend un événement porte un délai maximal de temps mur et un code de sortie
+  distinct par cause d'échec — et on prouve les deux en les déclenchant.
