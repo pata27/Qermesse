@@ -880,9 +880,23 @@ func _on_eliminated(rider: int, rank: int, _gap_m: float) -> void:
 
 ## docs/02 §4 : « bandeau + son ». Quelle que soit la politique — sous
 ## RELANCE, l'abandon qui suit reprendra la parole.
-func _on_false_start(rider: int, _policy: int) -> void:
+func _on_false_start(rider: int, policy: int) -> void:
+	# LA POLITIQUE CHOISIE EST RESPECTÉE À L'ÉCRAN, pas seulement dans le
+	# moteur. `IGNORE` est « loggué UNIQUEMENT » : la ligne FALSE_START part au
+	# CSV, l'écran public ne dit rien. Un bandeau rouge malgré la politique
+	# choisie, c'est la politique ignorée.
+	if policy == RaceConfig.FalseStartPolicy.IGNORE:
+		return
 	_notice.add_theme_color_override("font_color", ALERT)
-	_notice.text = "FAUX DEPART — PISTE %d" % (rider + 1)
+	if policy == RaceConfig.FalseStartPolicy.PENALTY:
+		# Sans un mot, le public voit un coureur inexplicablement distancé dès
+		# le départ — et croit à un bug plutôt qu'à une sanction.
+		_notice.text = (
+			"PISTE %d PENALISEE — DEPART %.0f m EN ARRIERE"
+			% [rider + 1, _controller.settings.false_start_penalty_m]
+		)
+	else:
+		_notice.text = "FAUX DEPART — PISTE %d" % (rider + 1)
 	_covered_notice = ""
 
 
@@ -900,9 +914,12 @@ func _on_link_state(state: int) -> void:
 		_covered_notice = ""
 
 
-func _on_aborted(_note: String) -> void:
+func _on_aborted(note: String) -> void:
+	# LE MOTIF EST AFFICHÉ. Le moteur le connaît — faux départ, plafond, lien
+	# perdu — et il était jeté : le public voyait une course s'arrêter sans
+	# raison, et l'opérateur devait l'expliquer au micro.
 	_notice.add_theme_color_override("font_color", ALERT)
-	_notice.text = "COURSE INTERROMPUE"
+	_notice.text = "COURSE INTERROMPUE" if note.is_empty() else "COURSE INTERROMPUE — %s" % note
 	_covered_notice = ""
 
 

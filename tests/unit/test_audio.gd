@@ -95,3 +95,16 @@ func test_le_faux_depart_a_son_buzzer() -> void:
 	assert_true(audio.is_muted(), "le son reste coupe : on travaille en open space")
 	controller.false_start_detected.emit(0, RaceConfig.FalseStartPolicy.WARN)
 	assert_eq(audio.last_cue, "faux-depart")
+
+
+func test_la_politique_ignorer_ne_sonne_pas() -> void:
+	# docs/02 §4 : IGNORE est loggue UNIQUEMENT. « Bandeau + son » est le
+	# comportement d'AVERTISSEMENT, pas celui d'IGNORE.
+	var controller := AppController.new()
+	controller.preferences_enabled = false
+	add_child_autofree(controller)
+	var audio := RaceAudio.new()
+	add_child_autofree(audio)
+	audio.setup(controller)
+	controller.false_start_detected.emit(0, RaceConfig.FalseStartPolicy.IGNORE)
+	assert_eq(audio.last_cue, "", "rien n'a ete declenche")

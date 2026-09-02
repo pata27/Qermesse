@@ -51,7 +51,9 @@ décrit le déroulé normal d'une soirée.
      poursuivant.
      Deux **plafonds** bornent la poursuite — durée (défaut 300 s) et distance (défaut 5000 m) :
      atteint, celui qui mène gagne. L'écran public affiche « décision dans … » sous la barre.
-3. **Faux départ** : choisir la politique (ignorer, avertir, relancer, pénaliser).
+3. **Faux départ** : choisir la politique. Ce que le public voit en dépend — *ignorer* ne montre
+   rien et ne sonne pas (la ligne part quand même au journal), *avertir* affiche le bandeau rouge,
+   *pénaliser* annonce la piste et son handicap, *relancer* arrête la course en affichant le motif.
 4. **START**. Le décompte `3 · 2 · 1 · PARTEZ` est piloté par le boîtier : les LED et l'écran
    sont d'accord. Ne pas compter à haute voix sur une autre cadence.
 5. **STOP** interrompt une course en cours ; **Relancer** l'interrompt et réarme la même

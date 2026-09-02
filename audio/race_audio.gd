@@ -125,8 +125,11 @@ func _on_countdown(value: int) -> void:
 		_horn.play()
 
 
-## docs/02 §4, AVERTISSEMENT : « bandeau + son ».
-func _on_false_start(_rider: int, _policy: int) -> void:
+## docs/02 §4, AVERTISSEMENT : « bandeau + son ». `IGNORE`, lui, est « loggué
+## uniquement » — ni bandeau ni son.
+func _on_false_start(_rider: int, policy: int) -> void:
+	if policy == RaceConfig.FalseStartPolicy.IGNORE:
+		return
 	_buzzer.play()
 	last_cue = "faux-depart"
 
