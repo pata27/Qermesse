@@ -603,6 +603,8 @@ func _reposition_riders(delta: float) -> void:
 			])
 
 	_relieve_for_panes(_split.group_count())
+	# L'habillage s'efface quand l'écran se scinde : voir `RaceHud.set_compact`.
+	_hud.set_compact(_split.group_count() > 1)
 
 
 ## Recensement des instances visuelles, par branche de la scène. Sert à savoir

@@ -349,3 +349,19 @@
 * **Ce que le scratchpad contient disparaît entre deux sessions.** Deux fois un script de lancement
   a manqué et l'application « n'avait pas de fenêtre ». Vérifier l'existence du script avant de
   conclure.
+
+## Boucle d'amélioration, suite (2026-09-02)
+
+* **Une insertion « au prochain motif » n'a pas de cible : elle a un hasard.** Pour ajouter un appel
+  à la fin de `rebuild_cards`, j'ai cherché « le prochain `func` » — le texte a atterri à la fin de
+  `_tick_podium`, où il ne s'exécutait qu'après un podium. Les cartes restaient à l'origine jusqu'à
+  la première scission, et la suite de tests, qui ne teste pas les positions, est restée verte. Un
+  patch s'ancre sur un texte UNIQUE du bon endroit, et un changement de disposition se vérifie à
+  CHAQUE phase — le décompte a révélé ce que la course ne montrait pas.
+* **Sous zsh, `set -- $variable` ne segmente pas.** Deux courses ont tourné avec des paramètres vides
+  sans que rien ne le signale ; les images existaient, les journaux étaient propres. Écrire les
+  boucles avec des arguments explicites, et vérifier que les noms de fichiers produits sont ceux
+  attendus.
+* **En mode scindé, l'habillage doit s'effacer.** Le volet du leader — le plus important — tenait
+  tout entier sous la colonne de cartes. Une vérification « jusqu'au podium » sur 1 et 3 coureurs
+  n'a rien trouvé côté données, mais a montré ça côté lisibilité.

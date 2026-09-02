@@ -18,6 +18,8 @@ const CARD_HEIGHT := 96
 ## Largeur des cartes. Élargies pour que la cadence tienne à droite sans
 ## chevaucher la distance, dont la longueur varie avec le mode.
 const CARD_WIDTH := 700.0
+## Échelle des cartes quand l'écran est scindé, voir `_layout_cards`.
+const CARD_COMPACT_SCALE := 0.55
 const ALERT := Color("#FF3B30")
 const INK := Color("#F2F5FA")
 ## Vert de départ, pour le « PARTEZ ! ». Le décompte doit changer de COULEUR au
@@ -66,6 +68,7 @@ var _countdown_holder: Control
 var _countdown_label: Label
 var _countdown_pulse := 0.0
 var _countdown_hold_s := 0.0
+var _compact := false
 var _podium: ColorRect
 var _podium_title: Label
 var _podium_grid: GridContainer
@@ -170,8 +173,8 @@ func rebuild_cards() -> void:
 		var color := Color(rider.color)
 
 		var root := Control.new()
-		root.position = Vector2(36, BAND_HEIGHT + 28 + index * (CARD_HEIGHT + 12))
 		root.size = Vector2(CARD_WIDTH, CARD_HEIGHT)
+		root.set_meta("index", index)
 		root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(root)
 
@@ -230,6 +233,11 @@ func rebuild_cards() -> void:
 
 ## Anime le décompte : le chiffre entre agrandi puis se resserre, et l'annonce
 ## de départ s'efface d'elle-même.
+	# Positions et échelle selon le mode courant, dès la construction : sans
+	# cet appel les cartes restaient à l'origine jusqu'à la première scission.
+	_layout_cards()
+
+
 ## Fait apparaître le podium une fois la célébration jouée.
 func _tick_podium(delta: float) -> void:
 	if _pending_result == null:
@@ -586,6 +594,32 @@ func _build_countdown() -> void:
 	_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_countdown_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_countdown_holder.add_child(_countdown_label)
+
+
+## Place les cartes selon le mode, plein cadre ou compact.
+##
+## COMPACTES DÈS QUE L'ÉCRAN SE SCINDE. En plein cadre, la colonne de cartes
+## occupe 736 px sur la gauche et ne gêne personne. Scindé en trois ou quatre,
+## le volet du LEADER fait 480 px et tient tout entier sous cette colonne :
+## le portique, la piste devant lui, parfois lui-même disparaissaient sous
+## l'habillage. Réduites d'un peu plus de moitié, les cartes gardent toutes
+## leurs informations et s'arrêtent avant la hauteur où roulent les coureurs.
+func _layout_cards() -> void:
+	var scale := CARD_COMPACT_SCALE if _compact else 1.0
+	var step := (CARD_HEIGHT + 12.0) * scale
+	for entry: Dictionary in _cards.values():
+		var root := entry["root"] as Control
+		var index := int(root.get_meta("index", 0))
+		root.scale = Vector2(scale, scale)
+		root.position = Vector2(36, BAND_HEIGHT + 28 + index * step)
+
+
+## Active ou non le mode compact ; appelé par la scène selon le nombre de volets.
+func set_compact(compact: bool) -> void:
+	if compact == _compact:
+		return
+	_compact = compact
+	_layout_cards()
 
 
 func _make_label(size: int, color: Color) -> Label:
