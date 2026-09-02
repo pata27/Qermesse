@@ -136,7 +136,9 @@ func _refresh_lanes() -> void:
 				lane + 1,
 				rider.display_name(),
 				state.distance_m[lane],
-				state.speed_kph[lane],
+				# La vitesse d'ÉCRAN, lissée : la brute à 100 Hz faisait battre
+				# le dixième sous les yeux de l'opérateur.
+				state.display_speed_kph[lane],
 				suffix,
 			]
 		)

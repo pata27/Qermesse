@@ -308,6 +308,8 @@ func _process(delta: float) -> void:
 		_printed_speed[lane] = shown
 		var card: Dictionary = _cards[lane]
 		(card["speed"] as Label).text = "%5.1f km/h" % shown
+		var development: float = maxf(_controller.settings.development_m, 0.5)
+		(card["cadence"] as Label).text = "%.0f tr/min" % (shown / 3.6 / development * 60.0)
 
 
 ## Le gros chiffre d'écart : lissé en continu, puis affiché avec hystérésis —
@@ -745,11 +747,10 @@ func _on_progress(state: RaceState) -> void:
 		# voisines à chaque rafraîchissement ; c'est ce battement qui se voyait.
 		# Le chiffre affiché rejoint sa cible en continu, il ne s'y pose plus.
 		_target_speed[lane] = state.display_speed_kph[lane]
-
-		# La cadence suit la vitesse d'affichage, donc elle est déjà lissée.
-		var development: float = maxf(_controller.settings.development_m, 0.5)
-		var rpm := state.display_speed_kph[lane] / 3.6 / development * 60.0
-		(card["cadence"] as Label).text = "%.0f tr/min" % rpm
+		# La cadence est écrite avec la vitesse, dans `_process`, sous la même
+		# hystérésis : écrite ici à 100 Hz depuis la vitesse « lissée », son
+		# dernier chiffre battait quand même à chaque trame — un tour par
+		# minute vaut 0,04 km/h, bien moins que le bruit résiduel.
 
 		var done := state.distance_m[lane]
 		match config.mode:
