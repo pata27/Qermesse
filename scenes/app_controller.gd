@@ -141,6 +141,11 @@ func apply_backend(use_simulator: bool) -> void:
 	if use_simulator:
 		_link.use_simulator()
 	elif not _link.use_serial():
+		# REPLI. Sortir ici est VOULU : `Link._swap` voit qu'un simulateur est
+		# deja en place, garde celui qui tourne et jette le neuf. Poursuivre
+		# jusqu'a `start()` relancerait un lien deja identifie, qui repasserait
+		# par PORT_OPEN sous les yeux de l'operateur. Verifie en retirant la
+		# bibliotheque native : le lien reste IDENTIFIED, START reste possible.
 		settings.use_simulator = true
 		_link.use_simulator()
 		notice.emit(

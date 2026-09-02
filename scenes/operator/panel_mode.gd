@@ -109,6 +109,10 @@ func distance_cap_field() -> SpinBox:
 	return _distance_cap
 
 
+func penalty_field() -> SpinBox:
+	return _penalty
+
+
 func policy_selector() -> OptionButton:
 	return _policy
 

@@ -567,6 +567,37 @@ func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interro
 	assert_does_not_have(events, "RACE_ABORTED")
 
 
+func test_la_politique_de_faux_depart_choisie_est_celle_qui_court() -> void:
+	# Le selecteur n'etait exerce par aucun test alors que la politique a
+	# maintenant des consequences visibles a l'ecran (docs/02 §4). Choisir
+	# PENALITE doit aussi faire apparaitre le champ de handicap, qui ne sert
+	# qu'a elle.
+	var mode_panel := _panel.mode_panel()
+	_select_option(mode_panel.policy_selector(), RaceConfig.FalseStartPolicy.PENALTY)
+	assert_eq(_controller.settings.false_start_policy, RaceConfig.FalseStartPolicy.PENALTY)
+	assert_eq(_controller.current_config().false_start_policy, RaceConfig.FalseStartPolicy.PENALTY)
+	assert_true(mode_panel.penalty_field().visible, "le handicap se regle quand il s'applique")
+
+	_select_option(mode_panel.policy_selector(), RaceConfig.FalseStartPolicy.IGNORE)
+	assert_eq(_controller.settings.false_start_policy, RaceConfig.FalseStartPolicy.IGNORE)
+	assert_false(mode_panel.penalty_field().visible, "et disparait quand il ne sert a rien")
+
+
+func test_basculer_materiel_puis_simulateur_ramene_un_lien_vivant() -> void:
+	# docs/05 lot 3 : la bascule se fait « en un clic », et la recette fait ce
+	# geste le jour du boitier. S'il laisse un lien mort, la soiree s'arrete la.
+	assert_true(await _await_identified())
+	var toggle := _panel.hardware_panel().backend_toggle()
+
+	toggle.button_pressed = false
+	await wait_frames(5)
+	toggle.button_pressed = true
+
+	assert_true(await _await_identified(), "le lien simulateur repart")
+	assert_true(_controller.is_simulated())
+	assert_true(_controller.can_start_race(), "et START redevient possible")
+
+
 func test_une_alerte_n_est_pas_effacee_par_le_message_suivant() -> void:
 	# Le bandeau n'affichait QUE le dernier message. Depuis que le logiciel
 	# signale les pistes muettes, les pointes suspectes et les trames perdues,

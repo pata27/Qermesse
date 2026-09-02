@@ -447,3 +447,8 @@
   « Courses du jour » de l'opérateur en une journée, et la CI en ajoutait à chaque exécution. Les
   réglages étaient protégés (`preferences_enabled = false`), pas le dossier des courses — la moitié
   d'un cloisonnement n'en est pas un. Vérifier ce qu'un outil écrit, pas seulement ce qu'il lit.
+* **Un défaut lu dans le code n'est pas un défaut tant qu'on ne l'a pas provoqué.** J'ai cru qu'un
+  `return` privait le repli sur simulateur de son `start()`, et j'ai « corrigé ». En provoquant
+  vraiment le cas — bibliothèque native écartée — le lien restait IDENTIFIED : `Link._swap` garde le
+  simulateur déjà en place, et mon correctif aurait relancé un lien vivant, qui serait repassé par
+  PORT_OPEN à l'écran. Reproduire avant de corriger, même quand la lecture semble sans appel.
