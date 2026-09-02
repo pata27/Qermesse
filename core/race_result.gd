@@ -28,6 +28,10 @@ var eliminated: Array[bool] = []
 ## Instant de l'elimination en ms, 0 sinon — voir `RaceState.eliminated_ms`.
 var eliminated_ms: PackedInt32Array = PackedInt32Array()
 var false_started: Array[bool] = []
+## Noms des riders TELS QU'AU DEPART, piste -> nom. L'ecran de resultats et
+## l'historique lisent ceux-la, jamais le roster courant : renommer les pistes
+## entre deux courses ne reecrit pas l'histoire — docs/02 §5.
+var rider_names: Dictionary = {}
 
 
 func _init() -> void:
@@ -39,6 +43,12 @@ func _init() -> void:
 	for i: int in range(Protocol.MAX_RIDERS):
 		eliminated.append(false)
 		false_started.append(false)
+
+
+## Le nom du depart, ou « Piste N » — jamais une ligne vide.
+func rider_name(rider: int) -> String:
+	var name := str(rider_names.get(rider, ""))
+	return name if not name.is_empty() else "Piste %d" % (rider + 1)
 
 
 func rank_of(rider: int) -> int:
@@ -84,6 +94,10 @@ static func from_json(data: Dictionary) -> RaceResult:
 	out.end_reason = int(block.get("end_reason", 0)) as RaceRule.EndReason
 	out.interrupted = bool(block.get("interrupted", false))
 	out.interruption_note = str(block.get("interruption_note", ""))
+	# Les cles du roster sont des chaines en JSON.
+	var roster: Dictionary = data.get("roster", {})
+	for lane: Variant in roster:
+		out.rider_names[int(str(lane))] = str((roster[lane] as Dictionary).get("name", ""))
 	for rider: int in range(Protocol.MAX_RIDERS):
 		out.finished_ms[rider] = int(_nth(block.get("finished_ms", []), rider, 0))
 		out.eliminated_ms[rider] = int(_nth(block.get("eliminated_ms", []), rider, 0))

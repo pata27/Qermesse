@@ -310,6 +310,24 @@ func test_l_interface_construite_avant_l_entree_dans_l_arbre_fonctionne() -> voi
 # =============================================================================
 
 
+func test_le_tableau_montre_les_noms_du_depart_pas_le_roster_courant() -> void:
+	# Alice et Bob ont couru ; on renomme les pistes pour la course suivante.
+	# Cliquer la premiere course dans l'historique doit toujours dire Alice.
+	var roster_panel := _panel.roster_panel()
+	_type_into(roster_panel.name_field(0), "Carole")
+	_type_into(roster_panel.name_field(1), "Dan")
+	var result := RaceResult.new()
+	result.mode = "distance"
+	result.ranking = [1, 0]
+	result.end_reason = RaceRule.EndReason.ALL_FINISHED
+	result.rider_names = {0: "Alice", 1: "Bob"}
+	_panel.results_panel().show_result(result)
+	var table := _panel.results_panel().table_text()
+	assert_string_contains(table, "Alice")
+	assert_string_contains(table, "Bob")
+	assert_false(table.contains("Carole"), "le roster courant ne reecrit pas l'histoire")
+
+
 func test_l_historique_du_jour_survit_a_un_redemarrage() -> void:
 	# Une course JSON deja sur disque, datee d'aujourd'hui : un controleur et
 	# un panneau NEUFS — le logiciel vient d'etre relance — doivent la lister.

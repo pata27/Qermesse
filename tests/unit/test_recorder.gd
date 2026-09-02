@@ -369,6 +369,17 @@ func test_l_historique_du_jour_est_relu_depuis_les_json() -> void:
 	assert_eq(relu.config.active_riders, [0, 1])
 
 
+func test_le_resultat_porte_les_noms_du_depart_et_les_relit() -> void:
+	var result := _run_recorded_race(_config(), [45.0, 43.0])
+	assert_eq(result.rider_name(0), "Alice", "le nom du depart, porte par le resultat")
+	assert_eq(result.rider_name(1), "Bob")
+	assert_eq(result.rider_name(2), "Piste 3", "une piste sans nom reste identifiable")
+
+	var relu := Recorder.new(_logs, _races).load_day()[0]
+	assert_eq(relu.rider_name(0), "Alice", "relu depuis le JSON")
+	assert_eq(relu.rider_name(1), "Bob")
+
+
 func test_le_jour_est_le_jour_local_celui_du_csv() -> void:
 	# Une course partie a 23 h 30 en heure locale d'un fuseau UTC+2 est ecrite
 	# « 21:30 UTC » : elle est du jour local. Une autre a 00 h 30 locale, ecrite

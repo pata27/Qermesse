@@ -90,7 +90,7 @@ func show_result(result: RaceResult) -> void:
 			% [
 				result.rank_of(rider),
 				rider + 1,
-				_controller.roster.rider(rider).display_name(),
+				result.rider_name(rider),
 				result.distance_m[rider],
 				timing,
 				result.avg_kph[rider],
@@ -113,8 +113,8 @@ func select_history(index: int) -> void:
 
 func _add_history_item(result: RaceResult) -> void:
 	_history.add_item(
-		"%s  %s  vainqueur piste %d"
-		% [result.finished_at_iso, result.mode, result.winner() + 1]
+		"%s  %s  vainqueur %s (piste %d)"
+		% [result.finished_at_iso, result.mode, result.rider_name(result.winner()), result.winner() + 1]
 	)
 
 

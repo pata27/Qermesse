@@ -180,6 +180,9 @@ les JSON au lancement**, pas seulement alimentée par les courses de la session 
 logiciel en pleine soirée — plantage, changement de machine, mise à jour — ne la vide pas. Le
 « jour » est le jour **local**, celui qui nomme le CSV ; `started_at` étant écrit en UTC, la
 conversion est faite à la relecture. Les courses sont listées dans l'ordre de départ.
+Un résultat porte **les noms des riders tels qu'ils étaient au départ** : l'écran de résultats et
+l'historique affichent ceux-là, jamais le roster courant — renommer les pistes entre deux courses
+ne réécrit pas l'histoire.
 
 **Réglages** — JSON, chemins standards par OS :
 * Linux `~/.config/silversprint/settings.json`
