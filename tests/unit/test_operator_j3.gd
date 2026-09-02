@@ -443,6 +443,25 @@ func test_le_panneau_course_nomme_le_vainqueur_du_depart() -> void:
 	)
 
 
+func test_le_chemin_du_json_de_la_course_affichee_est_donne() -> void:
+	# DEPANNAGE : « c'est ce qu'il faut envoyer au developpeur en cas de
+	# resultat suspect ». Le panneau ne donnait que le chemin du CSV, et son
+	# bouton ouvrait le dossier des journaux : pour trouver le JSON, il fallait
+	# deviner un dossier voisin et un nom de fichier en uuid.
+	var result := RaceResult.new()
+	result.mode = "distance"
+	result.uuid = "20260903-011742-abcd"
+	result.ranking = [0, 1]
+	result.end_reason = RaceRule.EndReason.ALL_FINISHED
+	result.rider_names = {0: "Alice", 1: "Bob"}
+
+	var results := _panel.results_panel()
+	results.show_result(result)
+	assert_string_contains(results.files_text(), "CSV :")
+	assert_string_contains(results.files_text(), "20260903-011742-abcd.json", "le fichier a envoyer")
+	assert_string_contains(results.files_text(), _races, "dans le dossier des courses")
+
+
 func test_le_tableau_ne_barre_pas_une_course_decidee_au_plafond() -> void:
 	var config := RaceConfig.new()
 	config.mode = RaceConfig.Mode.PURSUIT

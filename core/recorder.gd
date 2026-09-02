@@ -60,6 +60,17 @@ func problems() -> Array[String]:
 	return _problems
 
 
+## Dossier des courses, et chemin du JSON d'une course donnee. `DEPANNAGE`
+## demande a l'operateur d'envoyer ce fichier au developpeur : encore faut-il
+## qu'il puisse le nommer sans deviner un dossier voisin et un uuid.
+func races_dir() -> String:
+	return _races_dir
+
+
+func json_path(uuid: String) -> String:
+	return "" if uuid.is_empty() else _races_dir.path_join("%s.json" % uuid)
+
+
 func csv_path() -> String:
 	return _csv_path
 

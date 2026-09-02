@@ -144,8 +144,9 @@ repartir, plutôt que d'attendre le plafond de dix minutes devant le public.
 
 ## Le CSV est introuvable
 
-Le chemin complet est affiché **en clair** sous l'écran de résultats, et le bouton
-*Ouvrir le dossier du CSV* y mène.
+Les chemins complets sont affichés **en clair** sous l'écran de résultats — celui du journal du jour
+et celui du **fichier de la course sélectionnée**, qui est celui à envoyer au développeur. Le bouton
+*Ouvrir le dossier des résultats* mène au dossier qui contient les deux.
 
 Les **outils de démonstration** (`tools/ss_operator_demo.gd`, `tools/ss_race3d_demo.gd`) font de
 vraies courses et enregistrent donc de vrais fichiers. Ils écrivent dans un dossier séparé —

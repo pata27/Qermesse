@@ -92,5 +92,6 @@ suivant.
 
 
 Le dossier des résultats contient un **CSV** (une ligne par événement, toutes courses de la
-journée) et un **JSON par course** avec la trace complète des trames, rejouable. **Ouvrir le
-dossier du CSV** dans le panneau Résultats y mène directement.
+journée) et un **JSON par course** avec la trace complète des trames, rejouable. Le panneau
+Résultats affiche les deux chemins — celui du journal et celui de la course sélectionnée — et
+**Ouvrir le dossier des résultats** y mène directement.

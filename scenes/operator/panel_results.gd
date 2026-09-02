@@ -42,7 +42,7 @@ func _build() -> void:
 	add_child(_history)
 
 	_export_button = Button.new()
-	_export_button.text = "Ouvrir le dossier du CSV"
+	_export_button.text = "Ouvrir le dossier des resultats"
 	_export_button.pressed.connect(_on_export)
 	add_child(_export_button)
 
@@ -65,6 +65,10 @@ func history_count() -> int:
 
 
 func csv_path_label() -> String:
+	return _csv_label.text
+
+
+func files_text() -> String:
 	return _csv_label.text
 
 
@@ -121,7 +125,14 @@ func show_result(result: RaceResult) -> void:
 	_table.text = "\n".join(lines)
 	# Le chemin du CSV est affiche en clair : un operateur doit pouvoir le
 	# retrouver sans deviner ou le logiciel range ses fichiers.
-	_csv_label.text = "CSV : %s" % _controller.recorder.csv_path()
+	# LES DEUX FICHIERS, pas seulement le journal. Le JSON de la course affichee
+	# est celui que le depannage demande d'envoyer au developpeur ; il vivait
+	# dans un dossier voisin, sous un nom en uuid que rien n'affichait.
+	var lines_files: Array[String] = ["CSV : %s" % _controller.recorder.csv_path()]
+	var json := _controller.recorder.json_path(result.uuid)
+	if not json.is_empty():
+		lines_files.append("Course : %s" % json)
+	_csv_label.text = "\n".join(lines_files)
 
 
 ## Selectionne une course de l'historique, comme un clic dans la liste.
@@ -164,8 +175,10 @@ func _on_history_selected(index: int) -> void:
 
 
 func _on_export() -> void:
-	var path := _controller.recorder.csv_path()
-	if path.is_empty():
-		_csv_label.text = "Aucun CSV ecrit pour l'instant."
+	# Le dossier PARENT : journaux et courses y sont cote a cote, et c'est dans
+	# les courses que se trouve le fichier a envoyer au developpeur.
+	var races := _controller.recorder.races_dir()
+	if races.is_empty():
+		_csv_label.text = "Aucun resultat ecrit pour l'instant."
 		return
-	OS.shell_open(path.get_base_dir())
+	OS.shell_open(races.get_base_dir())
