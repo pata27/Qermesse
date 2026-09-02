@@ -246,6 +246,23 @@ func test_trame_corrompue_remonte_en_unknown_sans_rien_casser() -> void:
 	assert_string_contains(unknown[0]["text"], "\\x01")
 
 
+func test_les_statistiques_du_simulateur_comptent_vraiment() -> void:
+	# Le panneau materiel les affiche : « Trames 0 » pendant qu'une course
+	# defile ressemblait a une panne du simulateur.
+	_connect_sim()
+	_sim.inject_corrupt_frame()
+	var stats: Dictionary = _sim.get_stats()
+	assert_eq(int(stats["connects"]), 1)
+	assert_eq(int(stats["frames_unknown"]), 1)
+	assert_eq(int(stats["frames_total"]), _frames.size(), "chaque trame emise est comptee")
+	assert_gt(int(stats["frames_total"]), 1, "V: au moins, plus la corrompue")
+	_sim.inject_link_loss()
+	_sim.inject_link_return()
+	stats = _sim.get_stats()
+	assert_eq(int(stats["watchdog_trips"]), 1)
+	assert_eq(int(stats["connects"]), 2, "reconnexion comptee")
+
+
 func test_perte_et_retour_du_lien() -> void:
 	_connect_sim()
 	assert_eq(_sim.get_link_state(), Protocol.State.IDENTIFIED)

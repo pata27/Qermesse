@@ -79,6 +79,12 @@ const SCHEDULES := {
 ## en temps reel. Sans effet sur le materiel : le firmware a sa propre horloge.
 @export var time_scale: float = 1.0
 
+## Compteurs du lien, miroir de ceux du module natif — voir `get_stats`.
+var _frames_total := 0
+var _frames_progress := 0
+var _frames_unknown := 0
+var _connects := 0
+var _watchdog_trips := 0
 var _state: int = Protocol.State.DISCONNECTED
 var _running := false
 var _elapsed_s := 0.0
@@ -240,6 +246,13 @@ func _speed_kph(rider: int, race_s: float) -> float:
 
 
 func _emit(kind: int, payload: Dictionary) -> void:
+	# Les memes compteurs que le lien reel : le panneau materiel les affiche,
+	# et « Trames 0 » pendant qu'une course defile ressemble a une panne.
+	_frames_total += 1
+	if kind == Protocol.Frame.PROGRESS:
+		_frames_progress += 1
+	elif kind == Protocol.Frame.UNKNOWN:
+		_frames_unknown += 1
 	frame_received.emit(kind, payload)
 
 
@@ -247,6 +260,8 @@ func _set_state(state: int) -> void:
 	if _state == state:
 		return
 	_state = state
+	if state == Protocol.State.IDENTIFIED:
+		_connects += 1
 	state_changed.emit(state)
 
 
@@ -412,14 +427,14 @@ func set_profile(name: String) -> void:
 
 func get_stats() -> Dictionary:
 	return {
-		"frames_total": 0,
-		"frames_progress": 0,
-		"frames_unknown": 0,
+		"frames_total": _frames_total,
+		"frames_progress": _frames_progress,
+		"frames_unknown": _frames_unknown,
 		"frames_dropped": 0,
 		"lines_overlong": 0,
-		"connects": 1 if _state == Protocol.State.IDENTIFIED else 0,
+		"connects": _connects,
 		"handshake_failures": 0,
-		"watchdog_trips": 0,
+		"watchdog_trips": _watchdog_trips,
 		"races_interrupted": 0,
 		"simulated": true,
 	}
@@ -447,6 +462,7 @@ func inject_corrupt_frame() -> void:
 
 ## Coupure du lien : le simulateur cesse d'emettre, comme un cable arrache.
 func inject_link_loss() -> void:
+	_watchdog_trips += 1
 	_set_state(Protocol.State.LINK_LOST)
 	_running = false
 
