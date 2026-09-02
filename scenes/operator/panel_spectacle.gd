@@ -208,3 +208,5 @@ func _on_quality_selected(index: int) -> void:
 		window.scene.set_auto_degrade(false)
 		window.scene.quality.level = level as RenderQuality.Level
 		window.scene.apply_quality()
+	# Retenu pour les soirees suivantes, comme la coupure du son et son volume.
+	_controller.settings.render_quality = level

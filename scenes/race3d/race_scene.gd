@@ -81,6 +81,11 @@ var _auto_degrade := true
 func setup(controller: AppController, level: int = -1) -> void:
 	_controller = controller
 	quality.level = RenderQuality.detect() if level < 0 else (level as RenderQuality.Level)
+	# UN NIVEAU IMPOSE DESARME LA DEGRADATION AUTOMATIQUE. Sans cela le choix
+	# de l'operateur serait defait des la premiere seconde sous le budget, sans
+	# qu'il comprenne pourquoi — c'est la regle deja appliquee quand il change
+	# le niveau en cours de route, et elle doit valoir au lancement aussi.
+	_auto_degrade = level < 0
 
 	_build_environment()
 	_build_track()
@@ -976,3 +981,7 @@ func apply_quality() -> void:
 
 func set_auto_degrade(enabled: bool) -> void:
 	_auto_degrade = enabled
+
+
+func auto_degrade() -> bool:
+	return _auto_degrade

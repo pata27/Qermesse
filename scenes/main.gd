@@ -59,7 +59,8 @@ func open_spectacle() -> void:
 		spectacle.setup(
 			controller,
 			controller.settings.show_window_screen,
-			not controller.settings.single_window_mode
+			not controller.settings.single_window_mode,
+			controller.settings.render_quality
 		)
 		spectacle.closed_by_user.connect(_on_spectacle_closed)
 	else:

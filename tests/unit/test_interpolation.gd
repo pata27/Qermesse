@@ -213,6 +213,40 @@ func test_la_degradation_descend_d_un_cran_et_s_arrete_en_bas() -> void:
 	assert_eq(quality.level, RenderQuality.Level.LOW)
 
 
+func test_un_niveau_choisi_a_la_main_survit_au_lancement() -> void:
+	# docs/04 §4 : « trois niveaux, detection automatique au premier lancement,
+	# reglage MANUEL possible ». Le choix ne vivait que sur la scene : ferme la
+	# fenetre, et la detection reprenait la main — la machine du projecteur
+	# retrouvait un niveau trop lourd a chaque soiree.
+	var settings := Settings.new()
+	assert_eq(settings.render_quality, -1, "au premier lancement, on detecte")
+	settings.render_quality = RenderQuality.Level.LOW
+
+	var controller := AppController.new()
+	controller.preferences_enabled = false
+	add_child_autofree(controller)
+	var scene := RaceScene.new()
+	add_child_autofree(scene)
+	scene.setup(controller, settings.render_quality)
+
+	assert_eq(scene.quality.level, RenderQuality.Level.LOW, "le niveau choisi est applique")
+	assert_false(
+		scene.auto_degrade(),
+		"et la degradation automatique ne le defait pas : le choix serait sans effet"
+	)
+
+
+func test_la_detection_reprend_la_main_sans_choix_manuel() -> void:
+	var controller := AppController.new()
+	controller.preferences_enabled = false
+	add_child_autofree(controller)
+	var scene := RaceScene.new()
+	add_child_autofree(scene)
+	scene.setup(controller, -1)
+	assert_eq(scene.quality.level, RenderQuality.detect(), "niveau detecte")
+	assert_true(scene.auto_degrade(), "et la scene s'allege d'elle-meme si besoin")
+
+
 func test_un_gpu_integre_vise_le_niveau_moyen() -> void:
 	# La cible de docs/04 §4. On vise « moyen » et on tient 60 fps, plutot que
 	# de viser « eleve » et de rater le budget.

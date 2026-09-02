@@ -69,7 +69,10 @@ l'accélération et au franchissement de ligne. Volumétrique léger, bloom, vig
 **Budget de performance.** 60 fps stables en 1080p sur un GPU intégré Intel Iris Xe ou équivalent.
 C'est la machine réelle d'un événement, pas une station de jeu. Toute fonctionnalité visuelle qui
 fait passer sous 60 fps est coupée ou dégradée. Trois niveaux de qualité (`bas / moyen / élevé`),
-détection automatique au premier lancement, réglage manuel possible.
+détection automatique au premier lancement, réglage manuel possible. **Un niveau choisi à la main
+est persisté et désarme la dégradation automatique** : sinon il serait défait dès la première
+seconde sous le budget, et la machine du projecteur retrouverait un niveau trop lourd à chaque
+soirée.
 La composition est pensée en 1080p, mais **la 3D ne se rend jamais plus fin que le projecteur** :
 sur un 720p elle se rend en 720p — 2,25× moins de pixels — et l'habillage reste composé en 1080p.
 Au-delà de 1080p, le rendu reste en 1080p, mis à l'échelle : c'est le budget, pas le projecteur, qui

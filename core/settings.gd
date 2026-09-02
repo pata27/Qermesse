@@ -46,6 +46,14 @@ var audio_muted: bool = true
 ## manuel fait regler le son LA VEILLE, et un reglage qu'on refait chaque soir
 ## n'est pas un reglage.
 var audio_volume_db: float = 0.0
+## Niveau de rendu CHOISI par l'operateur : -1 = detection automatique,
+## 0..2 = niveau impose (docs/04 §4, « reglage manuel possible »).
+##
+## Le choix ne vivait que sur la scene : fermer la fenetre spectacle rendait la
+## main a la detection, et la machine du projecteur retrouvait un niveau trop
+## lourd a chaque soiree. Un reglage qu'on refait chaque soir n'est pas un
+## reglage.
+var render_quality: int = -1
 
 
 func to_dict() -> Dictionary:
@@ -69,6 +77,7 @@ func to_dict() -> Dictionary:
 		"single_window_mode": single_window_mode,
 		"audio_muted": audio_muted,
 		"audio_volume_db": audio_volume_db,
+		"render_quality": render_quality,
 	}
 
 
@@ -99,6 +108,7 @@ func from_dict(data: Dictionary) -> void:
 	# Memes bornes que `RaceAudio.set_volume_db` : rien de ce que l'audio
 	# accepte ne doit etre refuse par les reglages.
 	audio_volume_db = _clamp_float(data, "audio_volume_db", audio_volume_db, -60.0, 6.0)
+	render_quality = _clamp_enum(data, "render_quality", render_quality, -1, 2)
 
 
 ## Construit la configuration de course correspondant aux reglages courants.

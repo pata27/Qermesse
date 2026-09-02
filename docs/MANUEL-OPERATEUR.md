@@ -14,7 +14,10 @@ décrit le déroulé normal d'une soirée.
 3. Panneau **Fenêtre spectacle**, section **Son** : le logiciel démarre **muet**. Activer le son
    seulement si la sono de la salle passe par cette machine, et régler le volume. Les deux sont
    mémorisés : le lancement suivant les retrouve.
-4. Faire une course complète au **simulateur** (interrupteur dans le panneau **Matériel**) pour
+4. Section **Qualité** du même panneau : le niveau est détecté au premier lancement. Le forcer si
+   l'image saccade sur la machine du projecteur — le choix est mémorisé et ne sera plus remis en
+   cause automatiquement.
+5. Faire une course complète au **simulateur** (interrupteur dans le panneau **Matériel**) pour
    vérifier l'écran du public, le décompte, le podium.
 
 ## 2. Branchement du boîtier

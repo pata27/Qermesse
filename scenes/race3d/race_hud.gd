@@ -124,8 +124,10 @@ func _build() -> void:
 	_band = ColorRect.new()
 	_band.color = Color(0.043, 0.055, 0.078, 0.82)
 	_band.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_band.custom_minimum_size.y = BAND_HEIGHT
-	_band.size.y = BAND_HEIGHT
+	# HAUTEUR PAR LA MARGE, pas par `size`. Avec des ancres opposees inegales
+	# — 0 a gauche, 1 a droite — Godot recalcule la taille apres `_ready` et
+	# ecrase celle qu'on vient de poser, en le disant dans un avertissement.
+	_band.offset_bottom = BAND_HEIGHT
 	_band.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_band)
 
@@ -702,8 +704,7 @@ func band_height() -> float:
 ## La bannière suit le mode compact : titres, chrono et bande réduits.
 func _layout_banner() -> void:
 	var height := band_height()
-	_band.custom_minimum_size.y = height
-	_band.size.y = height
+	_band.offset_bottom = height
 	_mode_label.add_theme_font_size_override("font_size", 18 if _compact else 28)
 	_mode_label.position = Vector2(36, 8 if _compact else 18)
 	_objective_label.add_theme_font_size_override("font_size", 24 if _compact else 40)
