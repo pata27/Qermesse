@@ -98,7 +98,7 @@ func show_result(result: RaceResult, objective: String) -> void:
 		# LES NOMS DU DEPART, portes par le resultat — pas le roster courant.
 		# Renommer les pistes entre deux courses ne reecrit pas l'histoire, et
 		# l'ecran public doit dire la meme chose que le tableau operateur.
-		who.text = "P%d  %s" % [rider + 1, Roster.shorten(result.rider_name(rider))]
+		who.text = "P%d  %s" % [rider + 1, result.display_name(rider)]
 		_grid.add_child(who)
 
 		var figure := RaceHud.make_label(44, RaceHud.INK)

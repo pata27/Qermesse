@@ -103,7 +103,7 @@ func show_result(result: RaceResult) -> void:
 				rider + 1,
 				# Meme borne que l'ecran public : un nom venu d'un fichier
 				# ecrit a la main desalignerait sinon toute la ligne.
-				Roster.shorten(result.rider_name(rider)),
+				result.display_name(rider),
 				result.distance_m[rider],
 				timing,
 				result.avg_kph[rider],

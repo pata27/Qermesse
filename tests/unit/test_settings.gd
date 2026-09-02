@@ -250,6 +250,21 @@ func test_le_roster_par_defaut_a_deux_pistes_actives() -> void:
 	assert_eq(roster.riders.size(), Protocol.MAX_RIDERS)
 
 
+func test_le_nom_qu_un_ecran_affiche_vient_du_depart_et_tient_dans_sa_colonne() -> void:
+	# Deux corrections faites a des tours differents — le nom du DEPART porte
+	# par le resultat, et sa troncature a la largeur affichable — etaient
+	# recopiees ensemble dans quatre ecrans. Un cinquieme en aurait oublie une.
+	var result := RaceResult.new()
+	result.rider_names = {0: "Jean-Baptiste de la Tour du Pin", 1: "Bob"}
+
+	var shown := result.display_name(0)
+	assert_eq(shown.length(), Roster.MAX_DISPLAY_NAME, "borne a la largeur affichable")
+	assert_true(shown.begins_with("Jean-Baptiste"))
+	assert_eq(result.rider_name(0), "Jean-Baptiste de la Tour du Pin", "la donnee reste entiere")
+	assert_eq(result.display_name(1), "Bob", "un nom court n'est pas touche")
+	assert_eq(result.display_name(3), "Piste 4", "et une piste sans nom reste identifiable")
+
+
 func test_un_nom_trop_long_est_tronque_pour_l_affichage() -> void:
 	# La carte de l'ecran public donne 414 px au nom, soit une vingtaine de
 	# caracteres : au-dela il passait par-dessus le compteur de vitesse et

@@ -871,7 +871,7 @@ func _on_finished(result: RaceResult) -> void:
 		"VAINQUEUR — P%d %s%s"
 		% [
 			winner + 1,
-			Roster.shorten(result.rider_name(winner)),
+			result.display_name(winner),
 			"   [INTERROMPUE]" if result.was_stopped() else "",
 		]
 	)

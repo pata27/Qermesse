@@ -233,7 +233,7 @@ func _on_race_finished(result: RaceResult) -> void:
 			winner + 1,
 			# LES NOMS DU DEPART, portes par le resultat. Le roster courant est
 			# deja celui de la course SUIVANTE des que l'operateur le saisit.
-			Roster.shorten(result.rider_name(winner)),
+			result.display_name(winner),
 			"  [INTERROMPUE]" if result.was_stopped() else "",
 		]
 	)

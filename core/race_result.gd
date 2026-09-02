@@ -79,6 +79,14 @@ func is_dead_heat(rider: int) -> bool:
 	return false
 
 
+## Le nom tel qu'un ECRAN doit l'afficher : celui du depart, borne a la largeur
+## affichable. Les deux moitiees ont ete corrigees a des tours differents, puis
+## recopiees ensemble dans quatre ecrans ; les composer ici evite qu'un
+## cinquieme n'en oublie une.
+func display_name(rider: int) -> String:
+	return Roster.shorten(rider_name(rider))
+
+
 ## Le temps COURU par un rider — la seule definition, docs/02 §5 : son
 ## arrivee s'il a fini, son elimination s'il a saute, sinon la fin de la
 ## course (gong du mode temps, plafond de poursuite, interruption). C'est
