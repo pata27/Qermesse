@@ -50,6 +50,9 @@ piste inclinée. Ligne d'arrivée matérialisée et visible à l'approche en mod
 * *poursuite* — cadre l'écart : elle recule et s'élève quand il se creuse, se resserre quand ça se recolle ;
 * *photo-finish* — ralenti automatique et plan latéral sur la ligne quand l'écart à l'arrivée est
   inférieur à 1 m. C'est le moment qui fait crier une salle, il mérite un traitement dédié.
+  L'écart est celui **des deux premiers encore en course** : un troisième loin derrière ne
+  l'annule pas, et un coureur qui arrive seul — le seul de la course, ou le dernier après les
+  autres — n'a pas de photo-finish.
 
 **Riders.** Modèle unique de cycliste, cadence de pédalage indexée sur la vitesse réelle, inclinaison
 en virage, maillot coloré par instance. Un seul modèle, quatre matériaux : le coût d'assets reste minimal.

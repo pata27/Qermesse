@@ -522,7 +522,9 @@ func _reposition_riders(delta: float) -> void:
 	bounds.append(order.size())
 
 	if _finish_m > 0.0:
-		_camera_rig.consider_photo_finish(spread, _finish_m - leader_m)
+		_camera_rig.consider_photo_finish(
+			photo_finish_gap(positions, racing if not all_done else []), _finish_m - leader_m
+		)
 
 	var state_now := _controller.engine.race_state()
 	# LES VOLETS SUIVENT L'ORDRE DU CLASSEMENT : le premier à gauche, le dernier
@@ -737,6 +739,26 @@ func split_pane_count() -> int:
 
 
 ## Tri décroissant par distance parcourue, pour repérer la cassure du peloton.
+## L'écart qui décide du photo-finish — docs/04 §4 : entre les DEUX PREMIERS
+## encore en course. `leader − dernier` faisait deux erreurs : un troisième
+## loin derrière annulait un vrai photo-finish, et un coureur seul — le seul
+## de la course, ou le dernier après les autres — en avait un à lui tout seul.
+## INF quand il n'y a personne à départager.
+static func photo_finish_gap(positions: Dictionary, racing: Array[int]) -> float:
+	if racing.size() < 2:
+		return INF
+	var first := -INF
+	var second := -INF
+	for lane: int in racing:
+		var shown := float(positions[lane])
+		if shown > first:
+			second = first
+			first = shown
+		elif shown > second:
+			second = shown
+	return first - second
+
+
 static func _further_first(left: int, right: int, by: Dictionary) -> bool:
 	return float(by[left]) > float(by[right])
 
