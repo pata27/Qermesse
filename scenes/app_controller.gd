@@ -280,6 +280,18 @@ func history() -> Array[RaceResult]:
 	return _history
 
 
+## Fermeture du logiciel. Une course en cours est ARRETEE proprement.
+##
+## Sans cela, `s` ne partait jamais : le firmware restait en course, ses LED
+## allumees, et la sequence d'armement du lancement suivant tombait sur une
+## course deja lancee (docs/01 §5.4). La trace de la course en cours etait
+## perdue par la meme occasion, alors que tout autre abandon la conserve.
+func shutdown() -> void:
+	if not _engine_at_rest():
+		engine.abort("fermeture du logiciel")
+	save_preferences()
+
+
 ## Ecrit reglages et roster. Appele a chaque fin de course et a la fermeture
 ## — docs/02 §5 : un plantage en soiree ne doit rien perdre de ce qui a servi.
 ## Rend false et previent l'operateur si l'ecriture echoue.

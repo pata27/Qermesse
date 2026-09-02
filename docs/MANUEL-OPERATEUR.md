@@ -79,6 +79,12 @@ le public attend » : le simulateur permet de faire courir les gens quand même.
 
 ## 6. Après
 
+Fermer la fenêtre opérateur arrête proprement une course encore en cours : le boîtier reçoit son
+ordre d'arrêt, la course est marquée **INTERROMPUE** et sa trace est écrite comme les autres. Sans
+cela le boîtier resterait en course, LED allumées, et refuserait de repartir droit au lancement
+suivant.
+
+
 Le dossier des résultats contient un **CSV** (une ligne par événement, toutes courses de la
 journée) et un **JSON par course** avec la trace complète des trames, rejouable. **Ouvrir le
 dossier du CSV** dans le panneau Résultats y mène directement.

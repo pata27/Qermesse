@@ -567,6 +567,34 @@ func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interro
 	assert_does_not_have(events, "RACE_ABORTED")
 
 
+func test_fermer_le_logiciel_pendant_une_course_arrete_le_boitier() -> void:
+	# A la fermeture, seuls les reglages etaient sauves. Le `s` ne partait pas :
+	# le firmware restait en course, LED allumees, et la sequence d'armement du
+	# lancement suivant tombait sur une course deja lancee (docs/01 §5.4). La
+	# trace de la course en cours etait perdue avec.
+	assert_true(await _await_identified())
+	_controller.settings.distance_m = 500.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+	await wait_frames(20)
+
+	var commands: Array[String] = []
+	_controller.engine.command_requested.connect(func(c: String) -> void: commands.append(c))
+	_controller.shutdown()
+
+	assert_has(commands, "s", "le boitier est arrete")
+	assert_eq(_controller.engine.state(), RaceEngine.State.IDLE)
+	assert_eq(DirAccess.get_files_at(_races).size(), 1, "et la trace est ecrite")
+	assert_has(_csv_events(), "RACE_ABORTED")
+
+
+func test_fermer_le_logiciel_hors_course_n_ecrit_rien() -> void:
+	assert_true(await _await_identified())
+	var before := DirAccess.get_files_at(_races).size()
+	_controller.shutdown()
+	assert_eq(DirAccess.get_files_at(_races).size(), before, "rien a arreter, rien a ecrire")
+
+
 func test_une_course_interrompue_garde_sa_trace_rejouable() -> void:
 	# DEPANNAGE : « le JSON d'une course est ce qu'il faut envoyer au
 	# developpeur, la course peut etre rejouee a l'identique ». Une course

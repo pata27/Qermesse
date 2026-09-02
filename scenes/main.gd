@@ -116,7 +116,8 @@ func _on_spectacle_closed() -> void:
 
 
 func _notification(what: int) -> void:
-	# Les noms des riders et les reglages sont persistes a la fermeture : la v1
-	# les perdait a chaque lancement (docs/02 §5).
+	# Une course en cours est arretee — le boitier aussi —, puis les noms des
+	# riders et les reglages sont persistes : la v1 les perdait a chaque
+	# lancement (docs/02 §5).
 	if what == NOTIFICATION_WM_CLOSE_REQUEST and controller != null:
-		controller.save_preferences()
+		controller.shutdown()
