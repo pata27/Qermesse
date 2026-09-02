@@ -61,19 +61,50 @@ func setup(controller: AppController, screen: int, fullscreen: bool, quality: in
 ## fenêtre est déjà en plein écran. On repasse donc en fenêtré, on déménage,
 ## puis on remet le plein écran.
 func move_to(screen: int, fullscreen: bool) -> void:
-	var target := resolve_screen(screen)
 	if mode == Window.MODE_FULLSCREEN:
 		mode = Window.MODE_WINDOWED
-	current_screen = target
-	if fullscreen:
-		mode = Window.MODE_FULLSCREEN
+	# SOUS WAYLAND, ON NE CHOISIT PAS D'ÉCRAN. C'est le compositeur qui place
+	# les fenêtres ; tout ce que l'application demande ici — écran, position —
+	# il le suit ou l'ignore à sa guise. Vérifié sous Hyprland : une règle du
+	# compositeur envoyait la fenêtre sur eDP-1, et l'application la ramenait
+	# aussitôt sur « l'écran 2 » de son énumération X11, en plein écran par-
+	# dessus le marché. Se battre est perdu d'avance ; on s'abstient, et
+	# docs/DEPANNAGE.md donne la règle à écrire côté compositeur.
+	if not compositor_places_windows():
+		var target := resolve_screen(screen)
+		current_screen = target
+		if not fullscreen:
+			size = WINDOWED_SIZE
+			# Centrée sur son écran : une fenêtre qui s'ouvre à cheval sur deux
+			# écrans est le premier réflexe qu'on nous reproche.
+			var area := DisplayServer.screen_get_usable_rect(target)
+			position = area.position + (area.size - size) / 2
 	else:
-		mode = Window.MODE_WINDOWED
+		# SOUS WAYLAND, PAS DE PLEIN ÉCRAN DEMANDÉ PAR L'APPLICATION NON PLUS.
+		#
+		# Une requête plein écran X11 emporte la géométrie de l'écran que Godot
+		# croit être le sien — hérité de la fenêtre principale, donc de l'écran
+		# où était la SOURIS au lancement — et le compositeur honore cette
+		# géométrie de préférence à sa propre règle de placement. Résultat
+		# vérifié : la fenêtre spectacle suivait la souris, pas la règle.
+		#
+		# Le plein écran est donc laissé au compositeur, comme l'écran : la
+		# règle documentée dans docs/DEPANNAGE.md fait les deux, sans course
+		# possible. Sans règle, le raccourci du compositeur reste disponible.
 		size = WINDOWED_SIZE
-		# Centrée sur son écran : une fenêtre qui s'ouvre à cheval sur deux
-		# écrans est le premier réflexe qu'on nous reproche.
-		var area := DisplayServer.screen_get_usable_rect(target)
-		position = area.position + (area.size - size) / 2
+		mode = Window.MODE_WINDOWED
+		return
+	mode = Window.MODE_FULLSCREEN if fullscreen else Window.MODE_WINDOWED
+
+
+## Vrai quand un compositeur Wayland décide du placement des fenêtres. Godot
+## tourne alors le plus souvent en XWayland, et `DisplayServer.get_name()`
+## répond « X11 » : c'est la session qu'il faut regarder, pas le pilote.
+static func compositor_places_windows() -> bool:
+	return (
+		OS.get_environment("XDG_SESSION_TYPE") == "wayland"
+		or not OS.get_environment("WAYLAND_DISPLAY").is_empty()
+	)
 
 
 ## Écran effectivement utilisable pour la valeur demandée.

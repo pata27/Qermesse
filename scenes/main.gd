@@ -37,8 +37,11 @@ func _ready() -> void:
 	# dans un immense fond vide. Une fenêtre d'outil doit avoir la taille de son
 	# contenu ; l'opérateur l'agrandit s'il le veut.
 	window.size = Vector2i(1320, 900)
-	var area := DisplayServer.screen_get_usable_rect(window.current_screen)
-	window.position = area.position + (area.size - window.size) / 2
+	# Sous Wayland le compositeur place les fenêtres ; demander une position
+	# ne sert à rien et peut la faire changer d'écran. Voir `SpectacleWindow`.
+	if not SpectacleWindow.compositor_places_windows():
+		var area := DisplayServer.screen_get_usable_rect(window.current_screen)
+		window.position = area.position + (area.size - window.size) / 2
 
 	# La fenêtre spectacle est rouverte telle qu'elle a été laissée : sur son
 	# écran, en plein écran ou non. Un opérateur qui a réglé sa projection la

@@ -149,7 +149,18 @@ func refresh() -> void:
 	_fullscreen.button_pressed = bool(_root.call("spectacle_fullscreen"))
 	_fullscreen.disabled = not open
 
-	if count > 1:
+	if SpectacleWindow.compositor_places_windows():
+		# Le sélecteur reste visible mais inactif : un réglage qui semble agir
+		# et n'agit pas est pire qu'un réglage absent.
+		_screens.disabled = true
+		_fullscreen.disabled = true
+		_status.text = (
+			"Session Wayland : c'est le compositeur qui choisit l'écran ET le "
+			+ "plein écran, pas ces réglages — une règle sur le titre de la fenêtre "
+			+ "fait les deux. Voir docs/DEPANNAGE.md."
+		)
+	elif count > 1:
+		_screens.disabled = false
 		_status.text = "%d écrans détectés." % count
 	else:
 		# Mode dégradé mono-écran : on l'annonce, on ne le subit pas.

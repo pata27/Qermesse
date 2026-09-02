@@ -168,21 +168,54 @@ pas un mode dégradé bricolé : c'est le même logiciel, avec une autre source 
 
 ## La fenêtre spectacle ne s'ouvre pas sur le bon écran (Wayland : Hyprland, Sway…)
 
-Sous Wayland, **c'est le compositeur qui décide de l'écran**, pas l'application : le réglage
-« Écran » du panneau opérateur peut être ignoré. La solution est une règle de fenêtre côté
-compositeur, sur le **titre** des fenêtres, qui est stable :
+Sous Wayland, **c'est le compositeur qui décide de l'écran et du plein écran**, pas
+l'application. Les réglages « Écran » et « Plein écran » du panneau opérateur sont désactivés dans
+ce cas, et le panneau le dit. Une requête plein écran faite par l'application emporterait la
+géométrie de l'écran où se trouvait la **souris au lancement**, et le compositeur la suivrait :
+la fenêtre s'ouvrirait donc « là où était le pointeur ». C'est le compositeur qui doit faire les
+deux, par une règle sur le **titre** des fenêtres, qui est stable :
 
 * fenêtre spectacle : `SilverSprint — spectacle`
 * fenêtre opérateur : `SilverSprint v3 — operateur` (suffixée de ` (DEBUG)` hors export)
 
-Hyprland — dans `~/.config/hypr/hyprland.conf`, ou un fichier sourcé depuis lui :
+### Hyprland 0.55 et suivants — configuration Lua
+
+Depuis 0.55 la configuration `hyprland.conf` (hyprlang) est dépréciée, et à partir de 0.57 la
+configuration est en **Lua**. Le signe qui ne trompe pas : `hyprctl systeminfo` affiche
+`configProvider: lua`. Dans ce cas **tout ce qu'on écrit dans `hyprland.conf` est ignoré en
+silence** — `hyprctl reload` répond `ok`, `hyprctl configerrors` reste vide, et rien ne change.
+
+Dans un fichier `~/.config/hypr/silversprint.lua`, chargé par `require("silversprint")` depuis
+`hyprland.lua` :
+
+```lua
+hl.window_rule({
+    name = "silversprint-spectacle",
+    match = { title = "^(SilverSprint).*spectacle.*" },
+    monitor = "eDP-1",       -- nom donné par `hyprctl monitors`
+    fullscreen = true,
+})
+hl.window_rule({
+    name = "silversprint-operateur",
+    match = { title = "^(SilverSprint).*operateur.*" },
+    monitor = "DP-10",
+})
+```
+
+Pour essayer une règle **sans toucher au fichier**, `hyprctl eval '<le même appel Lua>'` la pose
+à chaud jusqu'au prochain rechargement.
+
+### Hyprland avant 0.55 — configuration hyprlang
 
 ```
-windowrulev2 = monitor <NOM_ECRAN>, title:^(SilverSprint — spectacle).*
+windowrulev2 = monitor <NOM_ECRAN>, title:^(SilverSprint).*spectacle.*
+windowrulev2 = fullscreen, title:^(SilverSprint).*spectacle.*
 ```
 
-`hyprctl monitors` donne les noms d'écran (`eDP-1`, `DP-10`…) ; `hyprctl reload` applique sans
-redémarrer. Vérification : `hyprctl clients -j` doit montrer la fenêtre avec le bon `monitor`.
+### Vérifier, ne pas supposer
 
-Les deux fenêtres tournent en XWayland (le projet ne force pas le pilote Wayland de Godot) : la
-règle s'applique de la même façon.
+`hyprctl clients -j` donne, pour chaque fenêtre, `monitor` et `fullscreen`. Faire l'essai avec la
+souris sur **un autre écran** que celui visé : une fenêtre qui s'ouvre au bon endroit alors que le
+pointeur y était déjà ne prouve rien — c'est le placement par défaut. Les deux fenêtres tournent en
+XWayland (le projet ne force pas le pilote Wayland de Godot) ; les règles s'appliquent de la même
+façon.

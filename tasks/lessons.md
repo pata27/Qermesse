@@ -327,3 +327,25 @@
   scindait, le leader seul dans son volet — décalé de 2,4 m dans le couloir 1 — sortait du cadre et
   le volet de gauche était vide. Repéré sur capture, confirmé par l'utilisateur, reproduit avant
   d'être corrigé.
+
+## Placement des fenêtres sous Wayland (2026-09-02)
+
+* **Un essai qui réussit là où le pointeur était déjà ne prouve rien.** Trois « vérifications » de
+  suite ont conclu que la règle Hyprland fonctionnait, alors qu'aucune règle n'était lue : la fenêtre
+  s'ouvrait simplement sur l'écran du pointeur, qui était le bon. Un test de placement se fait avec
+  la souris AILLEURS, lue avant le lancement. C'est l'utilisateur qui a vu que « ça dépend de là où
+  est la souris », pas moi.
+* **Poser un témoin avant d'accuser une syntaxe.** J'ai essayé quatre syntaxes de règle avant de
+  vérifier si le fichier était seulement LU : un `border_size` témoin, sans effet, a tout tranché en
+  une commande. Hyprland 0.56 avait ici un `configProvider: lua` — `hyprland.conf` était ignoré en
+  silence, `hyprctl reload` disait `ok` et `configerrors` restait vide.
+* **Sous Wayland, l'application ne choisit ni l'écran ni le plein écran.** Une requête plein écran
+  X11 emporte la géométrie de l'écran que Godot croit être le sien — hérité de la fenêtre
+  principale, donc de la souris au lancement — et le compositeur l'honore de préférence à sa règle.
+  La carte des écrans vue par Godot à travers XWayland est en outre fausse quand un écran est pivoté.
+  On s'abstient, on désactive les réglages dans le panneau, et la règle du compositeur fait les deux.
+* **`pkill -f` avec un motif présent dans sa propre ligne de commande se tue lui-même.** Deux
+  vérifications perdues. Arrêter par PID.
+* **Ce que le scratchpad contient disparaît entre deux sessions.** Deux fois un script de lancement
+  a manqué et l'application « n'avait pas de fenêtre ». Vérifier l'existence du script avant de
+  conclure.
