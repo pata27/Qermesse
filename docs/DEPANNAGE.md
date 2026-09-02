@@ -165,3 +165,24 @@ partagent le même écran.
 
 Le simulateur produit exactement les mêmes trames que le boîtier, bugs du firmware compris. Ce n'est
 pas un mode dégradé bricolé : c'est le même logiciel, avec une autre source de données.
+
+## La fenêtre spectacle ne s'ouvre pas sur le bon écran (Wayland : Hyprland, Sway…)
+
+Sous Wayland, **c'est le compositeur qui décide de l'écran**, pas l'application : le réglage
+« Écran » du panneau opérateur peut être ignoré. La solution est une règle de fenêtre côté
+compositeur, sur le **titre** des fenêtres, qui est stable :
+
+* fenêtre spectacle : `SilverSprint — spectacle`
+* fenêtre opérateur : `SilverSprint v3 — operateur` (suffixée de ` (DEBUG)` hors export)
+
+Hyprland — dans `~/.config/hypr/hyprland.conf`, ou un fichier sourcé depuis lui :
+
+```
+windowrulev2 = monitor <NOM_ECRAN>, title:^(SilverSprint — spectacle).*
+```
+
+`hyprctl monitors` donne les noms d'écran (`eDP-1`, `DP-10`…) ; `hyprctl reload` applique sans
+redémarrer. Vérification : `hyprctl clients -j` doit montrer la fenêtre avec le bon `monitor`.
+
+Les deux fenêtres tournent en XWayland (le projet ne force pas le pilote Wayland de Godot) : la
+règle s'applique de la même façon.
