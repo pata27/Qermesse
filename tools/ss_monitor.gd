@@ -81,16 +81,36 @@ func _parse_args() -> void:
 		i += 1
 
 
+## Liste TOUS les ports, pas seulement les candidats.
+##
+## `docs/RECETTE.md` §1 demande de verifier deux choses le jour du boitier :
+## que sa ligne apparait marquee CANDIDAT, et que les autres sont marques
+## `ignore` — donc qu'aucun ne sera ouvert au hasard, la faute de la v1. Seuls
+## les candidats etaient imprimes : la seconde verification etait impossible
+## avec l'outil que la recette nomme.
 func _print_ports() -> void:
 	var ports: Array = _link.list_ports()
 	var candidates: Array = ports.filter(func(p: Dictionary) -> bool:
 		return bool(p.get("candidate", false)))
 	print("ports detectes  : %d, dont %d candidat(s)" % [ports.size(), candidates.size()])
-	for p: Dictionary in candidates:
+	# Les candidats d'abord : c'est la ligne qu'on cherche des yeux.
+	var ordered: Array = candidates.duplicate()
+	for p: Dictionary in ports:
+		if not bool(p.get("candidate", false)):
+			ordered.append(p)
+	for p: Dictionary in ordered:
 		var ids := "sans VID/PID"
 		if int(p.get("vid", -1)) >= 0:
 			ids = "%04x:%04x" % [int(p["vid"]), int(p["pid"])]
-		print("  %-24s %-13s %s" % [p.get("port", "?"), ids, p.get("reason", "")])
+		print(
+			"  %-8s %-24s %-13s %s"
+			% [
+				"CANDIDAT" if bool(p.get("candidate", false)) else "ignore",
+				p.get("port", "?"),
+				ids,
+				p.get("reason", ""),
+			]
+		)
 	if candidates.is_empty():
 		# C'est le comportement voulu, pas une panne : la v1 aurait ouvert le
 		# dernier port de la liste, c'est-a-dire n'importe quoi.

@@ -163,9 +163,12 @@ func refresh_ports() -> void:
 		var ids := "sans VID/PID"
 		if int(entry.get("vid", -1)) >= 0:
 			ids = "%04x:%04x" % [int(entry["vid"]), int(entry["pid"])]
-		var mark := "•" if bool(entry.get("candidate", false)) else " "
+		# MEME VOCABULAIRE que `docs/RECETTE.md` §1 et que `ss_monitor` : la
+		# recette se coche en lisant l'ecran, pas en traduisant une puce.
+		var mark := "CANDIDAT" if bool(entry.get("candidate", false)) else "ignore"
 		_port_list.add_item(
-			"%s %-22s %-13s %s" % [mark, entry.get("port", "?"), ids, entry.get("reason", "")]
+			"%-8s %-22s %-13s %s"
+			% [mark, entry.get("port", "?"), ids, entry.get("reason", "")]
 		)
 	if _ports.is_empty():
 		_port_list.add_item("aucun port detecte")

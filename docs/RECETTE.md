@@ -54,8 +54,18 @@ Vérifier ensuite que le logiciel le voit :
 godot --headless --script tools/ss_monitor.gd -- --duree 3
 ```
 
+Tous les ports sont listés, candidats en tête. La sortie ressemble à ceci :
+
+```
+ports detectes  : 33, dont 1 candidat(s)
+  CANDIDAT /dev/ttyACM0             2341:0043     VID/PID connu
+  ignore   /dev/ttyS0               sans VID/PID  aucun critere, ce port ne sera pas essaye
+  …
+```
+
 - [ ] La ligne du boîtier apparaît, marquée **CANDIDAT**, avec le motif `VID/PID connu`.
 - [ ] Les autres ports de la machine sont listés comme `ignore`. **Aucun ne doit être ouvert.**
+- [ ] Le panneau **Matériel** de la fenêtre opérateur dit la même chose, avec le même vocabulaire.
 
 ---
 
