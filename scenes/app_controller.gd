@@ -167,11 +167,7 @@ func is_simulated() -> bool:
 
 func can_start_race() -> bool:
 	# docs/01 §4 : IDENTIFIED est la SEULE condition d'autorisation du depart.
-	return (
-		_link.can_start_race()
-		and engine.state() == RaceEngine.State.IDLE
-		and current_config().is_valid()
-	)
+	return _link.can_start_race() and _engine_at_rest() and current_config().is_valid()
 
 
 ## Motif du refus, pour que le bouton grise puisse s'expliquer. Un bouton
@@ -181,12 +177,21 @@ func start_blocked_reason() -> String:
 		return "lien %s — le boitier doit avoir repondu V: (docs/01 §4)" % (
 			Protocol.state_name(_link.get_link_state())
 		)
-	if engine.state() != RaceEngine.State.IDLE:
+	if not _engine_at_rest():
 		return "une course est deja en cours (%s)" % engine.state_name()
 	var problems := current_config().validate()
 	if not problems.is_empty():
 		return ", ".join(problems)
 	return ""
+
+
+## docs/02, FSM : FINISHED -> RESULTS -> NEW RACE -> IDLE. Une course terminee
+## n'est pas « en cours » : le depart suivant est possible, et il n'a rien a
+## interrompre.
+func _engine_at_rest() -> bool:
+	return engine.state() in [
+		RaceEngine.State.IDLE, RaceEngine.State.FINISHED, RaceEngine.State.RESULTS
+	]
 
 
 func current_config() -> RaceConfig:
@@ -201,6 +206,9 @@ func start_race() -> bool:
 	# Un test capteurs en cours est une course a blanc cote boitier : la
 	# terminer d'abord, sinon `g` tomberait sur un firmware deja parti.
 	end_sensor_test()
+	# NEW RACE : la course precedente, terminee, est acquittee. Elle reste a
+	# l'ecran public jusqu'au decompte suivant — c'est le HUD qui decide.
+	acknowledge_results()
 	var config := current_config()
 	recorder.begin_race(config, roster.to_recorder_map())
 	if not engine.arm(config, Time.get_ticks_msec()):
@@ -211,7 +219,10 @@ func start_race() -> bool:
 
 
 func stop_race() -> void:
-	if engine.state() == RaceEngine.State.IDLE:
+	# Rien a interrompre apres une arrivee : STOP ou Relancer sur une course
+	# terminee ecrivait RACE_ABORTED et affichait « COURSE INTERROMPUE » au
+	# public — pour une course qui s'etait tres bien finie.
+	if _engine_at_rest():
 		return
 	engine.abort("arret operateur")
 

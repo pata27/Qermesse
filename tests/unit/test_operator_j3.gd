@@ -515,6 +515,52 @@ func test_le_test_capteurs_fait_vraiment_bouger_les_pistes() -> void:
 	assert_true(_controller.can_start_race(), "et START est possible")
 
 
+func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interrompre() -> void:
+	# docs/02, FSM : FINISHED -> RESULTS -> NEW RACE -> IDLE. Le moteur restait
+	# FINISHED pour toujours : START grise, et « Relancer » ABANDONNAIT la
+	# course terminee — s au boitier, RACE_ABORTED au CSV, « COURSE
+	# INTERROMPUE » sur l'ecran public — a chaque course sauf la premiere.
+	assert_true(await _await_identified())
+	var race_panel := _panel.race_panel()
+	var aborted: Array[String] = []
+	_controller.race_aborted.connect(func(note: String) -> void: aborted.append(note))
+	_controller.settings.distance_m = 100.0
+
+	race_panel.refresh()
+	race_panel.start_button().pressed.emit()
+	var finished: Array[RaceResult] = []
+	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
+	for i: int in range(900):
+		await wait_frames(1)
+		if not finished.is_empty():
+			break
+	assert_eq(finished.size(), 1, "premiere course terminee")
+
+	await wait_frames(2)
+	race_panel.refresh()
+	assert_false(race_panel.start_button().disabled, "START est de nouveau possible : %s" % _controller.start_blocked_reason())
+	race_panel.start_button().pressed.emit()
+	for i: int in range(900):
+		await wait_frames(1)
+		if finished.size() >= 2:
+			break
+	assert_eq(finished.size(), 2, "deuxieme course terminee")
+	assert_true(aborted.is_empty(), "rien n'a ete interrompu")
+
+	# Et « Relancer » apres une arrivee n'interrompt rien non plus.
+	await wait_frames(2)
+	race_panel.restart_button().pressed.emit()
+	for i: int in range(900):
+		await wait_frames(1)
+		if finished.size() >= 3:
+			break
+	assert_eq(finished.size(), 3, "troisieme course, relancee")
+	assert_true(aborted.is_empty(), "relancer apres une arrivee n'est pas un abandon")
+	var events := _csv_events()
+	assert_eq(events.count("RACE_START"), 3)
+	assert_does_not_have(events, "RACE_ABORTED")
+
+
 func test_l_interface_construite_avant_l_entree_dans_l_arbre_fonctionne() -> void:
 	# Regression : Godot ne declenche ni _enter_tree ni _ready de facon
 	# synchrone quand on ajoute un noeud depuis SceneTree._initialize(). Un
