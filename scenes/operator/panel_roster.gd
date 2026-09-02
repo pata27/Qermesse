@@ -51,6 +51,9 @@ func _build() -> void:
 		var name_edit := LineEdit.new()
 		name_edit.text = rider.name
 		name_edit.placeholder_text = "Piste %d" % (lane + 1)
+		# La saisie s'arrete a ce que l'ecran public peut montrer : mieux vaut
+		# un champ qui refuse une lettre qu'un nom coupe a la surprise generale.
+		name_edit.max_length = Roster.MAX_DISPLAY_NAME
 		name_edit.custom_minimum_size.x = 180
 		name_edit.text_changed.connect(_on_name_changed.bind(lane))
 		grid.add_child(name_edit)
@@ -58,6 +61,7 @@ func _build() -> void:
 
 		var dossard_edit := LineEdit.new()
 		dossard_edit.text = rider.dossard
+		dossard_edit.max_length = Roster.MAX_DOSSARD
 		dossard_edit.custom_minimum_size.x = 70
 		dossard_edit.text_changed.connect(_on_dossard_changed.bind(lane))
 		grid.add_child(dossard_edit)

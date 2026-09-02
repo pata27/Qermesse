@@ -11,6 +11,25 @@ extends RefCounted
 ## docs/04 §2 — palette figee, une couleur par piste.
 const DEFAULT_COLORS := ["#00E5FF", "#FF2E88", "#FFB300", "#00E676"]
 
+## Longueur AFFICHABLE d'un nom, en caracteres.
+##
+## La carte de l'ecran public donne 414 px au nom avant le compteur de vitesse,
+## a la police 34 : une vingtaine de caracteres. Au-dela, le nom passait
+## par-dessus le compteur et debordait sur la scene, et la colonne `nom` du
+## tableau operateur — a largeur fixe — poussait toute la ligne vers la droite.
+## La donnee stockee, elle, n'est jamais amputee : c'est l'AFFICHAGE qui borne.
+const MAX_DISPLAY_NAME := 18
+## Un dossard tient en quelques caracteres ; la colonne du tableau en fait cinq.
+const MAX_DOSSARD := 6
+
+
+## Ramene un nom a la largeur affichable, en montrant qu'il est coupe. Point
+## de passage unique : la carte, le podium et le tableau y viennent tous.
+static func shorten(name: String) -> String:
+	if name.length() <= MAX_DISPLAY_NAME:
+		return name
+	return "%s…" % name.substr(0, MAX_DISPLAY_NAME - 1)
+
 
 class Rider:
 	extends RefCounted
@@ -23,7 +42,7 @@ class Rider:
 	func display_name() -> String:
 		# Un rider sans nom reste identifiable : on ne laisse jamais une ligne
 		# vide a l'ecran spectacle.
-		return name if not name.is_empty() else "Piste %d" % (lane + 1)
+		return Roster.shorten(name) if not name.is_empty() else "Piste %d" % (lane + 1)
 
 	func to_dict() -> Dictionary:
 		return {

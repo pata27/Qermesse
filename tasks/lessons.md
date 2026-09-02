@@ -429,3 +429,7 @@
   réglages en vérifiait six sur dix-sept : les onze autres, dont tous ceux ajoutés depuis, auraient
   pu disparaître de `to_dict` sans qu'un test bronche. Quand la garantie porte sur « tous les
   champs », énumérer par réflexion et comparer, pas énumérer à la main.
+* **Une borne en caractères ne garantit aucune largeur.** Dix-huit lettres larges font 623 px là où
+  la carte en offre 414 : mon estimation « une vingtaine de caractères » était fausse d'un facteur
+  1,5, et le test écrit avec les vraies métriques de police l'a dit tout de suite. Ce qui doit tenir
+  dans une place se borne en PIXELS ; la borne en caractères ne vaut que pour des colonnes de texte.

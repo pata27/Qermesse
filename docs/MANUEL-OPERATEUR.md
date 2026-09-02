@@ -43,7 +43,9 @@ décrit le déroulé normal d'une soirée.
 
 ## 4. Une course
 
-1. **Riders** : cocher les pistes actives, saisir noms et dossards. Les noms sont mémorisés.
+1. **Riders** : cocher les pistes actives, saisir noms et dossards. Les noms sont mémorisés. Le
+   champ s'arrête à dix-huit caractères, la largeur que l'écran public peut montrer ; un nom plus
+   long y serait de toute façon coupé.
 2. **Mode de course** :
    * **Distance** — premier à parcourir la distance ; tout le monde va au bout.
    * **Temps** — plus grande distance dans le temps imparti ; le classement est la distance.

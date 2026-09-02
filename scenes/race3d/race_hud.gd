@@ -19,6 +19,12 @@ const BAND_HEIGHT := 132
 ## de moitié — comme les cartes.
 const BAND_HEIGHT_COMPACT := 72
 const CARD_HEIGHT := 96
+## Abscisses du nom et du compteur de vitesse dans une carte : leur écart est
+## le budget du nom, et c'est lui qui fixe `Roster.MAX_DISPLAY_NAME`. Nommés
+## pour que le test qui vérifie ce budget cesse d'être vrai si on les déplace.
+const CARD_NAME_X := 26.0
+const CARD_SPEED_X := 440.0
+const CARD_NAME_FONT := 34
 ## Largeur des cartes. Élargies pour que la cadence tienne à droite sans
 ## chevaucher la distance, dont la longueur varie avec le mode.
 const CARD_WIDTH := 700.0
@@ -214,13 +220,20 @@ func rebuild_cards() -> void:
 		chip.size = Vector2(10, CARD_HEIGHT)
 		root.add_child(chip)
 
-		var name_label := _make_label(34, color)
+		var name_label := _make_label(CARD_NAME_FONT, color)
 		name_label.text = "P%d  %s" % [lane + 1, rider.display_name()]
-		name_label.position = Vector2(26, 6)
+		name_label.position = Vector2(CARD_NAME_X, 6)
+		# BORNÉ EN PIXELS, pas en caractères. Dix-huit caractères larges font
+		# 623 px là où la carte en offre 414 : compter les lettres ne garantit
+		# rien. La coupure se fait donc à la largeur réelle, avec des points de
+		# suspension. La borne en caractères, elle, sert aux colonnes de texte
+		# du panneau opérateur, où un caractère vaut une colonne.
+		name_label.size.x = CARD_SPEED_X - CARD_NAME_X
+		name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		root.add_child(name_label)
 
 		var speed_label := _make_label(40, INK)
-		speed_label.position = Vector2(440, 2)
+		speed_label.position = Vector2(CARD_SPEED_X, 2)
 		root.add_child(speed_label)
 
 		# Cadence — docs/04 §5. Déduite du développement déclaré par
@@ -921,6 +934,10 @@ func _on_aborted(note: String) -> void:
 	_notice.add_theme_color_override("font_color", ALERT)
 	_notice.text = "COURSE INTERROMPUE" if note.is_empty() else "COURSE INTERROMPUE — %s" % note
 	_covered_notice = ""
+
+
+func card_name_label(lane: int) -> Label:
+	return null if not _cards.has(lane) else (_cards[lane] as Dictionary)["name"] as Label
 
 
 func card_speed_text(lane: int) -> String:

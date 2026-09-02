@@ -208,6 +208,22 @@ func test_le_roster_par_defaut_a_deux_pistes_actives() -> void:
 	assert_eq(roster.riders.size(), Protocol.MAX_RIDERS)
 
 
+func test_un_nom_trop_long_est_tronque_pour_l_affichage() -> void:
+	# La carte de l'ecran public donne 414 px au nom, soit une vingtaine de
+	# caracteres : au-dela il passait par-dessus le compteur de vitesse et
+	# debordait sur la scene. Le nom STOCKE, lui, n'est pas touche.
+	var roster := Roster.new()
+	roster.rider(0).name = "Jean-Baptiste de la Tour du Pin"
+	var shown := roster.rider(0).display_name()
+	assert_eq(shown.length(), Roster.MAX_DISPLAY_NAME, "borne a la largeur de la carte")
+	assert_true(shown.ends_with("…"), "et l'on voit que c'est coupe : %s" % shown)
+	assert_true(shown.begins_with("Jean-Baptiste"))
+	assert_eq(roster.rider(0).name, "Jean-Baptiste de la Tour du Pin", "la donnee est intacte")
+
+	roster.rider(1).name = "Bob"
+	assert_eq(roster.rider(1).display_name(), "Bob", "un nom court n'est pas touche")
+
+
 func test_un_rider_sans_nom_reste_identifiable() -> void:
 	# docs/03 §6 : aucune information ne doit reposer sur la seule couleur, et
 	# aucune ligne ne doit rester vide a l'ecran spectacle.

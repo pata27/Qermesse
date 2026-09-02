@@ -72,7 +72,7 @@ func show_result(result: RaceResult) -> void:
 			"  [INTERROMPUE : %s]" % result.interruption_note if result.interrupted else "",
 		]
 	)
-	lines.append("rang  piste  nom            distance   temps       moy      max")
+	lines.append("rang  piste  nom                distance   temps       moy      max")
 	for rider: int in result.ranking:
 		# MEME LECTURE QUE LE PODIUM SPECTACLE. Le temps est le temps COURU :
 		# l'arrivee pour un classe, l'elimination — marquee — pour un elimine.
@@ -91,11 +91,13 @@ func show_result(result: RaceResult) -> void:
 			# marque comme tel.
 			timing = "%6.2f s *" % (result.raced_ms(rider) / 1000.0)
 		lines.append(
-			"%4d  %5d  %-14s %7.1f m  %s  %5.1f  %5.1f"
+			"%4d  %5d  %-18s %7.1f m  %s  %5.1f  %5.1f"
 			% [
 				result.rank_of(rider),
 				rider + 1,
-				result.rider_name(rider),
+				# Meme borne que l'ecran public : un nom venu d'un fichier
+				# ecrit a la main desalignerait sinon toute la ligne.
+				Roster.shorten(result.rider_name(rider)),
 				result.distance_m[rider],
 				timing,
 				result.avg_kph[rider],

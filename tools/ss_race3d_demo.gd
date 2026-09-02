@@ -3,6 +3,7 @@
 ##   godot --script tools/ss_race3d_demo.gd -- --mesure [--riders 4] [--qualite moyen]
 ##   godot --script tools/ss_race3d_demo.gd -- --video <dossier>
 ##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --courses 2
+##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --noms Alice,Bob
 ##
 ## Codes de sortie : 0 fait, 1 depart refuse, 2 scene impossible a charger,
 ## 3 delai maximal depasse (`--delai N`, 300 s par defaut). L'outil ne pend
@@ -30,6 +31,7 @@ var _deadline_s := 300.0
 ## `--courses N` : N courses d'affilee, capturees chacune. Une seule course ne
 ## voit jamais ce qu'un deuxieme depart doit remettre a zero.
 var _races := 1
+var _names := PackedStringArray()
 var _race_index := 1
 var _deadline_us := 0
 var _frame_index := 0
@@ -140,6 +142,12 @@ func _parse_args() -> void:
 			"--vitesse":
 				i += 1
 				_speed = float(args[i]) if i < args.size() else _speed
+			"--noms":
+				# Noms des coureurs, separes par des virgules. Sert a REGARDER
+				# ce que fait l'habillage d'un nom long, que les tests bornent
+				# en pixels mais ne dessinent pas.
+				i += 1
+				_names = (args[i] if i < args.size() else "").split(",", false)
 			"--courses":
 				i += 1
 				_races = maxi(1, int(args[i])) if i < args.size() else _races
@@ -164,6 +172,8 @@ func _run() -> void:
 	# capteurs câblés — sinon les pistes surnuméraires resteraient à zéro.
 	for lane: int in range(Protocol.MAX_RIDERS):
 		_controller.roster.set_active(lane, lane < _riders)
+		if lane < _names.size():
+			_controller.roster.rider(lane).name = _names[lane]
 	_controller.set_simulator_riders(_riders)
 	_controller.set_simulator_profile(_profile)
 	_controller.set_simulation_speed(_speed)

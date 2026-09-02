@@ -596,6 +596,31 @@ func test_l_interface_construite_avant_l_entree_dans_l_arbre_fonctionne() -> voi
 # =============================================================================
 
 
+func test_un_nom_long_ne_desaligne_pas_le_tableau_des_resultats() -> void:
+	# Les colonnes du tableau operateur sont a largeur fixe : un nom plus long
+	# que sa colonne poussait tout le reste de la ligne vers la droite, et le
+	# tableau devenait illisible des qu'un seul coureur avait un nom long.
+	assert_eq(
+		_panel.roster_panel().name_field(0).max_length, Roster.MAX_DISPLAY_NAME,
+		"la saisie s'arrete a la largeur affichable"
+	)
+	var result := RaceResult.new()
+	result.mode = "distance"
+	result.ranking = [0, 1]
+	result.end_reason = RaceRule.EndReason.ALL_FINISHED
+	result.finished_ms[0] = 8000
+	result.finished_ms[1] = 9000
+	result.rider_names = {0: "Zoe", 1: "Jean-Baptiste-Marie"}
+	_panel.results_panel().show_result(result)
+
+	var rows: Array[String] = []
+	for line: String in _panel.results_panel().table_text().split("\n"):
+		if line.begins_with("   1  ") or line.begins_with("   2  "):
+			rows.append(line)
+	assert_eq(rows.size(), 2, "deux lignes de classement")
+	assert_eq(rows[0].length(), rows[1].length(), "colonnes alignees :\n%s\n%s" % [rows[0], rows[1]])
+
+
 func test_le_tableau_montre_les_noms_du_depart_pas_le_roster_courant() -> void:
 	# Alice et Bob ont couru ; on renomme les pistes pour la course suivante.
 	# Cliquer la premiere course dans l'historique doit toujours dire Alice.
