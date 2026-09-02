@@ -12,7 +12,8 @@ décrit le déroulé normal d'une soirée.
    *Sous Wayland (Hyprland, Sway…), l'écran et le plein écran se règlent côté compositeur — le
    panneau le dit, la recette est dans `DEPANNAGE.md`.*
 3. Panneau **Fenêtre spectacle**, section **Son** : le logiciel démarre **muet**. Activer le son
-   seulement si la sono de la salle passe par cette machine, et régler le volume.
+   seulement si la sono de la salle passe par cette machine, et régler le volume. Les deux sont
+   mémorisés : le lancement suivant les retrouve.
 4. Faire une course complète au **simulateur** (interrupteur dans le panneau **Matériel**) pour
    vérifier l'écran du public, le décompte, le podium.
 

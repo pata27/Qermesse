@@ -50,6 +50,7 @@ func setup(controller: AppController) -> void:
 	_bus = _ensure_bus()
 	_build_players()
 	set_muted(_controller.settings.audio_muted)
+	set_volume_db(_controller.settings.audio_volume_db)
 
 	_controller.countdown_tick.connect(_on_countdown)
 	_controller.race_state_changed.connect(_on_race_state)
@@ -73,7 +74,12 @@ func is_muted() -> bool:
 
 ## Volume général de la bande-son, en décibels.
 func set_volume_db(db: float) -> void:
-	AudioServer.set_bus_volume_db(_bus, clampf(db, -60.0, 6.0))
+	var level := clampf(db, -60.0, 6.0)
+	AudioServer.set_bus_volume_db(_bus, level)
+	# Symetrique de `set_muted` : le reglage suit le curseur, sinon le volume
+	# ne vivrait que sur le bus et le lancement suivant repartirait a zero.
+	if _controller != null:
+		_controller.settings.audio_volume_db = level
 
 
 func volume_db() -> float:

@@ -42,6 +42,10 @@ var single_window_mode: bool = true
 ## la musique de la salle des la premiere course est un probleme, pas une
 ## fonctionnalite. L'operateur allume le son quand il a verifie ou il sort.
 var audio_muted: bool = true
+## Volume general de la bande-son, en decibels. Persiste comme la coupure : le
+## manuel fait regler le son LA VEILLE, et un reglage qu'on refait chaque soir
+## n'est pas un reglage.
+var audio_volume_db: float = 0.0
 
 
 func to_dict() -> Dictionary:
@@ -64,6 +68,7 @@ func to_dict() -> Dictionary:
 		"show_window_screen": show_window_screen,
 		"single_window_mode": single_window_mode,
 		"audio_muted": audio_muted,
+		"audio_volume_db": audio_volume_db,
 	}
 
 
@@ -91,6 +96,9 @@ func from_dict(data: Dictionary) -> void:
 	show_window_screen = int(data.get("show_window_screen", show_window_screen))
 	single_window_mode = bool(data.get("single_window_mode", single_window_mode))
 	audio_muted = bool(data.get("audio_muted", audio_muted))
+	# Memes bornes que `RaceAudio.set_volume_db` : rien de ce que l'audio
+	# accepte ne doit etre refuse par les reglages.
+	audio_volume_db = _clamp_float(data, "audio_volume_db", audio_volume_db, -60.0, 6.0)
 
 
 ## Construit la configuration de course correspondant aux reglages courants.

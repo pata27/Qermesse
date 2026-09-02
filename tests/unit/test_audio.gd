@@ -97,6 +97,34 @@ func test_le_faux_depart_a_son_buzzer() -> void:
 	assert_eq(audio.last_cue, "faux-depart")
 
 
+func test_le_volume_est_persiste_et_reapplique_au_lancement() -> void:
+	# Le manuel fait regler le son LA VEILLE. Le volume ne vivait que sur le
+	# bus audio : rien ne l'ecrivait dans les reglages, et le lancement suivant
+	# repartait a zero — l'operateur retrouvait la sono a fond.
+	var controller := AppController.new()
+	controller.preferences_enabled = false
+	add_child_autofree(controller)
+	var audio := RaceAudio.new()
+	add_child_autofree(audio)
+	audio.setup(controller)
+
+	audio.set_volume_db(-12.0)
+	assert_almost_eq(controller.settings.audio_volume_db, -12.0, 0.001, "le reglage suit le curseur")
+
+	# Le bus est global : on le repose ailleurs, sinon le lancement suivant
+	# retrouverait -12 dB sans avoir rien relu.
+	audio.set_volume_db(0.0)
+
+	var later := AppController.new()
+	later.preferences_enabled = false
+	add_child_autofree(later)
+	later.settings.audio_volume_db = -12.0
+	var fresh := RaceAudio.new()
+	add_child_autofree(fresh)
+	fresh.setup(later)
+	assert_almost_eq(fresh.volume_db(), -12.0, 0.001, "et il est reapplique au lancement")
+
+
 func test_la_politique_ignorer_ne_sonne_pas() -> void:
 	# docs/02 §4 : IGNORE est loggue UNIQUEMENT. « Bandeau + son » est le
 	# comportement d'AVERTISSEMENT, pas celui d'IGNORE.

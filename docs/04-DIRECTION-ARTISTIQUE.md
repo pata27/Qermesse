@@ -98,4 +98,5 @@ fixe le plafond.
 * Réactions de foule sur les dépassements, les accélérations et le franchissement.
 * Souffle de vent indexé sur la vitesse.
 * **Coupure audio globale d'un bouton** : en événementiel, la sono est souvent gérée séparément
-  et un logiciel qui sonne par-dessus la musique est un problème.
+  et un logiciel qui sonne par-dessus la musique est un problème. **La coupure ET le volume sont
+  persistés** : ils se règlent la veille, une fois, et sont réappliqués au lancement suivant.
