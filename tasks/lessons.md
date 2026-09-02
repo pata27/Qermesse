@@ -295,3 +295,17 @@
   qui manque à l'export, et une synthèse qui se teste en headless sans carte son. Deux pièges :
   une boucle doit contenir un nombre ENTIER de périodes de chacun de ses partiels sous peine de
   claquer à chaque tour, et le bruit — qui n'a pas de période — se raccorde par fondu croisé.
+
+## Boucle d'amélioration (2026-09-02)
+
+* **Une case cochée sur une preuve absente vaut une case non cochée.** `tasks/preuves/j4-course.mp4`
+  était cité par J4 et n'existait pas : la vidéo avait été rendue puis jamais encodée. Vérifier
+  l'existence des fichiers cités fait partie de la vérification, pas de la relecture.
+* **Un test de conformité doit comparer des scénarios ÉGAUX.** Le premier passage accusait
+  `link_sim` d'émettre deux `V:` — c'est le test qui lui envoyait un `v` de trop : `ss_emu` sur
+  `--stdio` est un firmware nu, `link_sim` intègre la poignée de main du pilote. J'avais conclu
+  « bug du simulateur » avant d'avoir relu le firmware, qui ne dit jamais sa version de lui-même :
+  la source de vérité se lit AVANT d'accuser une implémentation.
+* **Une case restée décochée n'est pas toujours du travail restant.** Les quatre pannes exigées par
+  `docs/03` §5 existaient avec leurs tests ; seule la case manquait. L'inventaire doit vérifier le
+  code, pas se fier au suivi.

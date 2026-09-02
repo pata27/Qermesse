@@ -125,6 +125,12 @@ func advance(delta: float) -> void:
 func _step() -> void:
 	_elapsed_s += STEP_S
 
+	# Le vrai firmware n'annonce JAMAIS sa version de lui-meme : `setup()` ne
+	# fait que `Serial.begin(115200)`, et `V:` n'est qu'une reponse a `v`.
+	# Cette emission n'est donc pas une imitation du firmware mais celle de la
+	# POIGNEE DE MAIN DU PILOTE (`s` puis `v`, docs/01 §5), que ce simulateur
+	# integre parce qu'il vit derriere la facade `link.gd`, sans pilote devant
+	# lui. `tests/unit/test_conformite_emulateur.gd` s'appuie sur ce point.
 	if _state == Protocol.State.PORT_OPEN and _elapsed_s >= _connect_at_s:
 		_emit(Protocol.Frame.VERSION, {"text": Protocol.FIRMWARE_VERSION, "truncated": false})
 		_set_state(Protocol.State.IDENTIFIED)

@@ -42,8 +42,15 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
       *(preuve : `tasks/preuves/2026-08-31-emulateur-pty.md`)*
 - [x] Tests doctest de `FirmwareSim`, en temps virtuel *(à raccorder à la CI au lot 0)*
 - [x] Sonde console indépendante `tools/ss_probe.py` — témoin croisé, pas l'outil de J1
-- [ ] `link_sim.gd` : profils de course + injection de pannes (`docs/03` §5)
-- [ ] Test de conformité `link_sim.gd` ↔ `ss_emu` sur scénario à graine fixée
+- [x] `link_sim.gd` : profils de course + injection de pannes (`docs/03` §5)
+      *(les quatre pannes exigées — faux départ, tick fantôme, trame corrompue, perte/retour de
+      lien — existent avec leurs tests dans `tests/unit/test_link_sim.gd` ; la case était restée
+      décochée.)*
+- [x] Test de conformité `link_sim.gd` ↔ `ss_emu` sur scénario à graine fixée
+      *(`tests/unit/test_conformite_emulateur.gd` : `ss_emu --stdio`, graine 7, 2 coureurs, 100 m.
+      Même suite d'événements, mêmes compteurs dans la dernière `R:` avant l'arrivée — 277/277, le
+      bug de la dernière trame reproduit DES DEUX CÔTÉS —, temps d'arrivée à 20 ms près. Sauté
+      explicitement là où le binaire n'est pas construit, jamais vert par absence.)*
 - [x] **J1-ém** — contre `ss_emu`, **via le GDExtension** : handshake, ticks en direct, `LINK_LOST`,
       reconnexion sur pty renuméroté avec course survivante, trame corrompue absorbée
       *(preuve : `tasks/preuves/2026-08-31-J1em-gdextension.md`)*. Autorise le lot 2, **pas le lot 4**.
