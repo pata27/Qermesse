@@ -188,6 +188,12 @@ func start_blocked_reason() -> String:
 ## docs/02, FSM : FINISHED -> RESULTS -> NEW RACE -> IDLE. Une course terminee
 ## n'est pas « en cours » : le depart suivant est possible, et il n'a rien a
 ## interrompre.
+## Une course est-elle en cours ? Armement et decompte compris : il y a alors
+## quelque chose a arreter, et le boitier attend un `s`.
+func race_in_progress() -> bool:
+	return not _engine_at_rest()
+
+
 func _engine_at_rest() -> bool:
 	return engine.state() in [
 		RaceEngine.State.IDLE, RaceEngine.State.FINISHED, RaceEngine.State.RESULTS

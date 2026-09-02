@@ -38,8 +38,9 @@ décrit le déroulé normal d'une soirée.
 
 * **Diamètre du rouleau (mm)** — mesurer la distance de l'aimant au centre du rouleau, puis
   doubler. Un tick = un tour de rouleau = une circonférence. Aucun rapport de transmission n'entre
-  ici : le panneau affiche en direct la circonférence et le nombre de ticks pour 100 m et pour la
-  distance choisie.
+  ici : le panneau affiche en direct la circonférence et le nombre de ticks pour 100 m, plus le
+  repère qui compte dans le mode choisi — la distance de course en distance, l'écart décisif en
+  poursuite, rien de plus en temps.
 * **Développement (m / tour de manivelle)** — ne sert **qu'à** afficher la cadence sur l'écran
   public. Le capteur ne connaît pas le braquet ; 7 m est un développement de piste courant.
   Ni les distances, ni les temps, ni le classement n'en dépendent.

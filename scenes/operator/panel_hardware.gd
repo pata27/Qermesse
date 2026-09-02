@@ -174,6 +174,10 @@ func refresh_ports() -> void:
 		_port_list.add_item("aucun port detecte")
 
 
+func ticks_text() -> String:
+	return _ticks_label.text
+
+
 func port_list() -> ItemList:
 	return _port_list
 
@@ -202,14 +206,24 @@ func _refresh_ticks_label() -> void:
 	# Retour immediat sur la calibration : l'operateur voit ce que sa mesure
 	# donne en ticks avant de lancer quoi que ce soit.
 	var physics := Physics.new(_controller.settings.roller_mm)
+	var settings := _controller.settings
+	# LE SECOND REPERE SUIT LE MODE. Annoncer « 500 m = 1392 ticks » pendant une
+	# course en temps, ou la distance ne decide de rien, c'est un chiffre juste
+	# au mauvais endroit — et l'operateur le lit comme un objectif.
+	var second := ""
+	match settings.mode:
+		RaceConfig.Mode.DISTANCE:
+			if not is_equal_approx(settings.distance_m, 100.0):
+				second = ", %.0f m = %d ticks" % [
+					settings.distance_m, physics.metres_to_ticks(settings.distance_m)
+				]
+		RaceConfig.Mode.PURSUIT:
+			second = ", ecart %.0f m = %d ticks" % [
+				settings.gap_m, physics.metres_to_ticks(settings.gap_m)
+			]
 	_ticks_label.text = (
-		"Circonference %.1f mm — 100 m = %d ticks, %.0f m = %d ticks"
-		% [
-			physics.circumference_mm,
-			physics.metres_to_ticks(100.0),
-			_controller.settings.distance_m,
-			physics.metres_to_ticks(_controller.settings.distance_m),
-		]
+		"Circonference %.1f mm — 100 m = %d ticks%s"
+		% [physics.circumference_mm, physics.metres_to_ticks(100.0), second]
 	)
 
 

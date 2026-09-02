@@ -84,7 +84,10 @@ func refresh() -> void:
 	_start.tooltip_text = (
 		"Lancer la course" if can_start else _controller.start_blocked_reason()
 	)
-	var running := _controller.engine.state() != RaceEngine.State.IDLE
+	# UNE COURSE TERMINEE N'EST PAS EN COURS. STOP ne doit etre propose que
+	# tant qu'il y a quelque chose a arreter : sinon c'est un bouton qui invite
+	# au clic et ne fait rien.
+	var running := _controller.race_in_progress()
 	_stop.disabled = not running
 	_restart.disabled = not running and not can_start
 	_state_label.text = "Etat : %s" % _controller.engine.state_name()

@@ -567,6 +567,58 @@ func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interro
 	assert_does_not_have(events, "RACE_ABORTED")
 
 
+func test_la_ligne_de_calibration_ne_parle_que_de_ce_qui_compte() -> void:
+	# Le manuel promet « la circonference et le nombre de ticks pour 100 m et
+	# pour la distance choisie ». En mode temps la distance ne decide de rien,
+	# et l'annoncer la fait lire comme un objectif ; en poursuite, c'est
+	# l'ecart qui compte.
+	var hardware := _panel.hardware_panel()
+	var mode_panel := _panel.mode_panel()
+
+	_select_option(mode_panel.mode_selector(), RaceConfig.Mode.DISTANCE)
+	mode_panel.distance_field().value = 500.0
+	hardware.refresh()
+	assert_string_contains(hardware.ticks_text(), "100 m =")
+	assert_string_contains(hardware.ticks_text(), "500 m =")
+
+	_select_option(mode_panel.mode_selector(), RaceConfig.Mode.TIME)
+	hardware.refresh()
+	assert_string_contains(hardware.ticks_text(), "100 m =", "le repere de calibration reste")
+	assert_false(hardware.ticks_text().contains("500 m"), "la distance ne decide de rien ici")
+
+	_select_option(mode_panel.mode_selector(), RaceConfig.Mode.PURSUIT)
+	mode_panel.gap_field().value = 50.0
+	hardware.refresh()
+	assert_string_contains(hardware.ticks_text(), "ecart 50 m =", "c'est l'ecart qui compte")
+
+
+func test_stop_ne_reste_pas_actif_apres_une_arrivee() -> void:
+	# Depuis que FINISHED n'est plus « une course en cours », STOP restait
+	# propose : un bouton qui invite au clic et ne fait rien. Il ne doit etre
+	# actif que tant qu'il y a quelque chose a arreter.
+	assert_true(await _await_identified())
+	var race_panel := _panel.race_panel()
+	race_panel.refresh()
+	assert_true(race_panel.stop_button().disabled, "rien a arreter au repos")
+
+	_controller.settings.distance_m = 100.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+	race_panel.refresh()
+	assert_false(race_panel.stop_button().disabled, "en course, STOP est possible")
+
+	var finished: Array[RaceResult] = []
+	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
+	for i: int in range(900):
+		await wait_frames(1)
+		if not finished.is_empty():
+			break
+	assert_false(finished.is_empty(), "la course se termine")
+	race_panel.refresh()
+	assert_true(race_panel.stop_button().disabled, "plus rien a arreter")
+	assert_false(race_panel.start_button().disabled, "et la suivante peut partir")
+
+
 func test_fermer_le_logiciel_pendant_une_course_arrete_le_boitier() -> void:
 	# A la fermeture, seuls les reglages etaient sauves. Le `s` ne partait pas :
 	# le firmware restait en course, LED allumees, et la sequence d'armement du
