@@ -35,6 +35,13 @@ var false_start_penalty_m: float = 10.0
 ## Ecran de destination de la fenetre spectacle — docs/03 §6.
 var show_window_screen: int = -1
 var single_window_mode: bool = true
+## Plein ecran de la fenetre spectacle — INDEPENDANT du fait qu'elle soit
+## ouverte. `main.gd` passait `not single_window_mode` comme argument « plein
+## ecran » : vouloir la fenetre impliquait le plein ecran, et l'operateur qui
+## la gardait en fenetre, pour la surveiller a cote de son panneau, la
+## retrouvait plein ecran a chaque lancement. Vrai par defaut : la cible est un
+## projecteur. Sous Wayland, le compositeur tranche et ce reglage est inerte.
+var spectacle_fullscreen: bool = true
 ## Coupure audio globale — docs/04 §6.
 ##
 ## MUET PAR DEFAUT, et c'est un choix, pas un oubli. En evenementiel la sono est
@@ -75,6 +82,7 @@ func to_dict() -> Dictionary:
 		"development_m": development_m,
 		"show_window_screen": show_window_screen,
 		"single_window_mode": single_window_mode,
+		"spectacle_fullscreen": spectacle_fullscreen,
 		"audio_muted": audio_muted,
 		"audio_volume_db": audio_volume_db,
 		"render_quality": render_quality,
@@ -104,6 +112,7 @@ func from_dict(data: Dictionary) -> void:
 	development_m = _clamp_float(data, "development_m", development_m, 1.0, 20.0)
 	show_window_screen = int(data.get("show_window_screen", show_window_screen))
 	single_window_mode = bool(data.get("single_window_mode", single_window_mode))
+	spectacle_fullscreen = bool(data.get("spectacle_fullscreen", spectacle_fullscreen))
 	audio_muted = bool(data.get("audio_muted", audio_muted))
 	# Memes bornes que `RaceAudio.set_volume_db` : rien de ce que l'audio
 	# accepte ne doit etre refuse par les reglages.

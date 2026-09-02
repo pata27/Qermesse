@@ -59,7 +59,7 @@ func open_spectacle() -> void:
 		spectacle.setup(
 			controller,
 			controller.settings.show_window_screen,
-			not controller.settings.single_window_mode,
+			controller.settings.spectacle_fullscreen,
 			controller.settings.render_quality
 		)
 		spectacle.closed_by_user.connect(_on_spectacle_closed)
@@ -94,13 +94,20 @@ func set_spectacle_screen(screen: int) -> void:
 
 
 func set_spectacle_fullscreen(enabled: bool) -> void:
+	# Memorise MEME si la fenetre n'est pas ouverte : c'est un reglage de
+	# projection, pris la veille, pas l'etat d'une fenetre.
+	controller.settings.spectacle_fullscreen = enabled
 	if spectacle != null and spectacle.visible:
 		spectacle.set_fullscreen(enabled)
 	spectacle_changed.emit()
 
 
 func spectacle_fullscreen() -> bool:
-	return spectacle != null and spectacle.is_fullscreen()
+	# Sans fenetre ouverte, c'est le reglage qui fait foi — sinon la case du
+	# panneau afficherait « non » avant d'ouvrir une fenetre plein ecran.
+	if spectacle == null or not spectacle.visible:
+		return controller.settings.spectacle_fullscreen
+	return spectacle.is_fullscreen()
 
 
 func _on_spectacle_closed() -> void:

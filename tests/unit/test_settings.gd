@@ -95,6 +95,25 @@ func test_tous_les_reglages_declares_font_l_aller_retour() -> void:
 			assert_eq(got, want, "reglage %s : absent de to_dict ou de from_dict ?" % name)
 
 
+func test_le_plein_ecran_du_spectacle_est_un_reglage_a_part_entiere() -> void:
+	# `main.gd` passait `not single_window_mode` comme argument « plein ecran » :
+	# vouloir la fenetre spectacle IMPLIQUAIT le plein ecran. L'operateur qui
+	# la voulait en fenetre — pour la surveiller a cote de son panneau — la
+	# retrouvait plein ecran a chaque lancement, alors que le commentaire du
+	# code promettait « rouverte telle qu'elle a ete laissee ».
+	var settings := Settings.new()
+	assert_true(settings.spectacle_fullscreen, "par defaut oui : la cible est un projecteur")
+
+	settings.single_window_mode = false
+	settings.spectacle_fullscreen = false
+	assert_true(settings.save(_path("spectacle.json")))
+
+	var reloaded := Settings.new()
+	assert_true(reloaded.load_from(_path("spectacle.json")))
+	assert_false(reloaded.single_window_mode, "la fenetre est voulue")
+	assert_false(reloaded.spectacle_fullscreen, "et elle est voulue EN FENETRE")
+
+
 func test_un_fichier_absent_laisse_les_valeurs_par_defaut() -> void:
 	var settings := Settings.new()
 	assert_false(settings.load_from(_path("jamais_ecrit.json")))
