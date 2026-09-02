@@ -145,7 +145,8 @@ n'est jamais réécrit, et le fichier de la veille n'est jamais touché.
 
 Le dossier `races/` voisin contient un JSON par course, avec la trace complète des mesures. C'est ce
 qu'il faut envoyer au développeur en cas de résultat suspect : la course peut être rejouée à
-l'identique.
+l'identique. **Une course arrêtée en a un aussi** — c'est même le fichier le plus utile après un
+incident, puisqu'il contient les trames reçues jusqu'à la coupure.
 
 **Si l'écriture échoue** — disque plein, dossier interdit —, le panneau **Course** l'affiche en fin
 de course : `ENREGISTREMENT : …`. Le logiciel ne s'arrête pas pour autant ; le classement reste à

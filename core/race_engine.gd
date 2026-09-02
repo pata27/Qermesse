@@ -190,6 +190,20 @@ func abort(note: String) -> void:
 	command_requested.emit("s")
 	_interrupted = true
 	_interruption_note = note
+	# UNE COURSE QUI A COURU GARDE SON RESULTAT PARTIEL. C'est lui qui porte
+	# la trace au disque : sans lui, les trames deja recues etaient jetees et
+	# l'incident — lien perdu, arret operateur — devenait le seul cas
+	# NON rejouable, alors que c'est celui qu'on veut debriefer.
+	#
+	# Interrompue pendant l'armement ou le decompte, elle n'a rien a raconter.
+	_result = null
+	if _state == State.RUNNING and _race_state != null and _rule != null:
+		var final_order := _rule.final_ranking(_race_state)
+		for position: int in range(final_order.size()):
+			_race_state.rank[final_order[position]] = position + 1
+		_result = RaceResult.from_state(_race_state, _rule, RaceRule.EndReason.NONE)
+		_result.interrupted = true
+		_result.interruption_note = note
 	race_aborted.emit(note)
 	_set_state(State.IDLE)
 

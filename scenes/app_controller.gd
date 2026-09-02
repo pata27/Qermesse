@@ -432,5 +432,12 @@ func last_rejection() -> String:
 
 func _on_race_aborted(note: String) -> void:
 	_link.set_race_active(false)
+	# La trace AVANT le marqueur d'abandon : le CSV se lit alors « voila ou en
+	# etait chacun », puis « et voila pourquoi ca s'est arrete ».
+	var partial := engine.result()
+	if partial != null:
+		recorder.finish_race(partial)
+		_history.append(partial)
 	recorder.record_abort(note)
 	race_aborted.emit(note)
+	save_preferences()

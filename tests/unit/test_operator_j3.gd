@@ -561,6 +561,45 @@ func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interro
 	assert_does_not_have(events, "RACE_ABORTED")
 
 
+func test_une_course_interrompue_garde_sa_trace_rejouable() -> void:
+	# DEPANNAGE : « le JSON d'une course est ce qu'il faut envoyer au
+	# developpeur, la course peut etre rejouee a l'identique ». Une course
+	# ARRETEE — lien perdu, arret operateur — n'en ecrivait aucun : ses trames
+	# etaient jetees. C'est pourtant l'incident qu'on veut rejouer.
+	assert_true(await _await_identified())
+	_controller.settings.distance_m = 500.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+	await wait_frames(20)
+	_controller.stop_race()
+	await wait_frames(2)
+
+	var files := DirAccess.get_files_at(_races)
+	assert_eq(files.size(), 1, "la course interrompue laisse sa trace")
+	var loaded := Replay.load_file(_races.path_join(files[0]))
+	assert_true(loaded.ok, loaded.error)
+	assert_gt(loaded.samples.size(), 5, "avec les trames deja recues")
+
+	var relu := Recorder.new(_logs, _races).load_day()[0]
+	assert_true(relu.interrupted, "et elle se declare interrompue")
+	assert_string_contains(relu.interruption_note, "operateur", "en disant pourquoi")
+
+
+func test_l_historique_n_invente_pas_de_vainqueur_a_une_course_arretee() -> void:
+	assert_true(await _await_identified())
+	_controller.settings.distance_m = 500.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running())
+	await wait_frames(20)
+	_controller.stop_race()
+	await wait_frames(2)
+
+	var results := _panel.results_panel()
+	assert_eq(results.history_count(), 1, "elle entre dans les courses du jour")
+	assert_string_contains(results.history_text(0), "INTERROMPUE")
+	assert_false(results.history_text(0).contains("vainqueur"), "personne n'a gagne")
+
+
 func test_l_interface_construite_avant_l_entree_dans_l_arbre_fonctionne() -> void:
 	# Regression : Godot ne declenche ni _enter_tree ni _ready de facon
 	# synchrone quand on ajoute un noeud depuis SceneTree._initialize(). Un

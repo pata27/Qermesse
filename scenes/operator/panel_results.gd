@@ -13,9 +13,11 @@ func setup(controller: AppController) -> void:
 	_controller = controller
 	_build()
 	# Les courses deja sur disque aujourd'hui — le logiciel a pu etre relance.
-	for result: RaceResult in _controller.history():
-		_add_history_item(result)
+	_rebuild_history()
 	_controller.race_finished.connect(_on_race_finished)
+	# Une course arretee entre dans la liste elle aussi : elle a eu lieu, et sa
+	# trace est sur le disque.
+	_controller.race_aborted.connect(func(_note: String) -> void: _rebuild_history())
 
 
 func _build() -> void:
@@ -52,6 +54,10 @@ func _build() -> void:
 
 func table_text() -> String:
 	return _table.text
+
+
+func history_text(index: int) -> String:
+	return "" if index < 0 or index >= _history.item_count else _history.get_item_text(index)
 
 
 func history_count() -> int:
@@ -124,17 +130,31 @@ func select_history(index: int) -> void:
 	_on_history_selected(index)
 
 
+## Reconstruit la liste depuis l'historique du controleur, qui est la seule
+## source : ajouter au fil de l'eau laissait diverger ce qu'on voyait pendant
+## la soiree et ce qu'on retrouvait apres un redemarrage.
+func _rebuild_history() -> void:
+	_history.clear()
+	for result: RaceResult in _controller.history():
+		_add_history_item(result)
+
+
 func _add_history_item(result: RaceResult) -> void:
 	# Heure LOCALE : l'ISO UTC des fichiers se lisait avec deux heures d'ecart.
-	_history.add_item(
-		"%s  %s  vainqueur %s (piste %d)"
-		% [result.finished_at_local(), result.mode, result.rider_name(result.winner()), result.winner() + 1]
+	var outcome := (
+		"vainqueur %s (piste %d)" % [result.rider_name(result.winner()), result.winner() + 1]
 	)
+	# Une course ARRETEE n'a pas de vainqueur — la nommer ainsi serait un
+	# resultat invente. Un plafond de securite, lui, en a un : « celui qui
+	# mene gagne » (docs/02 §3), et il reste annonce comme tel.
+	if result.interrupted and result.end_reason == RaceRule.EndReason.NONE:
+		outcome = "INTERROMPUE"
+	_history.add_item("%s  %s  %s" % [result.finished_at_local(), result.mode, outcome])
 
 
 func _on_race_finished(result: RaceResult) -> void:
 	show_result(result)
-	_add_history_item(result)
+	_rebuild_history()
 
 
 func _on_history_selected(index: int) -> void:

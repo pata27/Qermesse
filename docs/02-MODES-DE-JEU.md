@@ -176,7 +176,11 @@ sur la durée totale de la course : la moyenne d'un rider éliminé à 14 s n'es
 25 s pendant lesquelles il regardait les autres. `distance_m` est la distance à cet instant.
 Une ligne `RIDER_ELIMINATED` porte, en `note`, l'écart au leader au moment de l'élimination.
 
-**JSON** — un fichier par course dans `<données_app>/races/<uuid>.json`, contenant en plus
+**JSON** — un fichier par course dans `<données_app>/races/<uuid>.json`, **y compris pour une course
+interrompue** dès lors qu'elle a couru : arrêt opérateur, lien perdu au-delà du délai de grâce. Son
+résultat partiel porte `interrupted` et `interruption_note`, et sa trace est celle qu'on veut
+justement rejouer après un incident. Une course interrompue pendant l'armement ou le décompte n'a
+rien à raconter et n'écrit rien. Le fichier contient en plus
 **la trace complète des trames `R:`** (ticks + elapsedMs). Le résultat y est porté par rider :
 `finished_ms`, `eliminated_ms` (0 tant que le rider court), `distance_m`, `avg_kph`, `max_kph`,
 `eliminated`, `false_started`, avec les mêmes conventions que le CSV. La trace comprend aussi
