@@ -28,6 +28,15 @@ signal sensor_activity(ticks: PackedInt32Array)
 
 ## docs/01 §6.2 — au-dela, la course est perdue.
 const LINK_GRACE_MS := 3000
+## Au-dela de ce temps de course sans un seul tick, une piste cochee est
+## signalee. Dix secondes : assez pour qu'un depart lent ne declenche rien,
+## assez tot pour arreter et repartir avant que le public ne s'impatiente.
+##
+## C'est le bug de la v1 sous une autre forme. En distance le PC attend TOUTES
+## les pistes actives : une piste cochee sans coureur — ou dont le capteur est
+## debranche — les fait attendre jusqu'au plafond de dix minutes. `DEPANNAGE`
+## demandait a l'operateur de le verifier lui-meme ; le logiciel le voit.
+const SILENT_LANE_MS := 10000
 
 ## Coutures de test, a fixer AVANT l'entree dans l'arbre. En production elles
 ## gardent leurs valeurs par defaut ; en test elles evitent d'ecrire dans les
@@ -49,6 +58,8 @@ var recorder: Recorder = null
 ## illisible remet tout a zero SANS empecher le demarrage — mais pas en
 ## silence : le panneau course le dit. « Bruyamment », comme promis.
 var _startup_problems: Array[String] = []
+## Pistes deja signalees comme muettes, pour ne le dire qu'une fois par course.
+var _silent_lanes_warned: Array[int] = []
 var _link: Link = null
 var _link_lost_since_ms: int = -1
 var _rejected_ticks: int = 0
@@ -212,6 +223,7 @@ func start_race() -> bool:
 	# Un test capteurs en cours est une course a blanc cote boitier : la
 	# terminer d'abord, sinon `g` tomberait sur un firmware deja parti.
 	end_sensor_test()
+	_silent_lanes_warned.clear()
 	# NEW RACE : la course precedente, terminee, est acquittee. Elle reste a
 	# l'ecran public jusqu'au decompte suivant — c'est le HUD qui decide.
 	acknowledge_results()
@@ -391,7 +403,23 @@ func _on_frame(kind: int, payload: Dictionary) -> void:
 
 func _on_progress_updated(state: RaceState) -> void:
 	recorder.record_sample(state.ticks, state.elapsed_ms)
+	_warn_silent_lanes(state)
 	progress_updated.emit(state)
+
+
+## Signale UNE FOIS par course chaque piste cochee restee muette.
+func _warn_silent_lanes(state: RaceState) -> void:
+	if state.elapsed_ms < SILENT_LANE_MS:
+		return
+	for rider: int in state.config.active_riders:
+		if state.ticks[rider] > 0 or _silent_lanes_warned.has(rider):
+			continue
+		_silent_lanes_warned.append(rider)
+		notice.emit(
+			"PISTE %d : aucun tick depuis le depart — coureur absent"
+			% (rider + 1)
+			+ " ou capteur debranche ? La course attend cette piste."
+		)
 
 
 func _on_rider_finished(rider: int, elapsed_ms: int, rank: int) -> void:

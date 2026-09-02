@@ -567,6 +567,36 @@ func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interro
 	assert_does_not_have(events, "RACE_ABORTED")
 
 
+func test_une_piste_cochee_qui_ne_bouge_pas_est_signalee() -> void:
+	# DEPANNAGE, « la course ne se termine jamais » : la fiche demande a
+	# l'operateur de verifier lui-meme qu'aucune piste cochee n'est vide. C'est
+	# le bug de la v1 sous une autre forme — en distance, le PC attend TOUTES
+	# les pistes actives, et une piste sans coureur les fait attendre jusqu'au
+	# plafond de dix minutes, public compris. Le logiciel peut le voir.
+	assert_true(await _await_identified())
+	# Trois pistes cochees, mais un boitier a deux capteurs cables.
+	_controller.roster.set_active(2, true)
+	_controller.set_simulator_riders(2)
+	_controller.settings.distance_m = 500.0
+
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+
+	var warned := ""
+	for i: int in range(900):
+		await wait_frames(1)
+		for text: String in notices:
+			if text.begins_with("PISTE 3"):
+				warned = text
+		if not warned.is_empty():
+			break
+	assert_false(warned.is_empty(), "la piste muette est signalee : %s" % str(notices))
+	assert_string_contains(warned, "aucun tick")
+	_controller.stop_race()
+
+
 func test_la_ligne_de_calibration_ne_parle_que_de_ce_qui_compte() -> void:
 	# Le manuel promet « la circonference et le nombre de ticks pour 100 m et
 	# pour la distance choisie ». En mode temps la distance ne decide de rien,

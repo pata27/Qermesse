@@ -52,6 +52,11 @@ atteint `ticks`. Chaque rider est figé à son franchissement, avec son `elapsed
 > C'est ici que la v1 était cassée : elle attendait les 4 pistes matérielles, donc ne se terminait
 > jamais à 2 riders. Le PC ne doit compter **que les riders actifs**.
 
+> Corollaire, et c'est le même piège déplacé d'un cran : une piste **cochée mais vide** fait
+> attendre tout le monde jusqu'au plafond de sécurité. Dix secondes après le départ, toute piste
+> active restée à zéro tick est signalée à l'opérateur — une fois, sans interrompre la course, qui
+> peut légitimement démarrer lentement.
+
 **Classement.** Croissant par temps de passage. Ex æquo au tick près départagé par l'ordre d'arrivée
 de la trame `R:`. Deux riders qui franchissent dans **la même trame** sont ex æquo : rien dans le
 flux ne les sépare. Ils sont rangés par numéro de piste — un ordre arbitraire mais déterministe — et

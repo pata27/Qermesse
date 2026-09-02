@@ -117,6 +117,11 @@ que les **quatre** pistes matérielles aient franchi la ligne, ce qui n'arrive j
 capteurs câblés. En v3, c'est le PC qui arbitre et ne compte que les pistes déclarées actives —
 vérifier d'ailleurs que le roster ne contient pas une piste cochée sans cycliste dessus.
 
+**Le logiciel le dit lui-même.** Dix secondes après le départ, toute piste cochée qui n'a produit
+aucun tick est signalée dans le panneau **Course** : `PISTE 3 : aucun tick depuis le départ —
+coureur absent ou capteur débranché ? La course attend cette piste.` C'est le moment d'arrêter et de
+repartir, plutôt que d'attendre le plafond de dix minutes devant le public.
+
 ---
 
 ## Les vitesses affichées sont absurdes
