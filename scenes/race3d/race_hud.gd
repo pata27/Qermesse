@@ -719,8 +719,11 @@ func _on_state(_previous: int, current: int) -> void:
 		_printed_gap = INF
 		_notice.visible = true
 		_refresh_objective()
-	elif current == RaceEngine.State.IDLE:
-		_clock_label.text = ""
+	elif current == RaceEngine.State.FINISHED or current == RaceEngine.State.IDLE:
+		# La décision est prise : le compte à rebours n'a plus rien à dire.
+		_decision_label.text = ""
+		if current == RaceEngine.State.IDLE:
+			_clock_label.text = ""
 
 
 func _on_countdown(value: int) -> void:
@@ -863,6 +866,10 @@ func _on_aborted(_note: String) -> void:
 	_notice.add_theme_color_override("font_color", ALERT)
 	_notice.text = "COURSE INTERROMPUE"
 	_covered_notice = ""
+
+
+func decision_text() -> String:
+	return _decision_label.text
 
 
 func notice_text() -> String:

@@ -50,6 +50,20 @@ func test_le_lien_perdu_n_efface_pas_une_elimination_au_retour() -> void:
 	assert_string_contains(_hud.notice_text(), "ELIMINEE")
 
 
+func test_la_jauge_de_decision_se_tait_une_fois_la_poursuite_decidee() -> void:
+	_controller.settings.mode = RaceConfig.Mode.PURSUIT
+	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	var config := _controller.current_config()
+	config.active_riders = [0, 1]
+	var state := RaceState.new(config)
+	state.elapsed_ms = 10000
+	_controller.progress_updated.emit(state)
+	assert_string_contains(_hud.decision_text(), "decision dans")
+	_controller.race_state_changed.emit(RaceEngine.State.RUNNING, RaceEngine.State.FINISHED)
+	assert_eq(_hud.decision_text(), "", "la decision est prise")
+
+
 func test_la_course_interrompue_le_dit_au_public() -> void:
 	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
 	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
