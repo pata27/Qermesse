@@ -392,7 +392,13 @@ func _show_podium(result: RaceResult) -> void:
 	for child: Node in _podium_grid.get_children():
 		child.queue_free()
 
-	for header: String in ["", "Coureur", "Temps", "Moyenne", "Pointe"]:
+	# LA TROISIÈME COLONNE DÉPEND DU MODE. En mode temps, tout le monde
+	# « arrive » à l'instant du gong (`rule_time.gd`) : un temps y serait le
+	# même sur chaque ligne et ne dirait rien. C'est la DISTANCE qui classe, et
+	# c'est elle qu'il faut montrer. En distance et en poursuite, c'est le temps.
+	var timed := result.config == null or result.config.mode != RaceConfig.Mode.TIME
+	var third := "Temps" if timed else "Distance"
+	for header: String in ["", "Coureur", third, "Moyenne", "Pointe"]:
 		var cell := _make_label(30, MUTED)
 		cell.text = header
 		_podium_grid.add_child(cell)
@@ -410,16 +416,18 @@ func _show_podium(result: RaceResult) -> void:
 		who.text = "P%d  %s" % [rider + 1, _controller.roster.rider(rider).display_name()]
 		_podium_grid.add_child(who)
 
-		var time := _make_label(44, INK)
+		var figure := _make_label(44, INK)
 		if result.eliminated[rider]:
-			time.text = "éliminé"
+			figure.text = "éliminé"
+		elif not timed:
+			figure.text = "%.1f m" % result.distance_m[rider]
 		elif result.finished_ms[rider] > 0:
-			time.text = "%.2f s" % (float(result.finished_ms[rider]) / 1000.0)
+			figure.text = "%.2f s" % (float(result.finished_ms[rider]) / 1000.0)
 		else:
 			# Un coureur peut ne pas avoir franchi la ligne : course
 			# interrompue, lien perdu. On l'écrit plutôt que d'inventer un temps.
-			time.text = "—"
-		_podium_grid.add_child(time)
+			figure.text = "—"
+		_podium_grid.add_child(figure)
 
 		var avg := _make_label(44, INK)
 		avg.text = "%.1f km/h" % result.avg_kph[rider]

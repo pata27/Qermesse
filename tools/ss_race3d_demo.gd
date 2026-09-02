@@ -35,6 +35,9 @@ var _window_s := MEASURE_WINDOW_S
 ## Distance de course. Réglable pour amener la ligne d'arrivée dans la fenêtre
 ## de capture : à 500 m elle tombe une quarantaine de secondes après le départ.
 var _distance_m := 0.0
+## Durée du mode temps, pour la même raison que la distance : amener la fin
+## dans la fenêtre de capture.
+var _duration_s := 0.0
 var _last_tick_us := 0
 
 
@@ -89,6 +92,9 @@ func _parse_args() -> void:
 			"--profil":
 				i += 1
 				_profile = args[i] if i < args.size() else _profile
+			"--duree":
+				i += 1
+				_duration_s = float(args[i]) if i < args.size() else _duration_s
 			"--distance":
 				i += 1
 				_distance_m = float(args[i]) if i < args.size() else _distance_m
@@ -123,7 +129,7 @@ func _run() -> void:
 	match _race_mode:
 		"temps":
 			_controller.settings.mode = RaceConfig.Mode.TIME
-			_controller.settings.duration_s = 60.0
+			_controller.settings.duration_s = _duration_s if _duration_s > 0.0 else 60.0
 		"poursuite":
 			_controller.settings.mode = RaceConfig.Mode.PURSUIT
 			_controller.settings.gap_m = 50.0
@@ -230,7 +236,12 @@ func _capture_stills() -> void:
 
 	var has_run := false
 	var racing := true
-	while done.size() < marks.size() and racing:
+	# On reste dans la boucle tant que la course COURT, même une fois tous les
+	# repères horaires pris : les captures d'après-ligne doivent attendre la fin
+	# réelle. En mode distance la ligne tombait avant le dernier repère et le
+	# défaut ne se voyait pas ; en mode temps, à 60 s, elles étaient prises en
+	# pleine course et le « podium » montrait deux coureurs à mi-parcours.
+	while racing:
 		await _step()
 		var state := _controller.engine.race_state()
 		var race_s: float = 0.0 if state == null else float(state.elapsed_ms) / 1000.0
