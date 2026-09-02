@@ -162,6 +162,9 @@ func _on_progress(state: RaceState) -> void:
 	# docs/01 §3 : l'horloge affichee derive de elapsedMs du firmware, jamais de
 	# l'horloge du PC.
 	_clock_label.text = "%.2f s" % (state.elapsed_ms / 1000.0)
+	if state.config.mode == RaceConfig.Mode.PURSUIT:
+		# Les plafonds sont visibles a l'operateur aussi — docs/02 §3.
+		_clock_label.text += "   (%s)" % RulePursuit.decision_text(state)
 	_refresh_lanes()
 
 

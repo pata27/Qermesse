@@ -377,3 +377,10 @@
   un redémarrage en soirée le vidait alors que les JSON étaient sur disque. Quand un libellé nomme
   une portée (le jour, la session, l'événement), vérifier que la donnée survit vraiment à cette
   portée — et penser au fuseau : `started_at` est en UTC, le CSV est nommé en heure locale.
+* **Une capture PNG par image fausse toute mesure de lissage.** Sauver chaque image ralentit la boucle,
+  les deltas gonflent, et un filtre réglé pour 60 i/s paraît sauter. Valider un filtre d'affichage
+  hors ligne, sur le signal exact décrit par l'utilisateur (ici : un tick de 0,3 m qui alterne à
+  40 Hz entre deux coureurs), avant de conclure sur des captures.
+* **Toute valeur brute à 100 Hz affichée telle quelle finit par stroboscoper.** Vitesse hier, écart
+  aujourd'hui : même cause (quantum de tick), même recette (cible + lissage continu + hystérésis
+  sur le chiffre). Chercher les autres étiquettes qui lisent `state` directement.

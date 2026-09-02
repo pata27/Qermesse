@@ -43,6 +43,11 @@ const TENSION_HEIGHT := 26.0
 ## Raideur du lissage des barres, en 1/s. Dix : elles suivent un écart qui se
 ## creuse sans traîner, mais ne rendent plus le pas des ticks.
 const TENSION_SMOOTHING := 10.0
+## Le chiffre d'écart ne bouge que si l'écart lissé s'en éloigne d'autant. Un
+## tick vaut ~0,3 m et arrive tantôt pour l'un, tantôt pour l'autre : brut, le
+## chiffre battait entre deux valeurs à chaque trame — un stroboscope.
+const GAP_STEP_M := 0.15
+const GAP_SMOOTHING := 5.0
 
 var _controller: AppController
 var _mode_label: Label
@@ -58,9 +63,14 @@ var _tension_targets: Array = []
 var _tension_shown: Dictionary = {}  # couleur -> fraction lissee
 var _tension_left: Label
 var _tension_right: Label
+var _decision_label: Label
 var _cards: Dictionary = {}  # lane -> Dictionary de contrôles
 var _target_speed: Dictionary = {}  # lane -> km/h visés
 var _shown_speed: Dictionary = {}  # lane -> km/h lissés
+var _target_gap := 0.0
+var _shown_gap := 0.0
+var _printed_gap := INF
+var _gap_scale := 1.0
 var _printed_speed: Dictionary = {}  # lane -> km/h effectivement écrits
 var _overlay: CanvasLayer
 var _countdown_veil: ColorRect
@@ -271,6 +281,7 @@ func _process(delta: float) -> void:
 	_animate_countdown(delta)
 	_tick_podium(delta)
 	_layout_tension(delta)
+	_animate_gap(delta)
 	if _target_speed.is_empty():
 		return
 	var alpha := 1.0 - exp(-delta * 4.0)
@@ -297,6 +308,23 @@ func _process(delta: float) -> void:
 		_printed_speed[lane] = shown
 		var card: Dictionary = _cards[lane]
 		(card["speed"] as Label).text = "%5.1f km/h" % shown
+
+
+## Le gros chiffre d'écart : lissé en continu, puis affiché avec hystérésis —
+## la même recette que la vitesse, pour la même raison.
+func _animate_gap(delta: float) -> void:
+	if not _gap_label.visible:
+		return
+	var alpha := 1.0 - exp(-delta * GAP_SMOOTHING)
+	_shown_gap = lerpf(_shown_gap, _target_gap, alpha)
+	if absf(_shown_gap - _printed_gap) < GAP_STEP_M:
+		return
+	_printed_gap = _shown_gap
+	_gap_label.text = "%.1f m" % _shown_gap
+	# Vire au rouge à l'approche du seuil — docs/04 §4.
+	_gap_label.add_theme_color_override(
+		"font_color", INK.lerp(ALERT, clampf(_shown_gap / _gap_scale, 0.0, 1.0))
+	)
 
 
 ## BARRE DE TENSION — docs/04 §5 : « entre −G et +G ».
@@ -366,6 +394,14 @@ func _build_tension() -> void:
 	_tension_right.position = Vector2(TENSION_WIDTH - 200.0, TENSION_HEIGHT + 6.0)
 	_tension_right.size.x = 200.0
 	_tension.add_child(_tension_right)
+
+	# La jauge « temps restant avant décision » — docs/02 §3 —, au centre sous
+	# la barre, entre −G et +G : c'est l'autre façon dont la course peut tomber.
+	_decision_label = _make_label(26, MUTED)
+	_decision_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_decision_label.position = Vector2(200.0, TENSION_HEIGHT + 6.0)
+	_decision_label.size.x = TENSION_WIDTH - 400.0
+	_tension.add_child(_decision_label)
 
 
 ## Place les barres. LE LEADER EST LA RÉFÉRENCE, pas la queue.
@@ -664,6 +700,9 @@ func _on_state(_previous: int, current: int) -> void:
 		# barre reprennent leur visibilité selon le mode.
 		_podium.visible = false
 		_pending_result = null
+		_target_gap = 0.0
+		_shown_gap = 0.0
+		_printed_gap = INF
 		_notice.visible = true
 		_refresh_objective()
 	elif current == RaceEngine.State.IDLE:
@@ -759,12 +798,8 @@ func _on_progress(state: RaceState) -> void:
 			var head: int = racing[0]
 			var last: int = racing[racing.size() - 1]
 			var scale := maxf(1.0, config.gap_m)
-			var gap := state.distance_m[head] - state.distance_m[last]
-			_gap_label.text = "%.1f m" % gap
-			# Vire au rouge à l'approche du seuil — docs/04 §4.
-			_gap_label.add_theme_color_override(
-				"font_color", INK.lerp(ALERT, clampf(gap / scale, 0.0, 1.0))
-			)
+			_target_gap = state.distance_m[head] - state.distance_m[last]
+			_gap_scale = scale
 			var lead_ratio := (state.distance_m[head] - state.distance_m[racing[1]]) / scale
 			var chasers: Array = []
 			for index: int in range(1, racing.size()):
@@ -776,6 +811,12 @@ func _on_progress(state: RaceState) -> void:
 			_set_tension(lead_ratio, Color(_controller.roster.rider(head).color), chasers)
 		_tension_left.text = "−%.0f m" % config.gap_m
 		_tension_right.text = "+%.0f m" % config.gap_m
+		# Rouge sur la dernière demi-minute : le public doit sentir que ça va
+		# tomber. (Pas dans la bannière : en 1280 px l'objectif allongé
+		# passait sous le chrono.)
+		_decision_label.text = RulePursuit.decision_text(state)
+		var urgent := RulePursuit.seconds_before_decision(state) < 30.0
+		_decision_label.add_theme_color_override("font_color", ALERT if urgent else MUTED)
 
 
 func _on_eliminated(rider: int, rank: int, _gap_m: float) -> void:

@@ -309,6 +309,28 @@ func test_poursuite_plafond_de_distance() -> void:
 	assert_true(_result.interrupted)
 
 
+func test_poursuite_le_temps_avant_decision_est_visible_a_l_ecran() -> void:
+	# docs/02 §3 : les plafonds « doivent etre visibles dans l'UI (jauge
+	# temps restant avant decision) ». Le moteur fournit la valeur.
+	var config := _config(RaceConfig.Mode.PURSUIT, [0, 1])
+	config.gap_m = 500.0
+	config.pursuit_time_cap_s = 100.0
+	config.pursuit_distance_cap_m = 5000.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(10.0, [45.0, 44.5])
+	var state := _engine.race_state()
+	assert_almost_eq(RulePursuit.seconds_before_decision(state), 90.0, 0.1)
+	# 10 s a 45 km/h = 125 m : il en reste 4875 avant le plafond de distance.
+	assert_almost_eq(RulePursuit.metres_before_decision(state), 4875.0, 2.0)
+	assert_eq(RulePursuit.decision_text(state), "decision dans 1:30")
+
+	# Quand c'est la distance qui tranchera en premier, c'est elle qu'on montre.
+	# (Le moteur travaille sur SA copie de la configuration.)
+	state.config.pursuit_distance_cap_m = 200.0
+	assert_eq(RulePursuit.decision_text(state), "decision a 75 m")
+
+
 func test_poursuite_la_tension_mesure_la_progression_vers_la_decision() -> void:
 	var config := _config(RaceConfig.Mode.PURSUIT, [0, 1])
 	config.gap_m = 50.0

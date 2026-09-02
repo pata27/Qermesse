@@ -74,6 +74,31 @@ func note_elimination(rider: int) -> void:
 		_elimination_order.append(rider)
 
 
+## Ce qui reste avant que le plafond de duree tranche — docs/02 §3 exige que
+## ce soit visible a l'ecran.
+static func seconds_before_decision(state: RaceState) -> float:
+	return maxf(0.0, state.config.pursuit_time_cap_s - state.elapsed_ms / 1000.0)
+
+
+## Idem pour le plafond de distance, mesure sur le leader.
+static func metres_before_decision(state: RaceState) -> float:
+	var leader := state.leader()
+	var lead_m := state.distance_m[leader] if leader >= 0 else 0.0
+	return maxf(0.0, state.config.pursuit_distance_cap_m - lead_m)
+
+
+## Le plafond qui tranchera en premier, en proportion de son etendue, et lui
+## seul : deux compteurs a rebours cote a cote ne se lisent pas.
+static func decision_text(state: RaceState) -> String:
+	var seconds := seconds_before_decision(state)
+	var metres := metres_before_decision(state)
+	var time_share := seconds / maxf(1.0, state.config.pursuit_time_cap_s)
+	var distance_share := metres / maxf(1.0, state.config.pursuit_distance_cap_m)
+	if distance_share < time_share:
+		return "decision a %.0f m" % metres
+	return "decision dans %d:%02d" % [int(seconds) / 60, int(seconds) % 60]
+
+
 func _safety_cap(state: RaceState) -> EndReason:
 	if state.elapsed_ms >= int(state.config.pursuit_time_cap_s * 1000.0):
 		return EndReason.TIME_CAP

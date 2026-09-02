@@ -139,6 +139,10 @@ func _run() -> void:
 		"poursuite":
 			_controller.settings.mode = RaceConfig.Mode.PURSUIT
 			_controller.settings.gap_m = 50.0
+			# `--duree` borne la poursuite : c'est le plafond de durée, et la
+			# jauge « décision dans » devient visible sur une capture courte.
+			if _duration_s > 0.0:
+				_controller.settings.pursuit_time_cap_s = maxf(10.0, _duration_s)
 		_:
 			_controller.settings.mode = RaceConfig.Mode.DISTANCE
 			_controller.settings.distance_m = _distance_m if _distance_m > 0.0 else 500.0
