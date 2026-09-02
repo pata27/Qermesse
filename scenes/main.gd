@@ -14,9 +14,21 @@ var spectacle: SpectacleWindow
 var audio: RaceAudio
 
 
+## Coutures, posees AVANT l'entree dans l'arbre : `_ready` construit le
+## controleur, qui lit aussitot les reglages et le roster de l'utilisateur. Un
+## test qui les laisserait actives lirait l'etat reel de la machine — et son
+## resultat dependrait de la derniere soiree de l'operateur.
+var preferences_enabled := true
+var recorder_logs_dir := ""
+var recorder_races_dir := ""
+
+
 func _ready() -> void:
 	controller = AppController.new()
 	controller.name = "AppController"
+	controller.preferences_enabled = preferences_enabled
+	controller.recorder_logs_dir = recorder_logs_dir
+	controller.recorder_races_dir = recorder_races_dir
 	add_child(controller)
 
 	operator = OperatorPanel.new()
