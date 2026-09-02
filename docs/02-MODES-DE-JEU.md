@@ -53,7 +53,9 @@ atteint `ticks`. Chaque rider est figé à son franchissement, avec son `elapsed
 > jamais à 2 riders. Le PC ne doit compter **que les riders actifs**.
 
 **Classement.** Croissant par temps de passage. Ex æquo au tick près départagé par l'ordre d'arrivée
-de la trame `R:` (documenté comme tel dans l'UI : « photo-finish »).
+de la trame `R:`. Deux riders qui franchissent dans **la même trame** sont ex æquo : rien dans le
+flux ne les sépare. Ils sont rangés par numéro de piste — un ordre arbitraire mais déterministe — et
+l'UI le dit : podium et tableau marquent « photo-finish ».
 
 **Plafond de sécurité.** 10 minutes. Au-delà : `s` envoyé, course marquée `INTERROMPUE`.
 

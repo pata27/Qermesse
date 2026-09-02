@@ -102,10 +102,13 @@ func final_ranking(state: RaceState) -> Array[int]:
 			unfinished.append(rider)
 
 	finished.sort_custom(func(a: int, b: int) -> bool:
-		# Ex aequo au tick pres : departage par l'ordre d'arrivee de la trame,
-		# ce que l'ordre stable de `active_riders` preserve. Documente comme
-		# « photo-finish » dans l'interface (docs/02 §1).
-		return state.finished_ms[a] < state.finished_ms[b])
+		# Ex aequo au tick pres : departage par l'ordre d'arrivee de la trame.
+		# Meme trame : rien ne les separe — ranges par numero de piste, et
+		# l'interface dit « photo-finish » (docs/02 §1). EXPLICITE : le tri de
+		# Godot n'est pas stable, l'ordre de `active_riders` ne garantissait rien.
+		if state.finished_ms[a] != state.finished_ms[b]:
+			return state.finished_ms[a] < state.finished_ms[b]
+		return a < b)
 	unfinished.sort_custom(func(a: int, b: int) -> bool:
 		return state.distance_m[a] > state.distance_m[b])
 

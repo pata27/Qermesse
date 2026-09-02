@@ -51,7 +51,13 @@ func _countdown() -> void:
 
 ## Injecte des trames `R:` a 100 Hz pour des vitesses constantes, en km/h.
 ## Rend le nombre de trames emises.
-func _run_race(seconds: float, speeds: Array, from_ms: int = 0) -> int:
+## `late_speeds` remplace `speeds` a partir de `switch_s` : un rider qui
+## change d'allure en cours de course, SANS repartir de zero — appeler deux
+## fois cette fonction faisait reculer les compteurs, et le filtre rejetait
+## tout le second appel en silence.
+func _run_race(
+	seconds: float, speeds: Array, from_ms: int = 0, late_speeds: Array = [], switch_s: float = 0.0
+) -> int:
 	var physics := Physics.new()
 	var distances := [0.0, 0.0, 0.0, 0.0]
 	var frames := 0
@@ -59,8 +65,11 @@ func _run_race(seconds: float, speeds: Array, from_ms: int = 0) -> int:
 	while ms < from_ms + int(seconds * 1000.0):
 		ms += 10
 		var ticks: Array = []
+		var current: Array = speeds
+		if not late_speeds.is_empty() and ms - from_ms > int(switch_s * 1000.0):
+			current = late_speeds
 		for rider: int in range(Protocol.MAX_RIDERS):
-			var kph: float = speeds[rider] if rider < speeds.size() else 0.0
+			var kph: float = current[rider] if rider < current.size() else 0.0
 			distances[rider] += kph * Physics.KPH_TO_MM_PER_MS * 10.0
 			ticks.append(int(floor(distances[rider] / physics.circumference_mm)))
 		_engine.on_progress(ticks, ms)
@@ -229,11 +238,32 @@ func test_mode_temps_ex_aequo_departage_par_vitesse_de_pointe() -> void:
 	config.duration_s = 10.0
 	_engine.arm(config, 0)
 	_countdown()
-	# Memes ticks cumules, mais le rider 1 a eu une pointe plus elevee.
-	_run_race(5.0, [40.0, 30.0])
-	_run_race(6.0, [40.0, 55.0], 5000)
+	# Meme distance en 10 s — 40 km/h constants contre 30 puis 50 —, mais le
+	# rider 1 a eu la pointe la plus elevee. (La version precedente de ce test
+	# n'affirmait rien, et ses vitesses ne faisaient meme pas un ex aequo.)
+	_run_race(11.0, [40.0, 30.0], 0, [40.0, 50.0], 5.0)
 	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
-	assert_not_null(_result)
+	var state := _engine.race_state()
+	assert_eq(state.ticks[0], state.ticks[1], "memes ticks cumules")
+	assert_gt(state.max_speed_kph[1], state.max_speed_kph[0])
+	assert_eq(_result.ranking, [1, 0], "la pointe departage")
+
+
+func test_mode_distance_meme_trame_ex_aequo_photo_finish_range_par_piste() -> void:
+	# docs/02 §1 : deux riders qui franchissent dans la meme trame sont ex
+	# aequo ; ranges par numero de piste, et l'UI le dit. Les pistes sont
+	# declarees dans le desordre pour prouver que le tri ne depend pas d'une
+	# stabilite que `sort_custom` ne garantit pas.
+	var config := _config(RaceConfig.Mode.DISTANCE, [2, 0])
+	config.distance_m = 100.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(30.0, [45.0, 0.0, 45.0])
+	assert_eq(_engine.state(), RaceEngine.State.FINISHED)
+	assert_eq(_result.finished_ms[0], _result.finished_ms[2], "meme trame")
+	assert_eq(_result.ranking, [0, 2], "ex aequo : par numero de piste")
+	assert_true(_result.is_dead_heat(0), "photo-finish, et l'UI le dira")
+	assert_true(_result.is_dead_heat(2))
 
 
 # =============================================================================

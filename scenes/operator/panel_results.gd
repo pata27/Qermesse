@@ -79,6 +79,8 @@ func show_result(result: RaceResult) -> void:
 		# Imprimer `finished_ms` pour tout le monde donnait 0,00 s a un elimine,
 		# sans dire ni quand ni pourquoi, alors que l'ecran public disait juste.
 		var timing := "%6.2f s  " % (result.raced_ms(rider) / 1000.0)
+		if result.is_dead_heat(rider):
+			timing = "%6.2f s =" % (result.raced_ms(rider) / 1000.0)
 		if result.finished_ms[rider] == 0 and result.eliminated[rider]:
 			timing = (
 				"%6.2f s x" % (result.eliminated_ms[rider] / 1000.0)
@@ -104,6 +106,10 @@ func show_result(result: RaceResult) -> void:
 		lines.append("x = elimine a cet instant ; distance et moyenne arretees la")
 	if result.interrupted:
 		lines.append("* = a couru jusqu'a la fin de la course, sans franchir de ligne")
+	for rider: int in result.ranking:
+		if result.is_dead_heat(rider):
+			lines.append("= photo-finish : meme trame de passage, ranges par numero de piste")
+			break
 	_table.text = "\n".join(lines)
 	# Le chemin du CSV est affiche en clair : un operateur doit pouvoir le
 	# retrouver sans deviner ou le logiciel range ses fichiers.

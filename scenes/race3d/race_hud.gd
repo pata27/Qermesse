@@ -570,6 +570,9 @@ func _show_podium(result: RaceResult) -> void:
 			figure.text = "%.1f m" % result.distance_m[rider]
 		elif result.finished_ms[rider] > 0:
 			figure.text = "%.2f s" % (float(result.finished_ms[rider]) / 1000.0)
+			# docs/02 §1 : meme trame, ex aequo — l'ecran le dit.
+			if result.is_dead_heat(rider):
+				figure.text += "  photo-finish"
 		elif result.eliminated[rider] and result.eliminated_ms[rider] > 0:
 			figure.text = "%.2f s ✕" % (float(result.eliminated_ms[rider]) / 1000.0)
 		elif result.eliminated[rider]:

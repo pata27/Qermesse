@@ -400,3 +400,8 @@
   deux minutes sur une scène qui ne se chargeait pas, jusqu'au `timeout` externe, sans un mot.
   Tout outil qui attend un événement porte un délai maximal de temps mur et un code de sortie
   distinct par cause d'échec — et on prouve les deux en les déclenchant.
+* **Un test qui finit par `assert_not_null(_result)` n'a rien testé.** « Ex æquo départagé par la
+  pointe » n'affirmait rien sur le classement, ses vitesses ne faisaient pas un ex æquo, et son
+  second appel à `_run_race` repartait de zéro — chaque trame rejetée par le filtre, en silence.
+  Trois défauts invisibles derrière un test vert. Un test se relit comme une phrase : sujet, verbe,
+  nombre attendu.

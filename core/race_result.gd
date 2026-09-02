@@ -56,6 +56,17 @@ func finished_at_local() -> String:
 	return "%02d:%02d" % [int(local["hour"]), int(local["minute"])]
 
 
+## Vrai si un autre rider classe a franchi dans la MEME trame — docs/02 §1 :
+## ex aequo « photo-finish », que l'interface doit dire.
+func is_dead_heat(rider: int) -> bool:
+	if finished_ms[rider] <= 0:
+		return false
+	for other: int in ranking:
+		if other != rider and finished_ms[other] == finished_ms[rider]:
+			return true
+	return false
+
+
 ## Le temps COURU par un rider — la seule definition, docs/02 §5 : son
 ## arrivee s'il a fini, son elimination s'il a saute, sinon la fin de la
 ## course (gong du mode temps, plafond de poursuite, interruption). C'est
