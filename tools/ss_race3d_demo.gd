@@ -2,6 +2,7 @@
 ##
 ##   godot --script tools/ss_race3d_demo.gd -- --mesure [--riders 4] [--qualite moyen]
 ##   godot --script tools/ss_race3d_demo.gd -- --video <dossier>
+##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --courses 2
 ##
 ## Codes de sortie : 0 fait, 1 depart refuse, 2 scene impossible a charger,
 ## 3 delai maximal depasse (`--delai N`, 300 s par defaut). L'outil ne pend
@@ -26,6 +27,10 @@ var _quality := -1
 var _speed := 1.0
 var _render_factor := 1.0
 var _deadline_s := 300.0
+## `--courses N` : N courses d'affilee, capturees chacune. Une seule course ne
+## voit jamais ce qu'un deuxieme depart doit remettre a zero.
+var _races := 1
+var _race_index := 1
 var _deadline_us := 0
 var _frame_index := 0
 var _race_mode := "distance"
@@ -135,6 +140,9 @@ func _parse_args() -> void:
 			"--vitesse":
 				i += 1
 				_speed = float(args[i]) if i < args.size() else _speed
+			"--courses":
+				i += 1
+				_races = maxi(1, int(args[i])) if i < args.size() else _races
 			"--delai":
 				i += 1
 				_deadline_s = float(args[i]) if i < args.size() else _deadline_s
@@ -201,6 +209,15 @@ func _run() -> void:
 		await _record()
 	elif _mode == "capture":
 		await _capture_stills()
+		# Les courses suivantes partent du bouton START, comme en soiree : la
+		# precedente est acquittee, le podium reste jusqu'au decompte.
+		while _race_index < _races:
+			_race_index += 1
+			if not _controller.start_race():
+				printerr("ECHEC course %d : %s" % [_race_index, _controller.start_blocked_reason()])
+				quit(1)
+				return
+			await _capture_stills()
 	else:
 		await _measure()
 	quit(0)
@@ -328,7 +345,8 @@ func _capture_stills() -> void:
 func _shoot(label: String) -> void:
 	await RenderingServer.frame_post_draw
 	var image := root.get_texture().get_image()
-	var path := _video_dir.path_join("r3d-%d-%s.png" % [_riders, label])
+	var suffix := "" if _races == 1 else "-course%d" % _race_index
+	var path := _video_dir.path_join("r3d-%d-%s%s.png" % [_riders, label, suffix])
 	image.save_png(path)
 	print("capture : %s" % path)
 

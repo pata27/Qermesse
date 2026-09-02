@@ -577,9 +577,12 @@ func _reposition_riders(delta: float) -> void:
 	bounds.append(order.size())
 
 	if _finish_m > 0.0:
-		_camera_rig.consider_photo_finish(
-			photo_finish_gap(positions, racing if not all_done else []), _finish_m - leader_m
-		)
+		# Tout le monde arrive : plus personne a departager. Le tableau vide
+		# est TYPE — un `[]` litteral n'est pas un Array[int], et l'appel
+		# echouait a chaque image apres la ligne, sans autre effet que du bruit.
+		var nobody: Array[int] = []
+		var contenders: Array[int] = racing if not all_done else nobody
+		_camera_rig.consider_photo_finish(photo_finish_gap(positions, contenders), _finish_m - leader_m)
 
 	var state_now := _controller.engine.race_state()
 	# LES VOLETS SUIVENT L'ORDRE DU CLASSEMENT : le premier à gauche, le dernier

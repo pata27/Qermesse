@@ -409,3 +409,7 @@
   `sensor_button()` existait, personne ne l'appelait, et le bouton ne pouvait pas marcher sur le vrai
   boîtier — le firmware ne lit ses capteurs qu'en course. Le balayage du code mort a trouvé un
   bloqueur J1 sans matériel. Chaque accesseur de widget doit avoir son test, ou disparaître.
+* **Un rendu qui produit ses images peut hurler des erreurs de script à chaque image.** Un `[]`
+  littéral passé à un `Array[int]` échouait 60 fois par seconde après chaque arrivée, depuis des
+  jours, invisible parce que mes greps ne cherchaient que « capture : ». Toute exécution d'un outil
+  se termine par `grep -c "SCRIPT ERROR"` — et le chiffre attendu est zéro.
