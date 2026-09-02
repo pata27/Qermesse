@@ -450,8 +450,15 @@ func _reposition_riders(delta: float) -> void:
 	# tout le monde ensemble.
 	var all_done := racing.is_empty()
 	if all_done:
+		# … sauf les éliminés d'une poursuite, figés à G mètres et plus de
+		# celui qui vient de gagner : le milieu du champ tombait entre eux et
+		# lui, et la caméra célébrait une piste vide.
 		for lane: int in _interpolators:
-			racing.append(lane)
+			if state == null or not state.eliminated[lane]:
+				racing.append(lane)
+		if racing.is_empty():
+			for lane: int in _interpolators:
+				racing.append(lane)
 
 	for lane: int in racing:
 		var shown: float = positions[lane]
