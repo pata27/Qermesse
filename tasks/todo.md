@@ -166,7 +166,10 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
       écrans. Il a fallu `display/window/subwindows/embed_subwindows=false` : par défaut Godot
       dessine une fenêtre fille À L'INTÉRIEUR de la principale, ce qui rendait le second écran
       inatteignable.)*
-- [ ] **J5** — les 3 modes en configuration deux écrans, avec le son *(preuve : vidéo)*
+- [x] **J5** — les 3 modes en configuration deux écrans, avec le son
+      *(preuve : `tasks/preuves/J5-habillage.md` + `tasks/preuves/j5-trois-modes.mp4`, 36 s. Le son est
+      vérifié sur pièces — tests de synthèse, bus présent, coupure par défaut — pas à l'écoute : tout a
+      été produit en muet, par consigne.)*
 
 ## Lot 6 — Terrain, packaging, sortie *(4 j)*
 
