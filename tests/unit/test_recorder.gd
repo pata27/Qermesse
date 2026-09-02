@@ -106,6 +106,7 @@ func test_les_evenements_declares_sont_reellement_ecrits() -> void:
 	_recorder.record_rider_finished(0, 8000, 1)
 	_recorder.record_rider_eliminated(1, 2, 30.4)
 	_recorder.record_link_lost("500 ms sans trame")
+	_recorder.record_tick_rejected(1, "piste 2 : 14 ticks en 10 ms, 1811 km/h")
 	_recorder.record_abort("arret operateur")
 
 	var text := "\n".join(Array(_read_csv_lines()))

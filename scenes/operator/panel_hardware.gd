@@ -221,6 +221,16 @@ func _refresh_stats() -> void:
 			stats.get("watchdog_trips", 0),
 		]
 	)
+	# docs/06 : un capteur qui rebondit se voit ici, avant de fausser une course.
+	if _controller.rejected_ticks() > 0:
+		_stats_label.text += (
+			"\nTicks rejetes : %d (dernier : %s)"
+			% [_controller.rejected_ticks(), _controller.last_rejection()]
+		)
+
+
+func stats_text() -> String:
+	return _stats_label.text
 
 
 func _on_backend_toggled(pressed: bool) -> void:

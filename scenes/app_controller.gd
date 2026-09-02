@@ -43,6 +43,8 @@ var recorder: Recorder = null
 
 var _link: Link = null
 var _link_lost_since_ms: int = -1
+var _rejected_ticks: int = 0
+var _last_rejection: String = ""
 var _last_link_state: int = Protocol.State.DISCONNECTED
 var _history: Array[RaceResult] = []
 var _sensor_test_active := false
@@ -93,7 +95,7 @@ func initialize() -> void:
 	engine.false_start_detected.connect(_on_false_start)
 	engine.race_finished.connect(_on_race_finished)
 	engine.race_aborted.connect(_on_race_aborted)
-	engine.tick_rejected.connect(func(d: String) -> void: notice.emit("tick rejete : %s" % d))
+	engine.tick_rejected.connect(_on_tick_rejected)
 
 	_sensor_baseline.resize(Protocol.MAX_RIDERS)
 	apply_backend(settings.use_simulator)
@@ -267,6 +269,11 @@ func simulate_link_return() -> void:
 	_link.inject_link_return()
 
 
+## Un tick sans mouvement — rebond de contact — sur le boîtier SIMULÉ.
+func simulate_phantom_tick(rider: int) -> void:
+	_link.inject_phantom_tick(rider)
+
+
 # --- Reactions au lien et au moteur ------------------------------------------
 
 func _on_command_requested(command: String) -> void:
@@ -339,6 +346,24 @@ func _on_race_finished(result: RaceResult) -> void:
 	recorder.finish_race(result)
 	_history.append(result)
 	race_finished.emit(result)
+
+
+## docs/01 §6.3 : loggue au CSV, compte pour le panneau materiel, et dit a
+## l'operateur. Le compte est celui de la SESSION : un capteur qui rebondit
+## se voit d'une course a l'autre.
+func _on_tick_rejected(rider: int, description: String) -> void:
+	_rejected_ticks += 1
+	_last_rejection = description
+	recorder.record_tick_rejected(rider, description)
+	notice.emit("tick rejete : %s" % description)
+
+
+func rejected_ticks() -> int:
+	return _rejected_ticks
+
+
+func last_rejection() -> String:
+	return _last_rejection
 
 
 func _on_race_aborted(note: String) -> void:

@@ -84,8 +84,9 @@ Le panneau matériel affiche `Trames …, inconnues …, perdues …`.
 
 - **`inconnues` monte** : le boîtier envoie des trames que le logiciel ne reconnaît pas. Le plus
   probable est un firmware différent. Relever la version affichée.
-- **Des ticks rejetés apparaissent en cours de course** : un capteur rebondit ou un aimant est mal
-  fixé. Le filtre écarte les valeurs impossibles, mais **il ne peut pas rattraper un tick fantôme
+- **`Ticks rejetés : N (dernier : piste 2 …)` apparaît** — la ligne reste toute la soirée, avec le
+  dernier motif, et chaque rejet est écrit au CSV (`TICK_REJECTED`) : un capteur rebondit ou un
+  aimant est mal fixé. Le filtre écarte les valeurs impossibles, mais **il ne peut pas rattraper un tick fantôme
   isolé** — resserrer la fixation avant la course suivante.
 - **`perdues` non nulle** : la machine n'arrive plus à suivre le flux. Fermer les autres
   applications ; c'est le seul cas qui fausse réellement une mesure.

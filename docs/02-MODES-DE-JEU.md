@@ -155,7 +155,10 @@ Fichier : `<données_app>/logs/YYYY_MM_DD_SilverSprintRaceLog.csv`, **append ré
 Colonnes : `timestamp_iso, event, mode, rider, dossard, distance_m, temps_ms, vitesse_moy_kph, vitesse_max_kph, rang, note`
 
 Événements écrits : `RACE_START`, `FALSE_START`, `RIDER_FINISH`, `RIDER_ELIMINATED`,
-`RACE_FINISH`, `RACE_ABORTED`, `LINK_LOST`.
+`RACE_FINISH`, `RACE_ABORTED`, `LINK_LOST`, `TICK_REJECTED`.
+Une ligne `TICK_REJECTED` porte le rider et, en `note`, la raison du filtre (`01` §6.3) : un tick
+rejeté est loggué, jamais silencieusement absorbé. Le panneau matériel en tient le compte de la
+session, avec le dernier motif — un capteur qui rebondit se voit avant de fausser une course.
 
 **Sens des colonnes sur une ligne `RACE_FINISH` — une par rider.** `temps_ms` est le **temps
 couru** par ce rider : son temps d'arrivée s'il a fini, l'instant de son élimination s'il a été

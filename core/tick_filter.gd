@@ -49,9 +49,10 @@ class Rejection:
 		match reason:
 			Reason.SPEED_IMPLAUSIBLE:
 				return (
+					# Numero de piste HUMAIN, 1..4, comme partout a l'ecran.
 					"piste %d : %d ticks en %d ms implique %.1f km/h (plafond %.0f)"
 					% [
-						rider,
+						rider + 1,
 						proposed_ticks - previous_ticks,
 						delta_ms,
 						implied_kph,
@@ -61,7 +62,7 @@ class Rejection:
 			Reason.TICKS_WENT_BACKWARD:
 				return (
 					"piste %d : ticks cumules en recul, %d -> %d"
-					% [rider, previous_ticks, proposed_ticks]
+					% [rider + 1, previous_ticks, proposed_ticks]
 				)
 			Reason.CLOCK_WENT_BACKWARD:
 				return "horloge firmware en recul de %d ms" % -delta_ms

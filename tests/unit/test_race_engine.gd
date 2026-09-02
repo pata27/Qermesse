@@ -30,7 +30,7 @@ func before_each() -> void:
 		_finishes.append({"rider": r, "ms": ms, "rank": rank}))
 	_engine.rider_eliminated.connect(func(r: int, rank: int, gap: float) -> void:
 		_eliminations.append({"rider": r, "rank": rank, "gap": gap}))
-	_engine.tick_rejected.connect(func(d: String) -> void: _rejections.append(d))
+	_engine.tick_rejected.connect(func(_r: int, d: String) -> void: _rejections.append(d))
 	_engine.race_finished.connect(func(res: RaceResult) -> void: _result = res)
 
 

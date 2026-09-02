@@ -154,3 +154,8 @@ func inject_link_loss() -> void:
 func inject_link_return() -> void:
 	if _impl.has_method("inject_link_return"):
 		_impl.inject_link_return()
+
+
+func inject_phantom_tick(rider: int) -> void:
+	if _impl.has_method("inject_phantom_tick"):
+		_impl.inject_phantom_tick(rider)

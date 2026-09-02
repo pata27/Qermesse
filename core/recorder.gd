@@ -22,6 +22,7 @@ const EVENTS := [
 	"FALSE_START",
 	"RIDER_FINISH",
 	"RIDER_ELIMINATED",
+	"TICK_REJECTED",
 	"RACE_FINISH",
 	"RACE_ABORTED",
 	"LINK_LOST",
@@ -116,6 +117,11 @@ func record_rider_eliminated(rider: int, rank: int, gap_m: float) -> void:
 			"note": "ecart %.1f m" % gap_m,
 		}
 	)
+
+
+## docs/01 §6.3 : un tick rejete est loggue, jamais silencieusement absorbe.
+func record_tick_rejected(rider: int, note: String) -> void:
+	_append_csv({"event": "TICK_REJECTED", "rider": rider, "note": note})
 
 
 func record_link_lost(note: String) -> void:

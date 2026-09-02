@@ -347,6 +347,28 @@ func test_lien_perdu_au_dela_de_trois_secondes_la_course_est_abandonnee() -> voi
 	assert_eq(events[events.size() - 1], "RACE_ABORTED", "la derniere ligne du CSV")
 
 
+func test_un_tick_fantome_est_loggue_et_compte_au_panneau_materiel() -> void:
+	# docs/01 §6.3 et docs/06 : « tout rejet loggue et visible dans le panneau
+	# materiel ». Un seul tick fantome passe la tolerance — c'est voulu — ;
+	# une rafale de rebonds, non.
+	assert_true(await _await_identified())
+	_controller.settings.distance_m = 100.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+	await wait_frames(10)
+	assert_eq(_controller.rejected_ticks(), 0)
+
+	for i: int in range(12):
+		_controller.simulate_phantom_tick(1)
+	await wait_frames(5)
+	assert_gt(_controller.rejected_ticks(), 0, "la rafale est rejetee")
+	assert_string_contains(_controller.last_rejection(), "piste 2")
+	assert_has(_csv_events(), "TICK_REJECTED", "loggue")
+	_panel.hardware_panel().refresh()
+	assert_string_contains(_panel.hardware_panel().stats_text(), "rejet")
+	assert_string_contains(_panel.hardware_panel().stats_text(), "piste 2")
+
+
 func test_l_interface_construite_avant_l_entree_dans_l_arbre_fonctionne() -> void:
 	# Regression : Godot ne declenche ni _enter_tree ni _ready de facon
 	# synchrone quand on ajoute un noeud depuis SceneTree._initialize(). Un

@@ -20,7 +20,8 @@ signal race_started()
 signal rider_finished(rider: int, elapsed_ms: int, rank: int)
 signal rider_eliminated(rider: int, rank: int, gap_m: float)
 signal false_start_detected(rider: int, policy: RaceConfig.FalseStartPolicy)
-signal tick_rejected(description: String)
+## `rider` vaut -1 quand le rejet ne concerne pas une piste (horloge en recul).
+signal tick_rejected(rider: int, description: String)
 signal race_finished(result: RaceResult)
 signal race_aborted(note: String)
 signal progress_updated(state: RaceState)
@@ -135,7 +136,8 @@ func on_progress(ticks: Array, elapsed_ms: int) -> void:
 	var before := _filter.rejection_count()
 	var accepted := _filter.accept(ticks, elapsed_ms, _config.active_riders)
 	for i: int in range(before, _filter.rejection_count()):
-		tick_rejected.emit(_filter.rejections()[i].describe())
+		var rejection := _filter.rejections()[i]
+		tick_rejected.emit(rejection.rider, rejection.describe())
 
 	_race_state.apply_sample(accepted, elapsed_ms)
 	progress_updated.emit(_race_state)
