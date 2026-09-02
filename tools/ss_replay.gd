@@ -98,7 +98,16 @@ func _check(path: String) -> bool:
 	if not same_ranking:
 		print("      enregistre : %s" % str(Array(loaded.recorded_ranking)))
 	if loaded.recorded_interrupted:
-		print("      interrompue : %s" % loaded.recorded_interruption_note)
+		# Meme distinction qu'a l'ecran : un plafond de securite est une fin
+		# legitime, seul un ARRET merite le mot (docs/02 §3).
+		var stopped := loaded.recorded_end_reason == int(RaceRule.EndReason.NONE)
+		print(
+			"      %s : %s"
+			% [
+				"arretee" if stopped else "decidee au plafond",
+				loaded.recorded_interruption_note,
+			]
+		)
 	if _detail:
 		for rider: int in replayed.ranking:
 			print(
