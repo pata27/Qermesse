@@ -580,7 +580,10 @@ func _show_podium(result: RaceResult) -> void:
 		_podium_grid.add_child(place)
 
 		var who := _make_label(44, color)
-		who.text = "P%d  %s" % [rider + 1, _controller.roster.rider(rider).display_name()]
+		# LES NOMS DU DEPART, portes par le resultat — pas le roster courant.
+		# Renommer les pistes entre deux courses ne reecrit pas l'histoire, et
+		# l'ecran public doit dire la meme chose que le tableau operateur.
+		who.text = "P%d  %s" % [rider + 1, Roster.shorten(result.rider_name(rider))]
 		_podium_grid.add_child(who)
 
 		var figure := _make_label(44, INK)
@@ -936,6 +939,16 @@ func _on_aborted(note: String) -> void:
 	_covered_notice = ""
 
 
+## Tout le texte du podium, pour les tests : il est fait de labels dans une
+## grille, et c'est leur contenu qui est la promesse, pas leur disposition.
+func podium_text() -> String:
+	var parts: PackedStringArray = []
+	for child: Node in _podium_grid.get_children():
+		if child is Label:
+			parts.append((child as Label).text)
+	return " ".join(parts)
+
+
 func card_name_label(lane: int) -> Label:
 	return null if not _cards.has(lane) else (_cards[lane] as Dictionary)["name"] as Label
 
@@ -963,7 +976,7 @@ func _on_finished(result: RaceResult) -> void:
 		"VAINQUEUR — P%d %s%s"
 		% [
 			winner + 1,
-			_controller.roster.rider(winner).display_name(),
+			Roster.shorten(result.rider_name(winner)),
 			"   [INTERROMPUE]" if result.interrupted else "",
 		]
 	)

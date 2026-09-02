@@ -51,6 +51,34 @@ func test_aucun_nom_ne_deborde_de_sa_carte() -> void:
 	assert_lt(realistic.get_minimum_size().x, budget, "un nom courant tient sans etre coupe")
 
 
+func test_l_ecran_public_nomme_les_coureurs_du_depart() -> void:
+	# Meme regle que le tableau operateur, corrigee la-bas et oubliee ici :
+	# renommer les pistes entre deux courses ne reecrit pas l'histoire. Le
+	# bandeau et le podium lisaient le roster COURANT — l'operateur voyait
+	# Alice sur son tableau pendant que le public lisait Carole.
+	_controller.roster.rider(0).name = "Carole"
+	_controller.roster.rider(1).name = "Dan"
+	var result := RaceResult.new()
+	result.mode = "distance"
+	result.ranking = [1, 0]
+	result.end_reason = RaceRule.EndReason.ALL_FINISHED
+	result.finished_ms[1] = 7900
+	result.finished_ms[0] = 8000
+	result.rider_names = {0: "Alice", 1: "Bob"}
+	_controller.race_finished.emit(result)
+
+	assert_string_contains(_hud.notice_text(), "Bob", "le bandeau nomme le vainqueur du depart")
+	assert_false(_hud.notice_text().contains("Dan"), "pas le roster courant")
+
+	# Le podium attend que la celebration se joue.
+	_hud._process(RaceHud.PODIUM_DELAY_S + 0.1)
+	var podium := _hud.podium_text()
+	assert_string_contains(podium, "Alice")
+	assert_string_contains(podium, "Bob")
+	assert_false(podium.contains("Carole"), "le roster courant ne reecrit pas l'histoire")
+	assert_false(podium.contains("Dan"))
+
+
 func test_la_politique_ignorer_ne_dit_rien_au_public() -> void:
 	# docs/02 §4 : IGNORE est « loggue UNIQUEMENT (comportement v1) ». Le CSV
 	# porte la ligne FALSE_START ; l'ecran public, lui, ne montre rien. Un
