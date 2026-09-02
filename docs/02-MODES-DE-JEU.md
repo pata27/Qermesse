@@ -117,6 +117,12 @@ firmware sur une condition de distance. Quand le PC décide la fin, il envoie `s
 > **Les deux plafonds ci-dessous sont entièrement à la charge du PC — ce sont eux, et eux seuls,
 > qui empêchent une course infinie.**
 
+> Une course décidée au plafond **n'est pas une course arrêtée** : elle a un vainqueur, et les
+> écrans le disent ainsi — podium titré `ARRIVÉE`, motif du plafond en pied, entrée normale dans les
+> courses du jour. Seul un abandon — arrêt opérateur, lien perdu, fermeture du logiciel — s'annonce
+> `INTERROMPUE`, parce que là personne n'a gagné. Le champ `interrupted` couvre les deux cas ; c'est
+> `end_reason` qui les sépare.
+
 **Plafonds de sécurité, appliqués par le PC (l'un ou l'autre déclenche la fin).**
 * Durée : `plafond_secs` (défaut 300 s), mesuré sur `elapsedMs`. Vainqueur = celui qui mène.
 * Distance : 5000 m cumulés. Idem.

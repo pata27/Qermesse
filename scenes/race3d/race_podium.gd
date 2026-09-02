@@ -133,7 +133,14 @@ func show_result(result: RaceResult, objective: String) -> void:
 		peak.text = "%.1f km/h" % result.max_kph[rider]
 		_grid.add_child(peak)
 
-	_title.text = "INTERROMPUE" if result.interrupted else "ARRIVÉE"
+	# UNE COURSE DECIDEE AU PLAFOND N'EST PAS UNE COURSE ARRETEE. docs/02 §3 :
+	# au plafond de securite, « celui qui mene gagne » — c'est une fin
+	# legitime, avec un vainqueur, et l'annoncer INTERROMPUE en gros devant le
+	# public dit le contraire. Seul un abandon — arret operateur, lien perdu,
+	# fermeture — n'a pas de vainqueur. C'est la regle deja appliquee a la
+	# liste des courses du jour, et jamais reportee ici.
+	var stopped := result.interrupted and result.end_reason == RaceRule.EndReason.NONE
+	_title.text = "INTERROMPUE" if stopped else "ARRIVÉE"
 	_note.text = (
 		result.interruption_note if result.interrupted
 		else "%s — %s" % [objective, result.end_reason_name()]
@@ -141,11 +148,13 @@ func show_result(result: RaceResult, objective: String) -> void:
 	visible = true
 
 
-## Tout le texte du podium, pour les tests : il est fait de labels dans une
-## grille, et c'est leur contenu qui est la promesse, pas leur disposition.
+## Tout le texte du podium, TITRE ET MOTIF COMPRIS : c'est le contenu qui est
+## la promesse, pas la disposition. La version precedente ne rendait que la
+## grille — un test sur le titre ne pouvait donc rien voir.
 func text() -> String:
-	var parts: PackedStringArray = []
+	var parts: PackedStringArray = [_title.text]
 	for child: Node in _grid.get_children():
 		if child is Label:
 			parts.append((child as Label).text)
+	parts.append(_note.text)
 	return " ".join(parts)

@@ -135,6 +135,51 @@ func test_le_lien_perdu_n_efface_pas_une_elimination_au_retour() -> void:
 	assert_string_contains(_hud.notice_text(), "ELIMINEE")
 
 
+func _podium_apres(result: RaceResult) -> String:
+	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	_controller.race_finished.emit(result)
+	_hud._process(RaceHud.PODIUM_DELAY_S + 0.1)
+	return _hud.podium_text()
+
+
+func test_une_poursuite_decidee_au_plafond_n_est_pas_annoncee_interrompue() -> void:
+	# docs/02 §3 : au plafond de securite, « celui qui mene gagne ». C'est une
+	# fin legitime, avec un vainqueur. Le podium l'annoncait pourtant
+	# INTERROMPUE en gros — la meme incoherence que j'avais corrigee dans la
+	# liste des courses du jour, jamais reportee ici.
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.PURSUIT
+	config.active_riders = [0, 1]
+	var capped := RaceResult.new()
+	capped.mode = "poursuite"
+	capped.config = config
+	capped.ranking = [0, 1]
+	capped.interrupted = true
+	capped.end_reason = RaceRule.EndReason.TIME_CAP
+	capped.interruption_note = "plafond de securite atteint : plafond de duree"
+	capped.rider_names = {0: "Alice", 1: "Bob"}
+
+	var shown := _podium_apres(capped)
+	assert_false(shown.contains("INTERROMPUE"), "elle s'est decidee, elle n'a pas ete arretee")
+	assert_string_contains(shown, "ARRIVÉE")
+	assert_string_contains(shown, "plafond", "et le motif reste affiche")
+
+
+func test_une_course_arretee_est_bien_annoncee_interrompue() -> void:
+	var stopped := RaceResult.new()
+	stopped.mode = "distance"
+	stopped.ranking = [0, 1]
+	stopped.interrupted = true
+	stopped.end_reason = RaceRule.EndReason.NONE
+	stopped.interruption_note = "arret operateur"
+	stopped.rider_names = {0: "Alice", 1: "Bob"}
+
+	var shown := _podium_apres(stopped)
+	assert_string_contains(shown, "INTERROMPUE", "la, personne n'a gagne")
+	assert_string_contains(shown, "arret operateur")
+
+
 func test_l_ecart_ne_s_affiche_pas_avant_le_depart() -> void:
 	# Vu sur une capture : pendant le decompte, l'ecran de poursuite montrait
 	# « 0.0 m » et une barre de tension vide, en concurrence avec le chiffre du
