@@ -127,7 +127,13 @@ func finish_race(result: RaceResult) -> String:
 				"event": "RACE_FINISH",
 				"rider": rider,
 				"distance_m": result.distance_m[rider],
-				"temps_ms": result.finished_ms[rider],
+				# Le temps COURU : l'arrivee pour un classe, l'elimination pour
+				# un elimine. Un zero dans cette colonne pour un elimine ne
+				# disait ni quand ni apres combien il avait saute.
+				"temps_ms": (
+					result.finished_ms[rider] if result.finished_ms[rider] > 0
+					else result.eliminated_ms[rider]
+				),
 				"vitesse_moy_kph": result.avg_kph[rider],
 				"vitesse_max_kph": result.max_kph[rider],
 				"rang": result.rank_of(rider),
@@ -246,6 +252,7 @@ func _write_json(result: RaceResult) -> String:
 			"interrupted": result.interrupted,
 			"interruption_note": result.interruption_note,
 			"finished_ms": Array(result.finished_ms),
+			"eliminated_ms": Array(result.eliminated_ms),
 			"distance_m": Array(result.distance_m),
 			"avg_kph": Array(result.avg_kph),
 			"max_kph": Array(result.max_kph),

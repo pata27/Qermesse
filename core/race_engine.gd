@@ -248,6 +248,7 @@ func _apply_verdict(verdict: RaceRule.Verdict) -> void:
 			continue
 		var rank := _race_state.next_elimination_rank()
 		_race_state.eliminated[rider] = true
+		_race_state.eliminated_ms[rider] = _race_state.elapsed_ms
 		if _rule is RulePursuit:
 			(_rule as RulePursuit).note_elimination(rider)
 		_race_state.rank[rider] = rank

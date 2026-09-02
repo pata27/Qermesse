@@ -309,3 +309,15 @@
 * **Une case restée décochée n'est pas toujours du travail restant.** Les quatre pannes exigées par
   `docs/03` §5 existaient avec leurs tests ; seule la case manquait. L'inventaire doit vérifier le
   code, pas se fier au suivi.
+* **Une barre « tête moins queue » redescend quand la queue change.** À quatre coureurs, l'élimination
+  du dernier refermait l'écart et faisait rebaisser la barre du premier, qui n'avait pas ralenti ;
+  et les deuxième et troisième n'apparaissaient nulle part. La référence doit être le LEADER : une
+  barre par poursuivant, longueur = retard sur lui. Une élimination retire une barre sans déplacer
+  les autres. Vu par l'utilisateur, pas par moi.
+* **Un affichage qui redit ce qu'un autre montre déjà ne fait que cacher la scène.** Les cartes en
+  poursuite répétaient les couleurs de la barre. Coupées : l'écart, sujet du mode, a l'écran pour lui.
+* **Vérifier un mode jusqu'au podium fait remonter des bugs de DONNÉES.** Le moteur ne mémorisait pas
+  l'instant d'élimination ; la moyenne d'un éliminé se calculait sur toute la course alors que sa
+  distance est figée — toujours trop basse. Le commentaire du code disait pourtant l'intention
+  juste. Un test verrouille désormais que la moyenne s'arrête à l'élimination.
+* **Ce que l'écran affirme, le CSV doit le porter aussi.** `temps_ms` valait 0 pour un éliminé.

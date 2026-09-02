@@ -580,3 +580,31 @@ func test_une_trame_de_fin_sur_une_piste_inactive_est_ignoree() -> void:
 
 	assert_eq(_finishes.size(), 0, "la piste 3 n'est pas de la course")
 	assert_eq(_engine.state(), RaceEngine.State.RUNNING, "la course continue")
+
+
+# =============================================================================
+# Elimination : l'instant est memorise, et la moyenne s'arrete la
+# =============================================================================
+
+
+func test_la_moyenne_d_un_elimine_s_arrete_a_son_elimination() -> void:
+	var config := _config(RaceConfig.Mode.PURSUIT, [0, 1])
+	config.gap_m = 20.0
+	assert_true(_engine.arm(config, _now_ms), "armement accepte")
+	_countdown()
+
+	# Piste 0 a 50 km/h, piste 1 a 25 : l'ecart de 20 m est atteint vers 2,9 s.
+	_run_race(30.0, [50.0, 25.0])
+	assert_eq(_eliminations.size(), 1, "la piste 1 est eliminee")
+	assert_eq(int(_eliminations[0]["rider"]), 1)
+
+	var state := _engine.race_state()
+	assert_gt(state.eliminated_ms[1], 0, "l'instant de l'elimination est memorise")
+	assert_eq(state.eliminated_ms[0], 0, "le survivant n'en a pas")
+
+	assert_not_null(_result, "la course est terminee")
+	# La distance de la piste 1 est figee a l'elimination : sa moyenne doit se
+	# calculer sur CE temps-la, pas sur la duree totale de la course.
+	var expected := _result.distance_m[1] / (float(_result.eliminated_ms[1]) / 1000.0) * 3.6
+	assert_almost_eq(_result.avg_kph[1], expected, 0.01, "moyenne sur le temps couru")
+	assert_gt(_result.avg_kph[1], 20.0, "proche des 25 km/h reels, pas diluee")

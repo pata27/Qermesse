@@ -29,6 +29,11 @@ var max_speed_kph: PackedFloat32Array = PackedFloat32Array()
 
 ## 0 = pas encore arrive. L'instant du franchissement, en ms firmware.
 var finished_ms: PackedInt32Array = PackedInt32Array()
+## Instant de l'elimination, en ms depuis le depart ; 0 tant que le rider court.
+## Sans lui, la moyenne d'un elimine se calculait sur TOUTE la course alors que
+## sa distance est figee a l'elimination : elle etait fausse, toujours trop
+## basse, et le podium ne pouvait pas dire quand il avait saute.
+var eliminated_ms: PackedInt32Array = PackedInt32Array()
 ## Rang final, 1 = vainqueur. 0 = pas encore classe.
 var rank: PackedInt32Array = PackedInt32Array()
 var eliminated: Array[bool] = []
@@ -52,6 +57,7 @@ func _init(race_config: RaceConfig) -> void:
 	display_speed_kph.resize(n)
 	max_speed_kph.resize(n)
 	finished_ms.resize(n)
+	eliminated_ms.resize(n)
 	rank.resize(n)
 	handicap_m.resize(n)
 	_previous_ticks.resize(n)
@@ -71,6 +77,7 @@ func reset() -> void:
 		display_speed_kph[i] = 0.0
 		max_speed_kph[i] = 0.0
 		finished_ms[i] = 0
+		eliminated_ms[i] = 0
 		rank[i] = 0
 		handicap_m[i] = 0.0
 		eliminated[i] = false

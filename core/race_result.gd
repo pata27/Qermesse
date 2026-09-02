@@ -25,11 +25,14 @@ var distance_m: PackedFloat32Array = PackedFloat32Array()
 var avg_kph: PackedFloat32Array = PackedFloat32Array()
 var max_kph: PackedFloat32Array = PackedFloat32Array()
 var eliminated: Array[bool] = []
+## Instant de l'elimination en ms, 0 sinon — voir `RaceState.eliminated_ms`.
+var eliminated_ms: PackedInt32Array = PackedInt32Array()
 var false_started: Array[bool] = []
 
 
 func _init() -> void:
 	finished_ms.resize(Protocol.MAX_RIDERS)
+	eliminated_ms.resize(Protocol.MAX_RIDERS)
 	distance_m.resize(Protocol.MAX_RIDERS)
 	avg_kph.resize(Protocol.MAX_RIDERS)
 	max_kph.resize(Protocol.MAX_RIDERS)
@@ -74,11 +77,18 @@ static func from_state(state: RaceState, rule: RaceRule, reason: RaceRule.EndRea
 		result.distance_m[rider] = state.distance_m[rider]
 		result.max_kph[rider] = state.max_speed_kph[rider]
 		result.eliminated[rider] = state.eliminated[rider]
+		result.eliminated_ms[rider] = state.eliminated_ms[rider]
 		result.false_started[rider] = state.false_started[rider]
 		# Vitesse moyenne sur le temps REELLEMENT couru par ce rider : un rider
 		# arrive a mi-course ne doit pas voir sa moyenne diluee par le temps
-		# pendant lequel il attendait les autres.
-		var ms := state.finished_ms[rider] if state.finished_ms[rider] > 0 else state.elapsed_ms
+		# pendant lequel il attendait les autres. Un ELIMINE non plus : sa
+		# distance est figee a l'instant ou il a saute, son temps l'est donc
+		# aussi. Le calculer sur toute la course donnait une moyenne trop basse.
+		var ms := state.elapsed_ms
+		if state.finished_ms[rider] > 0:
+			ms = state.finished_ms[rider]
+		elif state.eliminated_ms[rider] > 0:
+			ms = state.eliminated_ms[rider]
 		if ms > 0:
 			result.avg_kph[rider] = state.distance_m[rider] / (float(ms) / 1000.0) * 3.6
 	return result
