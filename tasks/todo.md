@@ -275,6 +275,11 @@ d'exportation.
 
 **Bloqué.** Le lot 4 (scène 3D) reste fermé : `docs/05` et `docs/07` §2 exigent J1 sur matériel réel.
 
+> *Écrit le 31 août, et vrai à cette date.* Le verrou a été levé le jour même à la demande de
+> l'utilisateur, décision consignée dans `docs/05` — « Dérogation au verrou *la donnée avant le
+> pixel* ». Les lots 4 et 5 ont suivi ; **J1 reste ouvert**. Ce paragraphe est conservé tel quel :
+> une revue datée se lit comme un état à une date, pas comme une vérité permanente.
+
 ### Lots 0, 1 et 2 — 2026-08-31
 
 **Jalons franchis.** J0 (CI verte sur trois OS), J1-ém (lien série validé contre l'émulateur de

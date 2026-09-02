@@ -168,11 +168,18 @@ func finish_race(result: RaceResult) -> String:
 				"vitesse_moy_kph": result.avg_kph[rider],
 				"vitesse_max_kph": result.max_kph[rider],
 				"rang": result.rank_of(rider),
+				# LA NOTE DECRIT CE RIDER, pas la course. Un elimine a 14 s
+				# portait « dernier en course » — le motif de fin de LA COURSE,
+				# faux de lui. Dans un tableur chaque ligne se lit seule.
+				#
+				# Une course decidee au plafond porte son motif de fin, pas le
+				# mot « interrompue » : seul un ARRET n'a pas de vainqueur
+				# (docs/02 §3).
 				"note": (
-					# Une course decidee au plafond porte son motif de fin, pas
-					# le mot « interrompue » : seul un ARRET n'a pas de
-					# vainqueur (docs/02 §3).
-					"INTERROMPUE : %s" % result.interruption_note
+					"elimine a %.2f s" % (result.eliminated_ms[rider] / 1000.0)
+					if result.eliminated[rider] and result.eliminated_ms[rider] > 0
+					else "elimine" if result.eliminated[rider]
+					else "INTERROMPUE : %s" % result.interruption_note
 					if result.was_stopped()
 					else result.end_reason_name()
 				),

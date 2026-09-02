@@ -185,7 +185,9 @@ poursuite, l'instant du plafond). Jamais 0 pour un rider classé.
 `vitesse_moy_kph` est calculée sur ce temps couru — et sur la distance figée à cet instant —, jamais
 sur la durée totale de la course : la moyenne d'un rider éliminé à 14 s n'est pas diluée par les
 25 s pendant lesquelles il regardait les autres. `distance_m` est la distance à cet instant.
-Une ligne `RIDER_ELIMINATED` porte, en `note`, l'écart au leader au moment de l'élimination.
+Une ligne `RIDER_ELIMINATED` porte, en `note`, l'écart au leader au moment de l'élimination. Sur une
+ligne `RACE_FINISH`, la `note` décrit **ce rider** et non la course : `elimine a 14.01 s` pour un
+éliminé, le motif de fin sinon. Chaque ligne d'un CSV se lit seule, une fois triée dans un tableur.
 
 **JSON** — un fichier par course dans `<données_app>/races/<uuid>.json`, **y compris pour une course
 interrompue** dès lors qu'elle a couru : arrêt opérateur, lien perdu au-delà du délai de grâce. Son

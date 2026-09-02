@@ -181,6 +181,34 @@ func test_le_dossard_du_roster_apparait_dans_le_csv() -> void:
 	assert_eq(last.split(",")[4], "7")
 
 
+func test_la_note_d_une_ligne_race_finish_decrit_le_rider_pas_la_course() -> void:
+	# Vu dans un vrai journal de poursuite : un coureur elimine a 14 s portait
+	# la note « dernier en course », qui est le motif de fin de LA COURSE. Dans
+	# un tableur, chaque ligne se lit seule — et celle-la disait faux de lui.
+	var config := _config()
+	config.mode = RaceConfig.Mode.PURSUIT
+	config.active_riders = [0, 1]
+	_recorder.begin_race(config)
+
+	var result := RaceResult.new()
+	result.mode = "poursuite"
+	result.config = config
+	result.ranking = [0, 1]
+	result.end_reason = RaceRule.EndReason.LAST_ONE_STANDING
+	result.finished_ms[0] = 38302
+	result.eliminated[1] = true
+	result.eliminated_ms[1] = 14014
+	_recorder.finish_race(result)
+
+	var notes := {}
+	for line: String in _read_csv_lines():
+		var row := line.split(",")
+		if row[1] == "RACE_FINISH":
+			notes[int(row[3])] = row[10]
+	assert_eq(notes[0], "dernier en course", "le survivant porte le motif de fin")
+	assert_string_contains(str(notes[1]), "elimine", "l'elimine dit ce qui LUI est arrive")
+
+
 func test_une_course_complete_ecrit_une_ligne_race_finish_par_rider() -> void:
 	var result := _run_recorded_race(_config(), [45.0, 43.0])
 	assert_not_null(result)
