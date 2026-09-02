@@ -64,6 +64,32 @@ func test_la_jauge_de_decision_se_tait_une_fois_la_poursuite_decidee() -> void:
 	assert_eq(_hud.decision_text(), "", "la decision est prise")
 
 
+func test_la_deuxieme_course_ne_part_pas_avec_la_vitesse_de_la_premiere() -> void:
+	# Les lissages survivaient aux cartes : a la deuxieme course, la premiere
+	# trame R: faisait DECROITRE l'ancienne vitesse sur des coureurs qui
+	# demarrent.
+	var config := _controller.current_config()
+	config.active_riders = [0, 1]
+	var state := RaceState.new(config)
+	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	state.display_speed_kph[0] = 52.0
+	_controller.progress_updated.emit(state)
+	for i: int in range(60):
+		_hud._process(1.0 / 30.0)
+	assert_string_contains(_hud.card_speed_text(0), "52.0")
+
+	# Nouvelle course : les cartes sont neuves, la premiere trame dit 0.
+	_controller.race_state_changed.emit(RaceEngine.State.RUNNING, RaceEngine.State.FINISHED)
+	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	var fresh := RaceState.new(config)
+	_controller.progress_updated.emit(fresh)
+	_hud._process(1.0 / 30.0)
+	assert_string_contains(_hud.card_speed_text(0), "0.0 km/h")
+	assert_false(_hud.card_speed_text(0).contains("5"), "pas une vitesse heritee qui decroit")
+
+
 func test_la_course_interrompue_le_dit_au_public() -> void:
 	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
 	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)

@@ -732,6 +732,17 @@ func _refresh_objective() -> void:
 func _on_state(_previous: int, current: int) -> void:
 	if current == RaceEngine.State.ARMING:
 		rebuild_cards()
+		# LES LISSAGES REPARTENT DE ZÉRO. Ils survivaient aux cartes : à la
+		# deuxième course, la première trame R: faisait DÉCROÎTRE l'ancienne
+		# vitesse — 52, 51,8, 51,6 km/h… — sur des coureurs qui démarrent, et
+		# la barre de tension repartait de son dernier état.
+		_target_speed.clear()
+		_shown_speed.clear()
+		_printed_speed.clear()
+		_tension_targets.clear()
+		_tension_shown.clear()
+		_tension_lead_target = 0.0
+		_tension_lead_shown = 0.0
 		_notice.text = ""
 		_covered_notice = ""
 		_notice.add_theme_color_override("font_color", ALERT)
@@ -893,6 +904,10 @@ func _on_aborted(_note: String) -> void:
 	_notice.add_theme_color_override("font_color", ALERT)
 	_notice.text = "COURSE INTERROMPUE"
 	_covered_notice = ""
+
+
+func card_speed_text(lane: int) -> String:
+	return "" if not _cards.has(lane) else ((_cards[lane] as Dictionary)["speed"] as Label).text
 
 
 func decision_text() -> String:

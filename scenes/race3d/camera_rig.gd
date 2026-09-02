@@ -349,3 +349,7 @@ func _apply_vibration(delta: float) -> void:
 
 func set_behaviour_for_mode(mode: RaceConfig.Mode) -> void:
 	behaviour = Behaviour.PURSUIT if mode == RaceConfig.Mode.PURSUIT else Behaviour.PACK
+	# Une nouvelle course : rien ne tremble encore, rien n'accélère.
+	_shake = 0.0
+	_accel = 0.0
+	_last_speed_kph = 0.0

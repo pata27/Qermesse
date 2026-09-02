@@ -99,6 +99,15 @@ func setup(world: World3D, size: Vector2i) -> void:
 ## Le nombre est borné par la course : à deux coureurs, une seule cassure est
 ## possible, donc un seul volet à réserver.
 func prime(riders: int) -> void:
+	# UNE NOUVELLE COURSE PART SANS LAME. Une course abandonnée en plein écran
+	# scindé laissait ses cassures : la suivante démarrait scindée, sur un
+	# peloton encore groupé sur la ligne de départ.
+	_cuts.clear()
+	_live_panes = 0
+	for pane: Pane in _panes:
+		pane.target = 0.0
+		pane.amount = 0.0
+		pane.composite.visible = false
 	for index: int in range(maxi(riders - 1, 0)):
 		var pane := _ensure_pane(index)
 		# Dessiné quelques images à ouverture nulle : la lame est alors hors
