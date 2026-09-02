@@ -213,7 +213,7 @@ func _append_csv(row: Dictionary) -> void:
 		dossard = str((_roster[rider] as Dictionary).get("dossard", ""))
 
 	var fields := [
-		Time.get_datetime_string_from_system(true),
+		_local_stamp(),
 		_row_value(row, "event"),
 		_config.mode_name() if _config != null else "",
 		str(rider) if rider >= 0 else "",
@@ -294,6 +294,26 @@ static func _is_same_local_day(started_utc_iso: String, bias_s: int, now: Dictio
 		and int(local["month"]) == int(now["month"])
 		and int(local["day"]) == int(now["day"])
 	)
+
+
+## Horodatage ISO 8601 COMPLET : heure locale ET decalage explicite,
+## `2026-09-02T22:49:00+02:00`.
+##
+## Le CSV est le fichier que l'operateur ouvre dans un tableur ; il est nomme
+## par le jour LOCAL. Sa colonne etait en UTC : deux heures d'ecart a la
+## lecture, et une course de fin de soiree portant la date de la veille. Le
+## decalage est ecrit plutot que sous-entendu — un horodatage sans fuseau ne
+## veut rien dire des qu'il change de machine.
+##
+## Le JSON de course, lui, reste en UTC : c'est un artefact machine, relu par
+## l'historique du jour qui fait la conversion (docs/02 §5).
+static func _local_stamp() -> String:
+	var bias := int(Time.get_time_zone_from_system().get("bias", 0))
+	var local := Time.get_datetime_string_from_unix_time(
+		int(Time.get_unix_time_from_system()) + bias * 60
+	)
+	var minutes := absi(bias)
+	return "%s%s%02d:%02d" % [local, "+" if bias >= 0 else "-", minutes / 60, minutes % 60]
 
 
 func _escape_csv(value: String) -> String:

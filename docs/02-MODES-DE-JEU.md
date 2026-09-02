@@ -156,6 +156,11 @@ Fichier : `<données_app>/logs/YYYY_MM_DD_SilverSprintRaceLog.csv`, **append ré
 
 Colonnes : `timestamp_iso, event, mode, rider, dossard, distance_m, temps_ms, vitesse_moy_kph, vitesse_max_kph, rang, note`
 
+`timestamp_iso` est en **heure locale avec son décalage** (`2026-09-02T22:49:00+02:00`) : le CSV est
+le fichier que l'opérateur ouvre dans un tableur, et il est nommé par le jour local — les deux
+doivent concorder. Le JSON de course, lui, horodate en **UTC** : c'est un artefact machine, et
+l'historique du jour fait la conversion à la relecture.
+
 Événements écrits : `RACE_START`, `FALSE_START`, `RIDER_FINISH`, `RIDER_ELIMINATED`,
 `RACE_FINISH`, `RACE_ABORTED`, `LINK_LOST`, `TICK_REJECTED`.
 Une ligne `TICK_REJECTED` porte le rider et, en `note`, la raison du filtre (`01` §6.3) : un tick

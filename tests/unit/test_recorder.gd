@@ -95,6 +95,22 @@ func test_le_csv_porte_l_entete_de_docs_02() -> void:
 	assert_eq(lines[0].split(",").size(), 11, "onze colonnes")
 
 
+func test_l_horodatage_du_csv_se_lit_a_l_heure_de_la_salle() -> void:
+	# Le fichier est nomme par le jour LOCAL, sa colonne d'horodatage etait en
+	# UTC : l'operateur qui ouvre le CSV le lendemain lisait deux heures
+	# d'ecart, et une course de fin de soiree portait la date de la veille.
+	_recorder.begin_race(_config())
+	var stamp := _read_csv_lines()[1].split(",")[0]
+
+	var day := AppPaths.daily_log_name().substr(0, 10).replace("_", "-")
+	assert_true(stamp.begins_with(day), "%s doit porter le jour du fichier, %s" % [stamp, day])
+
+	# Et il porte son decalage : un horodatage sans fuseau ne veut rien dire.
+	var bias := int(Time.get_time_zone_from_system()["bias"])
+	var offset := "%s%02d:%02d" % ["+" if bias >= 0 else "-", absi(bias) / 60, absi(bias) % 60]
+	assert_true(stamp.ends_with(offset), "%s doit finir par %s" % [stamp, offset])
+
+
 func test_les_evenements_declares_sont_reellement_ecrits() -> void:
 	# docs/02 §5 : la v1 declarait cinq types d'evenements et n'en ecrivait
 	# qu'un seul. Chacun doit apparaitre.
