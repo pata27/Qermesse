@@ -72,6 +72,11 @@ décrit le déroulé normal d'une soirée.
    Chaque ligne donne l'heure d'arrivée **en heure locale** (`21:47`), le mode et le vainqueur ;
    les fichiers, eux, sont horodatés en UTC.
 
+Sous les boutons, le panneau **Course** tient un court journal : les cinq derniers messages, le plus
+récent en tête, effacé au départ de la course suivante. C'est là qu'apparaissent les alertes — piste
+muette, pointe suspecte, trames perdues, faux départ, lien perdu. Aucune ne peut plus être effacée
+par la suivante.
+
 ## 5. Si ça coince
 
 `DEPANNAGE.md`, dans cet ordre : START grisé → boîtier non détecté → ticks sur la mauvaise

@@ -567,6 +567,27 @@ func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interro
 	assert_does_not_have(events, "RACE_ABORTED")
 
 
+func test_une_alerte_n_est_pas_effacee_par_le_message_suivant() -> void:
+	# Le bandeau n'affichait QUE le dernier message. Depuis que le logiciel
+	# signale les pistes muettes, les pointes suspectes et les trames perdues,
+	# l'alerte qui compte disparaissait derriere le bavardage suivant — et
+	# c'est la plus grave qui a le plus de chances d'etre recouverte.
+	var race_panel := _panel.race_panel()
+	_controller.notice.emit("TRAMES PERDUES : la machine ne suit plus le flux du boitier.")
+	for i: int in range(3):
+		_controller.notice.emit("tick rejete : piste 2, %d" % i)
+
+	assert_string_contains(race_panel.notice_text(), "TRAMES PERDUES", "l'alerte tient")
+	assert_string_contains(race_panel.notice_text(), "tick rejete : piste 2, 2", "le dernier aussi")
+
+	# Le journal reste court : c'est un bandeau, pas une console.
+	assert_lt(race_panel.notice_text().split("\n").size(), 8)
+
+	# Une nouvelle course repart d'une ardoise propre.
+	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	assert_false(race_panel.notice_text().contains("TRAMES PERDUES"))
+
+
 func test_des_trames_perdues_sont_signalees_pendant_la_course() -> void:
 	# DEPANNAGE : « `perdues` non nulle : la machine n'arrive plus a suivre le
 	# flux. C'est LE SEUL CAS qui fausse reellement une mesure. » Le compteur

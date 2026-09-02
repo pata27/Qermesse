@@ -6,6 +6,17 @@
 class_name PanelRace
 extends VBoxContainer
 
+## Journal de bord court : les derniers messages, le plus recent en tete.
+##
+## Le bandeau n'affichait que le dernier. Depuis que le logiciel signale les
+## pistes muettes, les pointes suspectes et les trames perdues, l'alerte qui
+## compte disparaissait derriere le bavardage suivant — et c'est la plus grave
+## qui a le plus de chances d'etre recouverte, puisqu'elle arrive en pleine
+## course. Cinq lignes : assez pour ne rien perdre de vue, trop peu pour que ce
+## soit une console.
+const NOTICE_LINES := 5
+
+
 var _controller: AppController
 var _start: Button
 var _stop: Button
@@ -14,12 +25,13 @@ var _state_label: Label
 var _clock_label: Label
 var _lanes: Array[Label] = []
 var _notice: Label
+var _notices: PackedStringArray = []
 
 
 func setup(controller: AppController) -> void:
 	_controller = controller
 	_build()
-	_controller.race_state_changed.connect(func(_p: int, _c: int) -> void: refresh())
+	_controller.race_state_changed.connect(_on_race_state)
 	_controller.link_state_changed.connect(func(_s: int) -> void: refresh())
 	_controller.countdown_tick.connect(_on_countdown)
 	_controller.progress_updated.connect(_on_progress)
@@ -30,7 +42,8 @@ func setup(controller: AppController) -> void:
 	refresh()
 	# Ce qui a mal tourne au chargement se dit ici, au premier regard.
 	if not _controller.startup_problems().is_empty():
-		_notice.text = "\n".join(_controller.startup_problems())
+		for problem: String in _controller.startup_problems():
+			_push_notice(problem)
 
 
 func _build() -> void:
@@ -176,22 +189,45 @@ func _on_progress(state: RaceState) -> void:
 	_refresh_lanes()
 
 
+## Une nouvelle course efface le journal de la precedente : ce qui s'y trouve
+## ne concerne plus personne, et une alerte perimee vaut pire que rien.
+func _on_race_state(_previous: int, current: int) -> void:
+	if current == RaceEngine.State.ARMING:
+		_clear_notices()
+	refresh()
+
+
 func _on_notice(text: String) -> void:
-	_notice.text = text
+	_push_notice(text)
+
+
+func _push_notice(text: String) -> void:
+	if text.is_empty():
+		return
+	_notices.insert(0, text)
+	while _notices.size() > NOTICE_LINES:
+		_notices.remove_at(_notices.size() - 1)
+	_notice.text = "\n".join(_notices)
+
+
+## Ardoise propre : une nouvelle course ne traine pas les alertes de l'ancienne.
+func _clear_notices() -> void:
+	_notices.clear()
+	_notice.text = ""
 
 
 func _on_false_start(rider: int, _policy: int) -> void:
-	_notice.text = "FAUX DEPART piste %d" % (rider + 1)
+	_push_notice("FAUX DEPART piste %d" % (rider + 1))
 
 
 func _on_rider_eliminated(rider: int, rank: int, gap_m: float) -> void:
-	_notice.text = "Piste %d eliminee (rang %d, ecart %.1f m)" % [rider + 1, rank, gap_m]
+	_push_notice("Piste %d eliminee (rang %d, ecart %.1f m)" % [rider + 1, rank, gap_m])
 
 
 func _on_race_finished(result: RaceResult) -> void:
 	var winner := result.winner()
 	_clock_label.text = "%.2f s" % (result.elapsed_ms / 1000.0)
-	_notice.text = (
+	_push_notice(
 		"Termine — vainqueur piste %d (%s)%s"
 		% [
 			winner + 1,
