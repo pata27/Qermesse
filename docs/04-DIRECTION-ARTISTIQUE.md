@@ -67,6 +67,10 @@ l'accélération et au franchissement de ligne. Volumétrique léger, bloom, vig
 C'est la machine réelle d'un événement, pas une station de jeu. Toute fonctionnalité visuelle qui
 fait passer sous 60 fps est coupée ou dégradée. Trois niveaux de qualité (`bas / moyen / élevé`),
 détection automatique au premier lancement, réglage manuel possible.
+La composition est pensée en 1080p, mais **la 3D ne se rend jamais plus fin que le projecteur** :
+sur un 720p elle se rend en 720p — 2,25× moins de pixels — et l'habillage reste composé en 1080p.
+Au-delà de 1080p, le rendu reste en 1080p, mis à l'échelle : c'est le budget, pas le projecteur, qui
+fixe le plafond.
 
 ## 5. Habillage à l'écran (fenêtre spectacle)
 

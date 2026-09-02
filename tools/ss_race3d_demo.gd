@@ -20,6 +20,7 @@ var _video_dir := ""
 var _riders := 4
 var _quality := -1
 var _speed := 1.0
+var _render_factor := 1.0
 var _frame_index := 0
 var _race_mode := "distance"
 var _profile := "egaux"
@@ -116,6 +117,11 @@ func _parse_args() -> void:
 			"--vitesse":
 				i += 1
 				_speed = float(args[i]) if i < args.size() else _speed
+			"--facteur-3d":
+				# Ce que la fenêtre spectacle applique d'elle-même sur un
+				# projecteur plus petit que 1080p (docs/04) : 0.667 pour du 720p.
+				i += 1
+				_render_factor = float(args[i]) if i < args.size() else _render_factor
 		i += 1
 
 
@@ -150,6 +156,9 @@ func _run() -> void:
 	_scene = RaceScene.new()
 	root.add_child(_scene)
 	_scene.setup(_controller, _quality)
+	if _render_factor < 1.0:
+		_scene.set_render_factor(_render_factor)
+		print("facteur 3d     : %.3f" % _render_factor)
 	# La dégradation automatique est coupée pendant la mesure : on veut le
 	# chiffre du profil demandé, pas celui d'un profil qui s'est ajusté.
 	_scene.set_auto_degrade(false)

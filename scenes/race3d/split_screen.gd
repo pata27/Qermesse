@@ -51,6 +51,7 @@ const SLIDE_RATE := 3.0
 const SLICE_MARGIN := 0.16
 ## Facteur de résolution des vues de volet, voir `_ensure_pane`.
 const SLICE_RENDER_SCALE := 0.8
+var _window_factor := 1.0
 
 
 ## Un volet : sa vue, sa caméra, sa lame.
@@ -111,6 +112,14 @@ func prime(riders: int) -> void:
 	_warm_frames = 3
 
 
+## Facteur de la fenêtre — docs/04 : la 3D ne se rend jamais plus fin que le
+## projecteur. Il se compose avec le facteur propre aux volets.
+func set_window_factor(factor: float) -> void:
+	_window_factor = clampf(factor, 0.25, 1.0)
+	for pane: Pane in _panes:
+		pane.viewport.scaling_3d_scale = _render_scale() * _window_factor
+
+
 ## Facteur de résolution effectif, surchargeable par `SS_SLICE_SCALE` pour
 ## pouvoir le chiffrer sans recompiler.
 static func _render_scale() -> float:
@@ -147,7 +156,7 @@ func _ensure_pane(index: int) -> Pane:
 		# fois à la création — changer ce facteur en cours de course réalloue les
 		# tampons de rendu, et c'est exactement le hoquet qu'on vient d'enlever.
 		pane.viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
-		pane.viewport.scaling_3d_scale = _render_scale()
+		pane.viewport.scaling_3d_scale = _render_scale() * _window_factor
 		# Tant que la lame est fermée, la vue n'est pas dessinée : une caméra
 		# qui tourne pour rien coûterait sa part entière du budget.
 		pane.viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED

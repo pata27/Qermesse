@@ -35,13 +35,26 @@ func _init() -> void:
 	own_world_3d = true
 	size = WINDOWED_SIZE
 	min_size = Vector2i(640, 360)
-	# La résolution de rendu suit la fenêtre, mais la composition est pensée
-	# pour du 1080p : `CONTENT_SCALE_MODE_VIEWPORT` conserve les proportions de
-	# l'habillage quel que soit le projecteur.
+	# La composition est pensée pour du 1080p : `CONTENT_SCALE_MODE_VIEWPORT`
+	# conserve les proportions de l'habillage quel que soit le projecteur. Ce
+	# mode rend TOUT en 1080p, aussi la 3D reçoit-elle un facteur qui la
+	# ramène à la définition réelle de la fenêtre — voir `_on_resized`.
 	content_scale_size = Vector2i(1920, 1080)
 	content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
 	content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
 	close_requested.connect(_on_close_requested)
+	size_changed.connect(_on_resized)
+
+
+## Facteur de rendu 3D pour une fenêtre donnée — docs/04 : jamais plus fin que
+## le projecteur, jamais plus que le 1080p du budget. Fonction pure, testée.
+static func render_factor_for(window_size: Vector2i) -> float:
+	return clampf(float(window_size.y) / 1080.0, 0.25, 1.0)
+
+
+func _on_resized() -> void:
+	if scene != null:
+		scene.set_render_factor(render_factor_for(size))
 
 
 ## Monte la scène 3D et place la fenêtre. `screen` négatif signifie « choisis
@@ -53,6 +66,7 @@ func setup(controller: AppController, screen: int, fullscreen: bool, quality: in
 	add_child(scene)
 	scene.setup(controller, quality)
 	move_to(screen, fullscreen)
+	_on_resized()
 
 
 ## Déplace la fenêtre sur un écran, en plein écran ou non.

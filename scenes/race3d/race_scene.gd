@@ -771,6 +771,18 @@ func _group_frame(order: Array[int], from: int, to: int, positions: Dictionary) 
 
 
 ## Suit la taille de la fenêtre pour la vue scindée.
+## La 3D ne se rend jamais plus fin que la fenêtre — docs/04, budget. La vue
+## pleine et les volets suivent le même facteur ; l'habillage 2D, lui, reste
+## composé en 1080p.
+func set_render_factor(factor: float) -> void:
+	var view := get_viewport()
+	if view != null:
+		view.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+		view.scaling_3d_scale = clampf(factor, 0.25, 1.0)
+	if _split != null:
+		_split.set_window_factor(factor)
+
+
 func _on_viewport_resized() -> void:
 	# La scène peut être en train de quitter l'arbre — fermeture de la fenêtre
 	# spectacle, fin de l'application — et n'avoir déjà plus de viewport.
