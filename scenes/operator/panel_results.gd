@@ -112,9 +112,10 @@ func select_history(index: int) -> void:
 
 
 func _add_history_item(result: RaceResult) -> void:
+	# Heure LOCALE : l'ISO UTC des fichiers se lisait avec deux heures d'ecart.
 	_history.add_item(
 		"%s  %s  vainqueur %s (piste %d)"
-		% [result.finished_at_iso, result.mode, result.rider_name(result.winner()), result.winner() + 1]
+		% [result.finished_at_local(), result.mode, result.rider_name(result.winner()), result.winner() + 1]
 	)
 
 

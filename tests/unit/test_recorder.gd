@@ -397,6 +397,19 @@ func test_seuls_les_fichiers_du_jour_sont_ouverts() -> void:
 	assert_eq(recorder.last_scan_opened(), 1, "un seul fichier ouvert sur quatre")
 
 
+func test_l_heure_d_arrivee_se_lit_en_heure_locale() -> void:
+	# Les fichiers sont en UTC ; l'operateur lit l'heure de la salle. Sur une
+	# machine reglee sur UTC+2, « 19:47 UTC » se lit « 21:47 ».
+	var result := RaceResult.new()
+	result.finished_at_iso = "2026-09-02T19:47:05"
+	var bias_min := int(Time.get_time_zone_from_system()["bias"])
+	var expected_min := (19 * 60 + 47 + bias_min) % (24 * 60)
+	if expected_min < 0:
+		expected_min += 24 * 60
+	assert_eq(result.finished_at_local(), "%02d:%02d" % [expected_min / 60, expected_min % 60])
+	assert_eq(RaceResult.new().finished_at_local(), "", "pas d'heure, pas de texte")
+
+
 func test_le_jour_est_le_jour_local_celui_du_csv() -> void:
 	# Une course partie a 23 h 30 en heure locale d'un fuseau UTC+2 est ecrite
 	# « 21:30 UTC » : elle est du jour local. Une autre a 00 h 30 locale, ecrite

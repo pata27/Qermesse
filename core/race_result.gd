@@ -45,6 +45,17 @@ func _init() -> void:
 		false_started.append(false)
 
 
+## L'heure d'arrivee « HH:MM » en heure LOCALE — les fichiers sont en UTC,
+## l'operateur lit l'heure de la salle.
+func finished_at_local() -> String:
+	if finished_at_iso.length() < 19:
+		return ""
+	var unix := Time.get_unix_time_from_datetime_string(finished_at_iso)
+	unix += int(Time.get_time_zone_from_system().get("bias", 0)) * 60
+	var local := Time.get_datetime_dict_from_unix_time(unix)
+	return "%02d:%02d" % [int(local["hour"]), int(local["minute"])]
+
+
 ## Le nom du depart, ou « Piste N » — jamais une ligne vide.
 func rider_name(rider: int) -> String:
 	var name := str(rider_names.get(rider, ""))
