@@ -22,6 +22,10 @@ signal rider_eliminated(rider: int, rank: int, gap_m: float)
 signal false_start_detected(rider: int, policy: RaceConfig.FalseStartPolicy)
 ## `rider` vaut -1 quand le rejet ne concerne pas une piste (horloge en recul).
 signal tick_rejected(rider: int, description: String)
+## Pointe humainement invraisemblable — signalee UNE FOIS par piste et par
+## course, sans rien rejeter. `DEPANNAGE` demandait a l'operateur de la
+## remarquer lui-meme dans les resultats, une fois la course finie.
+signal speed_implausible(rider: int, kph: float)
 signal race_finished(result: RaceResult)
 signal race_aborted(note: String)
 signal progress_updated(state: RaceState)
@@ -51,6 +55,8 @@ var _result: RaceResult = null
 var _armed_at_ms: int = -1
 var _last_error: String = ""
 var _interrupted: bool = false
+## Pistes deja signalees pour une pointe suspecte — une alerte par course.
+var _suspect_peaks: Array[int] = []
 var _interruption_note: String = ""
 
 
@@ -98,6 +104,7 @@ func arm(config: RaceConfig, now_ms: int) -> bool:
 	_result = null
 	_interrupted = false
 	_interruption_note = ""
+	_suspect_peaks.clear()
 	_armed_at_ms = now_ms
 
 	_set_state(State.ARMING)
@@ -140,6 +147,7 @@ func on_progress(ticks: Array, elapsed_ms: int) -> void:
 		tick_rejected.emit(rejection.rider, rejection.describe())
 
 	_race_state.apply_sample(accepted, elapsed_ms)
+	_flag_implausible_peaks()
 	progress_updated.emit(_race_state)
 	_apply_verdict(_rule.evaluate(_race_state))
 
@@ -300,6 +308,16 @@ func _finish(reason: RaceRule.EndReason) -> void:
 		_result.interruption_note = "plafond de securite atteint : %s" % _result.end_reason_name()
 	_set_state(State.FINISHED)
 	race_finished.emit(_result)
+
+
+func _flag_implausible_peaks() -> void:
+	for rider: int in _config.active_riders:
+		if _race_state.max_speed_kph[rider] <= Physics.SUSPECT_PEAK_KPH:
+			continue
+		if _suspect_peaks.has(rider):
+			continue
+		_suspect_peaks.append(rider)
+		speed_implausible.emit(rider, _race_state.max_speed_kph[rider])
 
 
 func _is_safety_cap(reason: RaceRule.EndReason) -> bool:

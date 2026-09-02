@@ -543,6 +543,29 @@ func test_le_firmware_f_est_une_confirmation_jamais_une_condition_de_fin() -> vo
 	assert_eq(_finishes.size(), 0)
 
 
+func test_une_pointe_humainement_invraisemblable_est_signalee() -> void:
+	# DEPANNAGE : « une pointe au-dessus de 90 km/h n'est pas une performance,
+	# c'est un capteur qui rebondit ou un aimant qui passe deux fois par tour ».
+	# La fiche demandait a l'operateur de le remarquer ; le moteur le voit.
+	#
+	# A distinguer du FILTRE (docs/01 §6.3, 120 km/h) : celui-la REJETTE
+	# l'impossible. Ici la mesure est retenue — elle est peut-etre vraie — et
+	# seulement signalee comme suspecte.
+	var suspects: Array = []
+	_engine.speed_implausible.connect(func(rider: int, kph: float) -> void:
+		suspects.append([rider, kph]))
+	var config := _config(RaceConfig.Mode.DISTANCE, [0, 1])
+	config.distance_m = 300.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(6.0, [100.0, 45.0])
+
+	assert_eq(suspects.size(), 1, "une seule alerte, pour la seule piste concernee")
+	assert_eq(int((suspects[0] as Array)[0]), 0, "c'est la piste 1")
+	assert_gt(float((suspects[0] as Array)[1]), Physics.SUSPECT_PEAK_KPH)
+	assert_true(_rejections.is_empty(), "et rien n'a ete rejete : la mesure est retenue")
+
+
 func test_la_vitesse_de_pointe_reste_plausible() -> void:
 	# Constate sur la premiere course complete menee a l'interface : la pointe
 	# etait calculee sur la vitesse instantanee, ce qui donnait 117 km/h pour un

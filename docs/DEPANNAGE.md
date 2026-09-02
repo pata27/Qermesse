@@ -130,7 +130,12 @@ repartir, plutôt que d'attendre le plafond de dix minutes devant le public.
   distance de l'aimant au centre du rouleau, **×2**. La ligne de calibration donne immédiatement le
   nombre de ticks pour 100 m ; à 114,3 mm ce doit être **278**.
 - **Une pointe au-dessus de 90 km/h** n'est pas une performance : c'est un capteur qui rebondit ou un
-  aimant qui passe deux fois par tour.
+  aimant qui passe deux fois par tour. Le logiciel le signale de lui-même, en course, dans le
+  panneau **Course** : `PISTE 2 : pointe à 104 km/h — capteur qui rebondit ou aimant qui passe deux
+  fois par tour ? La mesure est conservée.` Elle est **conservée**, pas rejetée : elle est
+  peut-être vraie, et un logiciel qui efface une performance est pire qu'un logiciel qui pose une
+  question. Le filtre, lui, rejette au-delà de 120 km/h (`01` §6.3) — c'est un autre seuil, pour
+  l'impossible et non pour l'invraisemblable.
 
 ---
 

@@ -567,6 +567,16 @@ func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interro
 	assert_does_not_have(events, "RACE_ABORTED")
 
 
+func test_une_pointe_suspecte_remonte_a_l_operateur() -> void:
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+	_controller.engine.speed_implausible.emit(1, 104.0)
+	assert_eq(notices.size(), 1)
+	assert_string_contains(notices[0], "PISTE 2")
+	assert_string_contains(notices[0], "104 km/h")
+	assert_string_contains(notices[0], "conservee", "on ne jette pas la mesure")
+
+
 func test_une_piste_cochee_qui_ne_bouge_pas_est_signalee() -> void:
 	# DEPANNAGE, « la course ne se termine jamais » : la fiche demande a
 	# l'operateur de verifier lui-meme qu'aucune piste cochee n'est vide. C'est

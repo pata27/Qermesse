@@ -15,6 +15,15 @@ const DEFAULT_ROLLER_MM := 114.3
 ## docs/01 §6.3 — au-dela, c'est un rebond de contact, pas un cycliste.
 const MAX_PLAUSIBLE_KPH := 120.0
 
+## `DEPANNAGE` : « une pointe au-dessus de 90 km/h n'est pas une performance,
+## c'est un capteur qui rebondit ou un aimant qui passe deux fois par tour ».
+##
+## A NE PAS CONFONDRE avec le plafond ci-dessus. Celui-la REJETTE l'impossible ;
+## celui-ci ne fait que signaler l'invraisemblable — la mesure est retenue,
+## parce qu'elle est peut-etre vraie et qu'un logiciel qui efface une
+## performance est pire qu'un logiciel qui pose une question.
+const SUSPECT_PEAK_KPH := 90.0
+
 ## docs/01 §7 — v1 lissait sur 60 echantillons (~600 ms), trop mou pour un
 ## rendu de jeu ; v2 sur 10 (~100 ms), trop nerveux. 20 (~200 ms) est le
 ## compromis retenu, expose en reglage avance.

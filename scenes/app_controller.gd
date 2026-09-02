@@ -115,6 +115,7 @@ func initialize() -> void:
 	engine.race_finished.connect(_on_race_finished)
 	engine.race_aborted.connect(_on_race_aborted)
 	engine.tick_rejected.connect(_on_tick_rejected)
+	engine.speed_implausible.connect(_on_speed_implausible)
 
 	_sensor_baseline.resize(Protocol.MAX_RIDERS)
 	apply_backend(settings.use_simulator)
@@ -469,6 +470,17 @@ func _on_tick_rejected(rider: int, description: String) -> void:
 	_last_rejection = description
 	recorder.record_tick_rejected(rider, description)
 	notice.emit("tick rejete : %s" % description)
+
+
+## La pointe est RETENUE — elle est peut-etre vraie —, seulement signalee.
+## `DEPANNAGE` : au-dela, c'est un capteur qui rebondit ou un aimant qui passe
+## deux fois par tour.
+func _on_speed_implausible(rider: int, kph: float) -> void:
+	notice.emit(
+		"PISTE %d : pointe a %.0f km/h — capteur qui rebondit"
+		% [rider + 1, kph]
+		+ " ou aimant qui passe deux fois par tour ? La mesure est conservee."
+	)
 
 
 func rejected_ticks() -> int:
