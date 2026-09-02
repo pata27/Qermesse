@@ -98,6 +98,11 @@ func _print_ports() -> void:
 	for p: Dictionary in ports:
 		if not bool(p.get("candidate", false)):
 			ordered.append(p)
+	# La liste detaillee sert a CHERCHER le boitier — `RECETTE` §1. Quand
+	# l'utilisateur a deja nomme son port, trente-deux lignes `ignore` avant le
+	# vrai sujet ne sont que du bruit.
+	if not _port.is_empty():
+		return
 	for p: Dictionary in ordered:
 		var ids := "sans VID/PID"
 		if int(p.get("vid", -1)) >= 0:

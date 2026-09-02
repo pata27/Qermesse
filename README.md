@@ -13,6 +13,10 @@ Logiciel de course de rouleaux (goldsprints) — refonte complète.
 Lire `docs/00-BRIEF.md`, puis suivre `docs/05-PLAN-EXECUTION.md`.
 Le suivi d'avancement est dans `tasks/todo.md`.
 
+> **Cloner dans un chemin court.** La compilation de `godot-cpp` passe des milliers de fichiers
+> objets à l'éditeur de liens : au-delà d'une centaine de caractères de chemin, elle échoue sur
+> `sh: Argument list too long`, sans indiquer la cause. `~/Code/` va bien.
+
 ```sh
 git clone --recurse-submodules <url> && cd SilverSprint-v3
 

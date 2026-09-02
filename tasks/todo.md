@@ -190,6 +190,8 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 - [x] `docs/DEPANNAGE.md` — dépannage terrain, écrit pour l'opérateur
 - [x] `docs/RECETTE.md` — checklist matériel du jalon J1, à dérouler avant chaque release
 - [ ] **J6** — un tiers installe sur machine vierge et fait courir deux personnes sans aide
+      *(la partie logicielle du parcours est vérifiée sur un clone vierge :
+      `tasks/preuves/2026-09-03-clone-vierge.md`. Restent le matériel et le tiers.)*
 
 ---
 
