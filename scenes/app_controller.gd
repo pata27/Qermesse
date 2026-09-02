@@ -102,6 +102,18 @@ func initialize() -> void:
 	_link.frame_received.connect(_on_frame)
 	_link.state_changed.connect(_on_link_state)
 
+	# UN SEUL SENS POUR `preferences_enabled` : ce controleur ne touche a AUCUNE
+	# donnee de l'utilisateur. Il protegeait les reglages et le roster, mais le
+	# recorder continuait de viser les dossiers de l'operateur — les demos lui
+	# ont ainsi depose des dizaines de courses dans « Courses du jour ». Un
+	# dossier explicite reste prioritaire : outils et tests visent ou ils
+	# veulent.
+	if not preferences_enabled:
+		var aside := ProjectSettings.globalize_path("user://sans-donnees")
+		if recorder_logs_dir.is_empty():
+			recorder_logs_dir = aside.path_join("logs")
+		if recorder_races_dir.is_empty():
+			recorder_races_dir = aside.path_join("races")
 	recorder = Recorder.new(recorder_logs_dir, recorder_races_dir)
 	# Un redemarrage en pleine soiree ne vide pas « Courses du jour ».
 	_history = recorder.load_day()

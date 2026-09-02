@@ -452,3 +452,8 @@
   vraiment le cas — bibliothèque native écartée — le lien restait IDENTIFIED : `Link._swap` garde le
   simulateur déjà en place, et mon correctif aurait relancé un lien vivant, qui serait repassé par
   PORT_OPEN à l'écran. Reproduire avant de corriger, même quand la lecture semble sans appel.
+* **Un drapeau d'isolation doit isoler TOUT, sinon il rassure à tort.** `preferences_enabled = false`
+  protégeait les réglages et le roster mais laissait le recorder viser les dossiers de l'opérateur :
+  les démos y ont déposé 63 courses, et j'ai reproduit l'oubli dans deux fichiers de test. Corrigé une
+  fois à l'appelant (les démos), il fallait le corriger à la source. Quand un drapeau porte une
+  promesse, la tenir entièrement — ou la renommer pour ce qu'elle couvre vraiment.

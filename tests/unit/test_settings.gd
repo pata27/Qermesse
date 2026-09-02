@@ -95,6 +95,29 @@ func test_tous_les_reglages_declares_font_l_aller_retour() -> void:
 			assert_eq(got, want, "reglage %s : absent de to_dict ou de from_dict ?" % name)
 
 
+func test_couper_les_preferences_isole_aussi_les_courses_enregistrees() -> void:
+	# `preferences_enabled = false` protegeait les reglages et le roster, mais
+	# le recorder continuait de viser les dossiers de l'operateur : les demos
+	# lui ont ainsi depose 63 courses dans « Courses du jour », et deux
+	# fichiers de test l'auraient fait aussi. Un seul sens pour ce drapeau :
+	# ce controleur ne touche a AUCUNE donnee de l'utilisateur.
+	var controller := AppController.new()
+	controller.preferences_enabled = false
+	add_child_autofree(controller)
+
+	assert_ne(controller.recorder_logs_dir, AppPaths.logs_dir(), "pas le journal de l'operateur")
+	assert_ne(controller.recorder_races_dir, AppPaths.races_dir(), "ni ses courses")
+	assert_false(controller.recorder_logs_dir.is_empty(), "mais un dossier bien defini")
+
+	# Un dossier explicite reste prioritaire : les outils et les tests visent ou
+	# ils veulent.
+	var chosen := AppController.new()
+	chosen.preferences_enabled = false
+	chosen.recorder_logs_dir = "/tmp/ss-test/logs"
+	add_child_autofree(chosen)
+	assert_eq(chosen.recorder_logs_dir, "/tmp/ss-test/logs")
+
+
 func test_le_plein_ecran_du_spectacle_est_un_reglage_a_part_entiere() -> void:
 	# `main.gd` passait `not single_window_mode` comme argument « plein ecran » :
 	# vouloir la fenetre spectacle IMPLIQUAIT le plein ecran. L'operateur qui
