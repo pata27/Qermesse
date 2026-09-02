@@ -168,7 +168,10 @@ Une ligne `RIDER_ELIMINATED` porte, en `note`, l'écart au leader au moment de l
 **JSON** — un fichier par course dans `<données_app>/races/<uuid>.json`, contenant en plus
 **la trace complète des trames `R:`** (ticks + elapsedMs). Le résultat y est porté par rider :
 `finished_ms`, `eliminated_ms` (0 tant que le rider court), `distance_m`, `avg_kph`, `max_kph`,
-`eliminated`, `false_started`, avec les mêmes conventions que le CSV. Permet le rejeu d'une course, le débogage
+`eliminated`, `false_started`, avec les mêmes conventions que le CSV. La trace comprend aussi
+`hardware_finishes` — les trames `<idx>F:` du boîtier, `[rider, elapsed_ms]` : le rejeu les rejoue à
+leur instant, sans quoi le dernier tick, que le firmware ne transmet jamais (`docs/01` §5.6),
+manquerait et la course rejouée ne se terminerait pas. Permet le rejeu d'une course, le débogage
 post-événement, et la génération de replays. ~100 Hz × 60 s × 4 riders ≈ 6000 échantillons,
 soit quelques centaines de Ko : négligeable.
 

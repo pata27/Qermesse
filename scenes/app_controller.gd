@@ -292,10 +292,13 @@ func _on_frame(kind: int, payload: Dictionary) -> void:
 		Protocol.Frame.FALSE_START:
 			engine.on_false_start(int(payload.get("rider", -1)))
 		Protocol.Frame.RIDER_FINISH:
-			# Confirmation firmware, jamais une condition de fin (docs/01 §5.4).
-			engine.on_rider_finish(
-				int(payload.get("rider", -1)), int(payload.get("elapsed_ms", 0))
-			)
+			# Observation bornee du boitier (docs/01 §5.6) : elle entre dans la
+			# trace AVANT d'etre soumise au moteur, pour que le rejeu la revoie
+			# au meme instant.
+			var rider := int(payload.get("rider", -1))
+			var elapsed_ms := int(payload.get("elapsed_ms", 0))
+			recorder.record_hardware_finish(rider, elapsed_ms)
+			engine.on_rider_finish(rider, elapsed_ms)
 		Protocol.Frame.ERROR, Protocol.Frame.UNKNOWN:
 			notice.emit("trame anormale : %s" % payload.get("text", ""))
 

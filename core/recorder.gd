@@ -42,6 +42,10 @@ var _config: RaceConfig = null
 var _roster: Dictionary = {}
 var _started_iso: String = ""
 var _samples: Array = []
+## Trames `<idx>F:` du boitier, [rider, elapsed_ms]. Elles font partie de la
+## trace : sans elles, un rejeu ne verrait jamais le dernier tick (docs/01 §5.6)
+## et une course vecue comme terminee ne se terminerait pas rejouee.
+var _hardware_finishes: Array = []
 var _events: Array[Dictionary] = []
 
 
@@ -69,6 +73,7 @@ func begin_race(config: RaceConfig, roster: Dictionary = {}) -> String:
 	_roster = roster.duplicate(true)
 	_started_iso = Time.get_datetime_string_from_system(true)
 	_samples.clear()
+	_hardware_finishes.clear()
 	_events.clear()
 	_append_csv(
 		{
@@ -89,6 +94,12 @@ func record_sample(ticks: PackedInt32Array, elapsed_ms: int) -> void:
 
 func record_false_start(rider: int) -> void:
 	_append_csv({"event": "FALSE_START", "rider": rider})
+
+
+## Trame `<idx>F:` recue du boitier — observation brute, distincte de l'arrivee
+## que le moteur DECIDE (`record_rider_finished`). Les deux vont dans la trace.
+func record_hardware_finish(rider: int, elapsed_ms: int) -> void:
+	_hardware_finishes.append([rider, elapsed_ms])
 
 
 func record_rider_finished(rider: int, elapsed_ms: int, rank: int) -> void:
@@ -262,6 +273,7 @@ func _write_json(result: RaceResult) -> String:
 		# La trace complete : [t0, t1, t2, t3, elapsed_ms] par trame retenue.
 		# ~100 Hz x 60 s = 6000 echantillons, quelques centaines de Ko.
 		"samples": _samples,
+		"hardware_finishes": _hardware_finishes,
 	}
 	file.store_string(JSON.stringify(payload, "  "))
 	file.close()

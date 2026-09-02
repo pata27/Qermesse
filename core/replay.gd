@@ -20,6 +20,7 @@ class Loaded:
 	var config: RaceConfig = null
 	var roster: Dictionary = {}
 	var samples: Array = []
+	var hardware_finishes: Array = []
 	## Classement tel qu'il avait ete enregistre — la reference a retrouver.
 	var recorded_ranking: Array[int] = []
 	var recorded_elapsed_ms: int = 0
@@ -70,6 +71,7 @@ static func load_file(path: String) -> Loaded:
 	out.config = config
 	out.roster = data.get("roster", {})
 	out.samples = data.get("samples", [])
+	out.hardware_finishes = data.get("hardware_finishes", [])
 	# JSON n'a qu'un type numerique : sans cette conversion, le classement relu
 	# vaut [0.0, 1.0] et ne sera jamais egal a [0, 1].
 	var ranking: Array[int] = []
@@ -97,13 +99,31 @@ static func replay(loaded: Loaded) -> RaceResult:
 	# faire demarrer le moteur (docs/02, la trame fait foi).
 	engine.on_countdown(0)
 
+	# Les trames `<idx>F:` sont rejouees A LEUR INSTANT, intercalees dans le
+	# flux `R:`. Sans elles, le dernier tick — que le firmware ne transmet
+	# jamais, docs/01 §5.6 — manquerait au rejeu, et une course vecue comme
+	# terminee resterait un tick sous la cible, indefiniment.
+	var finishes: Array = loaded.hardware_finishes.duplicate()
+	finishes.sort_custom(func(a: Array, b: Array) -> bool: return int(a[1]) < int(b[1]))
+	var next_finish := 0
+
 	for sample: Variant in loaded.samples:
 		var row: Array = sample
 		if row.size() < 5:
 			continue
-		engine.on_progress([int(row[0]), int(row[1]), int(row[2]), int(row[3])], int(row[4]))
+		var elapsed_ms := int(row[4])
+		while next_finish < finishes.size() and int(finishes[next_finish][1]) < elapsed_ms:
+			engine.on_rider_finish(int(finishes[next_finish][0]), int(finishes[next_finish][1]))
+			next_finish += 1
 		if engine.state() != RaceEngine.State.RUNNING:
 			break
+		engine.on_progress([int(row[0]), int(row[1]), int(row[2]), int(row[3])], elapsed_ms)
+		if engine.state() != RaceEngine.State.RUNNING:
+			break
+	# Celles qui suivent la derniere `R:` — c'est le cas normal du dernier arrive.
+	while next_finish < finishes.size() and engine.state() == RaceEngine.State.RUNNING:
+		engine.on_rider_finish(int(finishes[next_finish][0]), int(finishes[next_finish][1]))
+		next_finish += 1
 	return produced[0] if not produced.is_empty() else null
 
 

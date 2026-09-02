@@ -252,3 +252,64 @@ func test_les_chemins_suivent_la_convention_du_systeme() -> void:
 func test_le_nom_du_journal_quotidien_suit_le_format_v1() -> void:
 	var name := AppPaths.daily_log_name({"year": 2026, "month": 8, "day": 31})
 	assert_eq(name, "2026_08_31_SilverSprintRaceLog.csv")
+
+
+# =============================================================================
+# Rejeu d'une trace REELLE — la derniere trame R: manque (docs/01 §5.6)
+# =============================================================================
+
+
+func test_rejeu_d_une_trace_reelle_ou_la_derniere_trame_manque() -> void:
+	# Le firmware cesse d'emettre dans la passe ou le dernier tick fait franchir
+	# la ligne : la derniere R: recue porte un tick de moins que la cible, puis
+	# arrive <idx>F:. La course vecue s'est terminee grace a cette trame ; le
+	# rejeu, qui ne rejouait que les R:, restait un tick sous la cible.
+	var config := _config()
+	var engine := RaceEngine.new()
+	var produced: Array[RaceResult] = []
+	engine.race_finished.connect(func(r: RaceResult) -> void: produced.append(r))
+	engine.rider_finished.connect(func(rider: int, ms: int, rank: int) -> void:
+		_recorder.record_rider_finished(rider, ms, rank))
+
+	_recorder.begin_race(config, {0: {"name": "Alice"}, 1: {"name": "Bob"}})
+	engine.arm(config, 0)
+	for value: int in [3, 2, 1, 0]:
+		engine.on_countdown(value)
+
+	var physics := Physics.new(config.roller_mm)
+	var target := physics.metres_to_ticks(config.distance_m)
+	var distances := [0.0, 0.0]
+	var speeds := [45.0, 43.0]
+	var ms := 0
+	var last_ms := 0
+	while ms < 120000:
+		ms += 10
+		var ticks: Array = [0, 0, 0, 0]
+		for rider: int in range(2):
+			distances[rider] += speeds[rider] * Physics.KPH_TO_MM_PER_MS * 10.0
+			ticks[rider] = int(floor(distances[rider] / physics.circumference_mm))
+		# Le tick qui fait franchir la ligne au DERNIER n'est jamais transmis.
+		if ticks[1] >= target:
+			break
+		engine.on_progress(ticks, ms)
+		_recorder.record_sample(engine.race_state().ticks, ms)
+		last_ms = ms
+
+	assert_eq(engine.race_state().ticks[1], target - 1, "la derniere R: est un tick sous la cible")
+	assert_eq(engine.state(), RaceEngine.State.RUNNING, "sans F:, la course attend")
+
+	# Le boitier annonce l'arrivee : observation enregistree PUIS soumise.
+	_recorder.record_hardware_finish(1, last_ms + 2)
+	engine.on_rider_finish(1, last_ms + 2)
+	assert_eq(produced.size(), 1, "la course vecue se termine sur la trame F:")
+	var original := produced[0]
+	_recorder.finish_race(original)
+
+	var loaded := Replay.load_file(_races.path_join("%s.json" % original.uuid))
+	assert_true(loaded.ok, loaded.error)
+	assert_eq(loaded.hardware_finishes.size(), 1, "la trace porte la trame F:")
+	var replayed := Replay.replay(loaded)
+	assert_not_null(replayed, "le rejeu se termine")
+	assert_eq(replayed.ranking, original.ranking, "meme classement")
+	assert_gt(replayed.finished_ms[1], 0, "Bob est arrive au rejeu aussi")
+	assert_eq(replayed.finished_ms[1], original.finished_ms[1], "au meme instant")
