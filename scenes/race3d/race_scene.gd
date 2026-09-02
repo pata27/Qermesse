@@ -19,6 +19,8 @@ const COAST_TAU_S := 1.5
 ## Facteur de ralenti au photo-finish. Un tiers : assez lent pour qu'on voie qui
 ## passe devant, assez rapide pour ne pas faire attendre une salle.
 const SLOW_MOTION_SCALE := 0.33
+## Durée du fondu du néon d'un couloir dont le coureur est éliminé.
+const LANE_FADE_S := 1.5
 
 var quality := RenderQuality.new()
 var perf := PerfMonitor.new()
@@ -41,6 +43,8 @@ var _blur_material: ShaderMaterial
 var _rigs: Dictionary = {}          # lane -> RiderRig
 var _interpolators: Dictionary = {}  # lane -> RiderInterpolator
 var _lane_count := 2
+## Éclat du néon par couloir, 1 en course, 0 éliminé — fondu par `_process`.
+var _lane_glow: Dictionary = {}
 var _anchor_m := 0.0
 var _last_shape := ""
 var _key_light: DirectionalLight3D
@@ -195,6 +199,44 @@ func _build_track() -> void:
 	add_child(_crowd)
 
 
+## Couleur de néon d'un couloir selon son éclat : pleine pour un coureur en
+## course, éteinte pour un éliminé — docs/02 §3, « sa piste 3D s'estompe ».
+## Une simple atténuation garderait une teinte reconnaissable mais sombre ; on
+## désature aussi, pour que le couloir cesse de « parler » de son coureur.
+static func lane_neon(color: Color, glow: float) -> Color:
+	var grey := Color(0.20, 0.21, 0.24)
+	return grey.lerp(color, clampf(glow, 0.0, 1.0))
+
+
+func _upload_lane_colors() -> void:
+	var colors := PackedColorArray()
+	var active := _controller.roster.active_lanes()
+	for band: int in range(Protocol.MAX_RIDERS):
+		var shown := _lane_count - 1 - band
+		var lane: int = active[shown] if shown >= 0 and shown < active.size() else band
+		colors.append(
+			lane_neon(Color(_controller.roster.rider(lane).color), float(_lane_glow.get(lane, 1.0)))
+		)
+	_track_material.set_shader_parameter("lane_colors", colors)
+
+
+## Fondu des néons : un couloir ne s'éteint pas d'un coup à l'élimination.
+func _animate_lane_glow(delta: float) -> void:
+	var state := _controller.engine.race_state()
+	if state == null:
+		return
+	var changed := false
+	for lane: int in _rigs:
+		var wanted := 0.0 if state.eliminated[lane] else 1.0
+		var glow := float(_lane_glow.get(lane, 1.0))
+		if is_equal_approx(glow, wanted):
+			continue
+		_lane_glow[lane] = move_toward(glow, wanted, delta / LANE_FADE_S)
+		changed = true
+	if changed:
+		_upload_lane_colors()
+
+
 func _rebuild_track_material() -> void:
 	_track.mesh = TrackBuilder.build_mesh(_lane_count)
 	if _rails != null:
@@ -206,13 +248,8 @@ func _rebuild_track_material() -> void:
 	# plus à −X — c'est-à-dire depuis le bord DROIT de l'image. La bande `b`
 	# porte donc le couloir d'affichage `lane_count − 1 − b`, sans quoi les
 	# néons de piste ne seraient plus de la couleur du coureur qui roule dessus.
-	var colors := PackedColorArray()
-	var active := _controller.roster.active_lanes()
-	for band: int in range(Protocol.MAX_RIDERS):
-		var shown := _lane_count - 1 - band
-		var lane: int = active[shown] if shown >= 0 and shown < active.size() else band
-		colors.append(Color(_controller.roster.rider(lane).color))
-	_track_material.set_shader_parameter("lane_colors", colors)
+	_lane_glow.clear()
+	_upload_lane_colors()
 	_track_material.set_shader_parameter("lane_count", _lane_count)
 	_track_material.set_shader_parameter("lane_width", TrackBuilder.LANE_WIDTH_M)
 	# Bois clair de vélodrome. Nettement plus clair qu'il n'y paraît à l'écrit :
@@ -350,6 +387,7 @@ func _on_countdown(_value: int) -> void:
 func _process(delta: float) -> void:
 	if _controller == null:
 		return
+	_animate_lane_glow(delta)
 
 	# RALENTI DU PHOTO-FINISH — docs/04 §4.
 	#
