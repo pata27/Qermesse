@@ -125,6 +125,13 @@ Dans la fenêtre opérateur : deux pistes actives, mode **distance**, 100 m.
 - [ ] Les distances montent de façon régulière, sans à-coups ni retours en arrière.
 - [ ] **La course se termine seule**, sans intervention, dès que les pistes actives ont fini.
       *C'est le bug historique de la v1 : avec deux capteurs, l'ancien logiciel ne terminait jamais.*
+- [ ] **Le dernier arrivé est bien déclaré arrivé**, et non bloqué à « reste 1 m ».
+      *Le firmware cesse d'émettre ses trames `R:` dans la passe même où le dernier tick fait
+      franchir la ligne : la valeur qui atteint la cible n'est jamais transmise (`ss_basic.ino`,
+      `checkDistanceBased`). Le PC s'appuie alors sur la trame `<idx>F:` du boîtier, bornée à huit
+      ticks de retard. Vérifié contre l'émulateur ; ce point de recette est sa confirmation sur le
+      matériel réel. Si le dernier reste à « reste 1 m », noter le compte de ticks affiché et le
+      contenu du JSON de course.*
 - [ ] Les LED s'éteignent.
 - [ ] Le CSV du jour contient `RACE_START`, deux `RIDER_FINISH`, deux `RACE_FINISH`.
 - [ ] Les vitesses moyennes sont plausibles — un sprinteur sur rouleaux tourne entre 30 et 70 km/h.
