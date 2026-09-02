@@ -49,6 +49,52 @@ func test_un_aller_retour_disque_preserve_les_reglages() -> void:
 	assert_eq(reloaded.false_start_policy, RaceConfig.FalseStartPolicy.RESTART)
 
 
+## Valeur distincte de `current`, et qui reste dans les bornes de `from_dict` :
+## les defauts sont tous au milieu de leur plage, un facteur 1,5 sur un flottant
+## et un increment sur un entier y tiennent. Un futur reglage aux bornes plus
+## serrees fera echouer ce test en le nommant — c'est le but.
+func _mutate(current: Variant, type: int) -> Variant:
+	match type:
+		TYPE_BOOL:
+			return not bool(current)
+		TYPE_INT:
+			return int(current) + 1
+		TYPE_FLOAT:
+			return float(current) * 1.5
+		TYPE_STRING:
+			return "%s-modifie" % str(current)
+	return current
+
+
+func test_tous_les_reglages_declares_font_l_aller_retour() -> void:
+	# LE TEST S'ENTRETIENT SEUL. La version nommant les champs un a un n'en
+	# couvrait que six sur dix-sept : un reglage ajoute puis oublie dans
+	# `to_dict` ne serait jamais persiste, et aucun test ne l'aurait dit.
+	# Celui-ci enumere les champs DECLARES et echouera sur le prochain oubli.
+	var settings := Settings.new()
+	var expected := {}
+	for property: Dictionary in settings.get_property_list():
+		if not (int(property["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE):
+			continue
+		var name := str(property["name"])
+		var value: Variant = _mutate(settings.get(name), int(property["type"]))
+		settings.set(name, value)
+		expected[name] = value
+
+	assert_gt(expected.size(), 10, "la reflexion doit voir les reglages, pas une liste vide")
+	assert_true(settings.save(_path("tous.json")))
+
+	var reloaded := Settings.new()
+	assert_true(reloaded.load_from(_path("tous.json")))
+	for name: String in expected:
+		var want: Variant = expected[name]
+		var got: Variant = reloaded.get(name)
+		if want is float:
+			assert_almost_eq(float(got), float(want), 0.001, "reglage %s" % name)
+		else:
+			assert_eq(got, want, "reglage %s : absent de to_dict ou de from_dict ?" % name)
+
+
 func test_un_fichier_absent_laisse_les_valeurs_par_defaut() -> void:
 	var settings := Settings.new()
 	assert_false(settings.load_from(_path("jamais_ecrit.json")))
@@ -122,6 +168,37 @@ func test_les_noms_des_riders_sont_persistes() -> void:
 	assert_eq(reloaded.rider(0).dossard, "7")
 	assert_eq(reloaded.rider(1).name, "Bob")
 	assert_true(reloaded.rider(2).active)
+
+
+func test_tous_les_champs_d_un_rider_font_l_aller_retour() -> void:
+	# Meme garde-fou que pour les reglages, sur l'autre fichier persiste : un
+	# champ ajoute a `Rider` et oublie dans `to_dict` serait perdu en silence.
+	var roster := Roster.new()
+	var rider := roster.rider(1)
+	var expected := {}
+	for property: Dictionary in rider.get_property_list():
+		if not (int(property["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE):
+			continue
+		var name := str(property["name"])
+		# La piste identifie le rider dans le fichier : la muter le deplacerait
+		# au lieu de le modifier.
+		if name == "lane":
+			expected[name] = rider.lane
+			continue
+		var value: Variant = _mutate(rider.get(name), int(property["type"]))
+		rider.set(name, value)
+		expected[name] = value
+
+	assert_gt(expected.size(), 3, "la reflexion doit voir les champs d'un rider")
+	assert_true(roster.save(_path("roster-complet.json")))
+
+	var reloaded := Roster.new()
+	assert_true(reloaded.load_from(_path("roster-complet.json")))
+	for name: String in expected:
+		assert_eq(
+			reloaded.rider(1).get(name), expected[name],
+			"champ %s : absent de Rider.to_dict ou de from_dict ?" % name
+		)
 
 
 func test_le_roster_par_defaut_a_deux_pistes_actives() -> void:

@@ -425,3 +425,7 @@
   rien non plus, et coûte du débit — essai annulé. Signature : ces images ne dessinent que 185
   primitives quand une image normale à quatre volets en dessine 414 en 8 ms. C'est un gel côté
   pilote, pas du travail. À reprendre avec un vrai profileur GPU, pas à l'intuition.
+* **Un test qui nomme les champs un à un est toujours en retard d'un champ.** L'aller-retour des
+  réglages en vérifiait six sur dix-sept : les onze autres, dont tous ceux ajoutés depuis, auraient
+  pu disparaître de `to_dict` sans qu'un test bronche. Quand la garantie porte sur « tous les
+  champs », énumérer par réflexion et comparer, pas énumérer à la main.
