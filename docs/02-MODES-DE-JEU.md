@@ -162,7 +162,8 @@ session, avec le dernier motif — un capteur qui rebondit se voit avant de faus
 
 **Sens des colonnes sur une ligne `RACE_FINISH` — une par rider.** `temps_ms` est le **temps
 couru** par ce rider : son temps d'arrivée s'il a fini, l'instant de son élimination s'il a été
-éliminé (en mode temps, l'instant du gong pour tout le monde). Jamais 0 pour un éliminé.
+éliminé (en mode temps, l'instant du gong pour tout le monde ; pour les survivants d'un plafond de
+poursuite, l'instant du plafond). Jamais 0 pour un rider classé.
 `vitesse_moy_kph` est calculée sur ce temps couru — et sur la distance figée à cet instant —, jamais
 sur la durée totale de la course : la moyenne d'un rider éliminé à 14 s n'est pas diluée par les
 25 s pendant lesquelles il regardait les autres. `distance_m` est la distance à cet instant.

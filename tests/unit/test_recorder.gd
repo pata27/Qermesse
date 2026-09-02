@@ -179,6 +179,27 @@ func test_une_course_complete_ecrit_une_ligne_race_finish_par_rider() -> void:
 # JSON et rejeu — docs/06 §2
 # =============================================================================
 
+func test_les_survivants_d_un_plafond_de_poursuite_ont_un_temps_couru() -> void:
+	# docs/02 §5 : temps_ms n'est jamais 0 pour un rider classe. Deux riders
+	# de niveau egal, plafond de duree a 6 s : personne n'est arrive, personne
+	# n'est elimine — ils ont couru 6 s.
+	var config := _config()
+	config.mode = RaceConfig.Mode.PURSUIT
+	config.gap_m = 500.0
+	config.pursuit_time_cap_s = 6.0
+	var result := _run_recorded_race(config, [45.0, 44.5])
+	assert_true(result.interrupted, "plafond : course interrompue")
+	assert_between(result.raced_ms(0), 6000, 6100)
+	assert_between(result.raced_ms(1), 6000, 6100)
+	var finishes: Array[String] = []
+	for line: String in _read_csv_lines():
+		if line.contains("RACE_FINISH"):
+			finishes.append(line.split(",")[6])
+	assert_eq(finishes.size(), 2)
+	for value: String in finishes:
+		assert_between(int(value), 6000, 6100, "temps_ms = l'instant du plafond")
+
+
 func test_le_json_contient_la_trace_complete_des_trames() -> void:
 	var result := _run_recorded_race(_config(), [45.0, 43.0])
 	var path := _races.path_join("%s.json" % result.uuid)

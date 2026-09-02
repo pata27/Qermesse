@@ -78,13 +78,16 @@ func show_result(result: RaceResult) -> void:
 		# l'arrivee pour un classe, l'elimination — marquee — pour un elimine.
 		# Imprimer `finished_ms` pour tout le monde donnait 0,00 s a un elimine,
 		# sans dire ni quand ni pourquoi, alors que l'ecran public disait juste.
-		var timing := "    —    "
-		if result.finished_ms[rider] > 0:
-			timing = "%6.2f s  " % (result.finished_ms[rider] / 1000.0)
-		elif result.eliminated[rider] and result.eliminated_ms[rider] > 0:
-			timing = "%6.2f s x" % (result.eliminated_ms[rider] / 1000.0)
-		elif result.eliminated[rider]:
-			timing = " elimine "
+		var timing := "%6.2f s  " % (result.raced_ms(rider) / 1000.0)
+		if result.finished_ms[rider] == 0 and result.eliminated[rider]:
+			timing = (
+				"%6.2f s x" % (result.eliminated_ms[rider] / 1000.0)
+				if result.eliminated_ms[rider] > 0 else " elimine "
+			)
+		elif result.finished_ms[rider] == 0:
+			# Survivant d'un plafond ou course interrompue : le temps couru,
+			# marque comme tel.
+			timing = "%6.2f s *" % (result.raced_ms(rider) / 1000.0)
 		lines.append(
 			"%4d  %5d  %-14s %7.1f m  %s  %5.1f  %5.1f"
 			% [
@@ -99,6 +102,8 @@ func show_result(result: RaceResult) -> void:
 		)
 	if result.mode == "poursuite":
 		lines.append("x = elimine a cet instant ; distance et moyenne arretees la")
+	if result.interrupted:
+		lines.append("* = a couru jusqu'a la fin de la course, sans franchir de ligne")
 	_table.text = "\n".join(lines)
 	# Le chemin du CSV est affiche en clair : un operateur doit pouvoir le
 	# retrouver sans deviner ou le logiciel range ses fichiers.

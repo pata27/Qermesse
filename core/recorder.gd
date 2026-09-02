@@ -147,13 +147,10 @@ func finish_race(result: RaceResult) -> String:
 				"event": "RACE_FINISH",
 				"rider": rider,
 				"distance_m": result.distance_m[rider],
-				# Le temps COURU : l'arrivee pour un classe, l'elimination pour
-				# un elimine. Un zero dans cette colonne pour un elimine ne
-				# disait ni quand ni apres combien il avait saute.
-				"temps_ms": (
-					result.finished_ms[rider] if result.finished_ms[rider] > 0
-					else result.eliminated_ms[rider]
-				),
+				# Le temps COURU — `RaceResult.raced_ms`, la seule definition.
+				# Un zero ici pour un elimine ne disait ni quand ni apres combien
+				# il avait saute ; pour un survivant de plafond, il disait faux.
+				"temps_ms": result.raced_ms(rider),
 				"vitesse_moy_kph": result.avg_kph[rider],
 				"vitesse_max_kph": result.max_kph[rider],
 				"rang": result.rank_of(rider),

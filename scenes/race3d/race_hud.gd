@@ -575,9 +575,10 @@ func _show_podium(result: RaceResult) -> void:
 		elif result.eliminated[rider]:
 			figure.text = "éliminé"
 		else:
-			# Un coureur peut ne pas avoir franchi la ligne : course
-			# interrompue, lien perdu. On l'écrit plutôt que d'inventer un temps.
-			figure.text = "—"
+			# Survivant d'un plafond de poursuite, ou course interrompue : il a
+			# couru jusqu'à la fin de la course — c'est ce temps-là. Le motif
+			# de fin, affiché avec le podium, dit que ce n'est pas une arrivée.
+			figure.text = "%.2f s" % (float(result.raced_ms(rider)) / 1000.0)
 		_podium_grid.add_child(figure)
 
 		if pursuit:

@@ -56,6 +56,18 @@ func finished_at_local() -> String:
 	return "%02d:%02d" % [int(local["hour"]), int(local["minute"])]
 
 
+## Le temps COURU par un rider — la seule definition, docs/02 §5 : son
+## arrivee s'il a fini, son elimination s'il a saute, sinon la fin de la
+## course (gong du mode temps, plafond de poursuite, interruption). C'est
+## aussi la base de sa moyenne. Jamais 0 pour un rider classe.
+func raced_ms(rider: int) -> int:
+	if finished_ms[rider] > 0:
+		return finished_ms[rider]
+	if eliminated[rider] and eliminated_ms[rider] > 0:
+		return eliminated_ms[rider]
+	return elapsed_ms
+
+
 ## Le nom du depart, ou « Piste N » — jamais une ligne vide.
 func rider_name(rider: int) -> String:
 	var name := str(rider_names.get(rider, ""))
