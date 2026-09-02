@@ -148,7 +148,28 @@ func test_l_affichage_n_anticipe_pas_de_plus_d_un_tick() -> void:
 	for i: int in range(60):
 		interp.update(1.0 / 60.0)
 	var lead := interp.display_m() - 10.0
-	assert_lt(lead, 45.0 / 3.6 * 1.0 + RiderInterpolator.MAX_LEAD_M + 0.01)
+	# Un tick, pas « la vitesse pendant une seconde plus un tick » : la version
+	# precedente de cette assertion tolerait 12,9 m et laissait passer une
+	# borne qui ne bornait rien.
+	assert_lt(lead, RiderInterpolator.MAX_LEAD_M + 0.01)
+	assert_gt(lead, RiderInterpolator.MAX_LEAD_M * 0.9, "et il y va franchement")
+
+
+func test_lien_perdu_le_rider_s_arrete_a_un_tick_et_repart_sans_saut() -> void:
+	# docs/01 §6.2 : gel sur la derniere valeur connue. Trois secondes sans
+	# trame a 45 km/h feraient 37 m de derive sans borne — puis un rider plante
+	# au retour du lien, le temps que la mesure le rattrape.
+	var interp := RiderInterpolator.new()
+	interp.push_sample(100.0, 45.0)
+	for i: int in range(180):
+		interp.update(1.0 / 60.0)
+	assert_lt(interp.display_m(), 100.0 + RiderInterpolator.MAX_LEAD_M + 0.01)
+
+	# Le lien revient : le compteur absolu dit ou en est vraiment le rider.
+	interp.push_sample(137.5, 45.0)
+	var before := interp.display_m()
+	interp.update(1.0 / 60.0)
+	assert_gt(interp.display_m(), before, "il repart aussitot, sans attendre d'etre rattrape")
 
 
 # =============================================================================

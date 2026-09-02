@@ -64,8 +64,10 @@ func update(delta_s: float) -> float:
 
 	# Cible : la dernière mesure, prolongée par la vitesse lissée. C'est cette
 	# extrapolation qui remplit les 15 images sans donnée à basse vitesse.
-	var target := _measured_m + _speed_m_s * _age_s
-	target = minf(target, _measured_m + _speed_m_s * _age_s + MAX_LEAD_M)
+	# Bornée à un tick : `minf(target, target + MAX_LEAD_M)` — la version
+	# précédente — ne bornait rien, et un lien perdu faisait glisser le rider
+	# dans le vide à sa dernière vitesse.
+	var target := minf(_measured_m + _speed_m_s * _age_s, _measured_m + MAX_LEAD_M)
 
 	# Rattrapage exponentiel, indépendant du framerate : à 60 comme à 144 Hz,
 	# la position converge au même rythme en SECONDES.

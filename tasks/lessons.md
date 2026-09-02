@@ -392,3 +392,7 @@
   parsait chaque JSON du dossier — 7,6 Mo après deux jours de développement, et le dossier ne
   s'élague jamais. Quand une donnée s'accumule sans borne, filtrer sur ce qui est gratuit (le nom)
   avant ce qui coûte (le parseur), et laisser un compteur observable pour le prouver.
+* **Un test dont l'assertion tolère le bug vaut moins que pas de test.** « L'affichage n'anticipe
+  pas de plus d'un tick » tolérait `vitesse × 1 s + un tick`, soit 12,9 m — écrit pour passer sur
+  un `minf(x, x + borne)` qui ne bornait rien. Relire la borne d'un test contre la phrase de son
+  nom : si le nombre ne correspond pas au mot, l'un des deux ment.

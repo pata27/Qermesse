@@ -152,6 +152,11 @@ Les trames arrivent à 100 Hz, le rendu tourne à 60–144 Hz. La position 3D d'
 **interpolée** entre les deux dernières trames à partir de sa vitesse lissée, jamais téléportée.
 Sans ça le rendu saccade visiblement à basse vitesse. C'est un vrai piège : à 5 km/h, un rider
 produit un tick toutes les ~260 ms, soit un point de donnée toutes les 15 images.
+L'anticipation est **bornée à un tick** au-delà de la dernière mesure : c'est exactement ce qu'il
+faut pour remplir l'attente du tick suivant à basse vitesse, et jamais assez pour faire franchir
+la ligne à un rider qui ne l'a pas atteinte. Corollaire : lien perdu (`01` §6.2), le rider s'arrête
+à un tick de sa dernière mesure — il ne glisse pas dans le vide à sa dernière vitesse, et n'a rien à
+rattraper au retour.
 
 ---
 
