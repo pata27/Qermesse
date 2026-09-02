@@ -47,6 +47,7 @@ var _samples: Array = []
 ## et une course vecue comme terminee ne se terminerait pas rejouee.
 var _hardware_finishes: Array = []
 var _events: Array[Dictionary] = []
+var _last_scan_opened: int = 0
 
 
 func _init(logs_dir: String = "", races_dir: String = "") -> void:
@@ -233,9 +234,23 @@ func load_day(now: Dictionary = Time.get_datetime_dict_from_system()) -> Array[R
 	if not DirAccess.dir_exists_absolute(_races_dir):
 		return found
 	var bias_s := int(Time.get_time_zone_from_system().get("bias", 0)) * 60
+	# Le nom du fichier est horodate en UTC (`_make_uuid`) : un jour local
+	# ne recouvre que deux dates UTC au plus. Tout autre fichier est ecarte
+	# SANS etre ouvert — le dossier ne s'elague jamais, chaque fichier pese
+	# des centaines de Ko de trace.
+	var local_midnight := Time.get_unix_time_from_datetime_dict(
+		{"year": now["year"], "month": now["month"], "day": now["day"],
+		"hour": 0, "minute": 0, "second": 0}
+	)
+	var candidates: PackedStringArray = []
+	for local_unix: int in [local_midnight, local_midnight + 24 * 3600 - 1]:
+		var utc := Time.get_datetime_dict_from_unix_time(local_unix - bias_s)
+		candidates.append("%04d%02d%02d" % [utc["year"], utc["month"], utc["day"]])
+	_last_scan_opened = 0
 	for name: String in DirAccess.get_files_at(_races_dir):
-		if name.get_extension() != "json":
+		if name.get_extension() != "json" or not candidates.has(name.substr(0, 8)):
 			continue
+		_last_scan_opened += 1
 		var data := JsonStore.read(_races_dir.path_join(name))
 		if data.is_empty() or str(data.get("format", "")) != "silversprint-race/1":
 			continue
@@ -252,6 +267,12 @@ func load_day(now: Dictionary = Time.get_datetime_dict_from_system()) -> Array[R
 			return a.uuid < b.uuid
 	)
 	return found
+
+
+## Fichiers ouverts par le dernier `load_day` — pour prouver que le filtre
+## sur le nom travaille avant le parseur.
+func last_scan_opened() -> int:
+	return _last_scan_opened
 
 
 static func _is_same_local_day(started_utc_iso: String, bias_s: int, now: Dictionary) -> bool:

@@ -322,7 +322,11 @@ func test_rejeu_d_une_trace_reelle_ou_la_derniere_trame_manque() -> void:
 ## Ecrit un JSON de course minimal date d'un autre jour : il ne doit pas
 ## entrer dans l'historique d'aujourd'hui.
 func _write_foreign_day_race(uuid: String, started_at: String) -> void:
-	var file := FileAccess.open(_races.path_join("%s.json" % uuid), FileAccess.WRITE)
+	# Nomme comme `_make_uuid` : l'horodatage UTC du depart, puis le label.
+	var stamp := "00000000-000000"
+	if started_at.length() >= 19:
+		stamp = started_at.substr(0, 10).replace("-", "") + "-" + started_at.substr(11, 8).replace(":", "")
+	var file := FileAccess.open(_races.path_join("%s-%s.json" % [stamp, uuid]), FileAccess.WRITE)
 	file.store_string(JSON.stringify({
 		"format": "silversprint-race/1",
 		"uuid": uuid,
@@ -378,6 +382,18 @@ func test_le_resultat_porte_les_noms_du_depart_et_les_relit() -> void:
 	var relu := Recorder.new(_logs, _races).load_day()[0]
 	assert_eq(relu.rider_name(0), "Alice", "relu depuis le JSON")
 	assert_eq(relu.rider_name(1), "Bob")
+
+
+func test_seuls_les_fichiers_du_jour_sont_ouverts() -> void:
+	# Le dossier `races/` grossit de plusieurs Mo par soiree et ne s'elague
+	# jamais : parser chaque fichier au lancement finirait par couter des
+	# secondes. Le nom horodate suffit a ecarter les autres jours sans ouvrir.
+	_run_recorded_race(_config(), [45.0, 43.0])
+	for day: int in [1, 2, 3]:
+		_write_foreign_day_race("ancien", "2020-01-%02dT12:00:00" % day)
+	var recorder := Recorder.new(_logs, _races)
+	assert_eq(recorder.load_day().size(), 1)
+	assert_eq(recorder.last_scan_opened(), 1, "un seul fichier ouvert sur quatre")
 
 
 func test_le_jour_est_le_jour_local_celui_du_csv() -> void:

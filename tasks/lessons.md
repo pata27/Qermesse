@@ -384,3 +384,11 @@
 * **Toute valeur brute à 100 Hz affichée telle quelle finit par stroboscoper.** Vitesse hier, écart
   aujourd'hui : même cause (quantum de tick), même recette (cible + lissage continu + hystérésis
   sur le chiffre). Chercher les autres étiquettes qui lisent `state` directement.
+* **`git checkout -- fichier` jette TOUT le travail non commité du fichier.** Utilisé pour annuler un
+  `sed` de preuve rouge, il a emporté la fonctionnalité entière avec. Pour défaire une mutation
+  temporaire : la refaire à l'envers (`sed` inverse, `git stash push -- fichier` puis `pop`), jamais
+  `checkout` tant qu'il reste du travail non commité dans le fichier.
+* **Un scan « relis tout » qui marche à 60 fichiers est une bombe à retardement.** `load_day`
+  parsait chaque JSON du dossier — 7,6 Mo après deux jours de développement, et le dossier ne
+  s'élague jamais. Quand une donnée s'accumule sans borne, filtrer sur ce qui est gratuit (le nom)
+  avant ce qui coûte (le parseur), et laisser un compteur observable pour le prouver.
