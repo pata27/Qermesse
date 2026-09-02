@@ -71,6 +71,9 @@ func current_uuid() -> String:
 ## Ouvre une course. `roster` associe un numero de piste a {name, dossard}.
 func begin_race(config: RaceConfig, roster: Dictionary = {}) -> String:
 	_uuid = _make_uuid()
+	# Les problemes sont ceux de CETTE course : une cle USB retiree puis
+	# remise ne doit pas faire accuser toutes les courses suivantes.
+	_problems.clear()
 	_config = config.duplicate_config()
 	_roster = roster.duplicate(true)
 	_started_iso = Time.get_datetime_string_from_system(true)

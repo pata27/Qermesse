@@ -179,6 +179,24 @@ func test_une_course_complete_ecrit_une_ligne_race_finish_par_rider() -> void:
 # JSON et rejeu — docs/06 §2
 # =============================================================================
 
+func test_les_problemes_d_ecriture_sont_ceux_de_la_course_en_cours() -> void:
+	# Un journal impossible a ecrire pour une course, puis le disque revient :
+	# la course suivante ne doit pas etre accusee a tort.
+	var blocked := ProjectSettings.globalize_path(TEST_ROOT).path_join("logs-bloque")
+	var file := FileAccess.open(blocked, FileAccess.WRITE)
+	file.store_string("pas un dossier")
+	file.close()
+	var recorder := Recorder.new(blocked, _races)
+	recorder.begin_race(_config())
+	assert_false(recorder.problems().is_empty(), "l'echec est constate")
+
+	# Le disque revient : on change de dossier de journaux, comme l'operateur.
+	DirAccess.remove_absolute(blocked)
+	DirAccess.make_dir_recursive_absolute(blocked)
+	recorder.begin_race(_config())
+	assert_true(recorder.problems().is_empty(), "plus rien a reprocher a la course suivante")
+
+
 func test_les_survivants_d_un_plafond_de_poursuite_ont_un_temps_couru() -> void:
 	# docs/02 §5 : temps_ms n'est jamais 0 pour un rider classe. Deux riders
 	# de niveau egal, plafond de duree a 6 s : personne n'est arrive, personne
