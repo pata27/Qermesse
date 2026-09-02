@@ -409,6 +409,46 @@ func test_des_reglages_corrompus_demarrent_par_defaut_et_le_disent() -> void:
 	DirAccess.remove_absolute(settings_path)
 
 
+func test_les_preferences_sont_ecrites_a_chaque_fin_de_course() -> void:
+	# docs/02 §5 : pas seulement a la fermeture. Un plantage en soiree ne doit
+	# pas perdre les noms des riders qui viennent de courir.
+	var root := ProjectSettings.globalize_path(TEST_ROOT)
+	var settings_path := root.path_join("settings-ecrit.json")
+	var roster_path := root.path_join("roster-ecrit.json")
+	for path: String in [settings_path, roster_path]:
+		if FileAccess.file_exists(path):
+			DirAccess.remove_absolute(path)
+
+	var controller := AppController.new()
+	controller.preferences_enabled = true
+	controller.settings_path = settings_path
+	controller.roster_path = roster_path
+	controller.recorder_logs_dir = _logs
+	controller.recorder_races_dir = _races
+	add_child_autofree(controller)
+	controller.set_simulation_speed(10.0)
+	for i: int in range(120):
+		await wait_frames(1)
+		if controller.link_state() == Protocol.State.IDENTIFIED:
+			break
+	controller.roster.rider(0).name = "Zoe"
+	controller.settings.distance_m = 100.0
+	assert_false(FileAccess.file_exists(roster_path), "rien d'ecrit avant la course")
+	assert_true(controller.start_race())
+	var finished: Array[RaceResult] = []
+	controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
+	for i: int in range(900):
+		await wait_frames(1)
+		if not finished.is_empty():
+			break
+	assert_false(finished.is_empty())
+	assert_true(FileAccess.file_exists(roster_path), "le roster est sur disque des la fin de course")
+	assert_string_contains(FileAccess.get_file_as_string(roster_path), "Zoe")
+	assert_string_contains(FileAccess.get_file_as_string(settings_path), "\"distance_m\": 100")
+	for path: String in [settings_path, roster_path]:
+		DirAccess.remove_absolute(path)
+
+
 func test_un_journal_impossible_a_ecrire_est_signale_en_fin_de_course() -> void:
 	# Un FICHIER a la place du dossier des journaux : le disque plein en
 	# miniature. Le classement doit s'afficher, et l'operateur doit savoir

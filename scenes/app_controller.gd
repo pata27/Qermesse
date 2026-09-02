@@ -246,11 +246,19 @@ func history() -> Array[RaceResult]:
 	return _history
 
 
-func save_preferences() -> void:
+## Ecrit reglages et roster. Appele a chaque fin de course et a la fermeture
+## — docs/02 §5 : un plantage en soiree ne doit rien perdre de ce qui a servi.
+## Rend false et previent l'operateur si l'ecriture echoue.
+func save_preferences() -> bool:
 	if not preferences_enabled:
-		return
-	settings.save()
-	roster.save()
+		return true
+	var ok := settings.save(settings_path)
+	if not ok:
+		notice.emit("SAUVEGARDE DES REGLAGES : %s" % JsonStore.last_error)
+	if not roster.save(roster_path):
+		notice.emit("SAUVEGARDE DU ROSTER : %s" % JsonStore.last_error)
+		ok = false
+	return ok
 
 
 ## Accelere le temps du simulateur — demonstrations et tests.
@@ -358,6 +366,7 @@ func _on_race_finished(result: RaceResult) -> void:
 	# doit le savoir maintenant, pas en cherchant le CSV a la fin de la soiree.
 	if not recorder.problems().is_empty():
 		notice.emit("ENREGISTREMENT : %s" % recorder.problems()[recorder.problems().size() - 1])
+	save_preferences()
 
 
 func startup_problems() -> Array[String]:

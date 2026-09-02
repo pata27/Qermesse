@@ -198,4 +198,6 @@ ne réécrit pas l'histoire.
 * Windows `%APPDATA%\SilverSprint\settings.json`
 
 Les noms des riders **sont persistés** (roster réutilisable d'une course à l'autre) — la v1 les
-perdait à chaque lancement.
+perdait à chaque lancement. Réglages et roster sont écrits **à chaque fin de course** et à la
+fermeture, pas seulement à la fermeture : un plantage ou une coupure en soirée ne perd rien de ce
+qui a servi. Une écriture qui échoue est dite à l'opérateur.
