@@ -175,6 +175,12 @@ manquerait et la course rejouée ne se terminerait pas. Permet le rejeu d'une co
 post-événement, et la génération de replays. ~100 Hz × 60 s × 4 riders ≈ 6000 échantillons,
 soit quelques centaines de Ko : négligeable.
 
+**Historique du jour.** La liste « Courses du jour » du panneau de résultats est **relue depuis
+les JSON au lancement**, pas seulement alimentée par les courses de la session : un redémarrage du
+logiciel en pleine soirée — plantage, changement de machine, mise à jour — ne la vide pas. Le
+« jour » est le jour **local**, celui qui nomme le CSV ; `started_at` étant écrit en UTC, la
+conversion est faite à la relecture. Les courses sont listées dans l'ordre de départ.
+
 **Réglages** — JSON, chemins standards par OS :
 * Linux `~/.config/silversprint/settings.json`
 * macOS `~/Library/Application Support/SilverSprint/settings.json`

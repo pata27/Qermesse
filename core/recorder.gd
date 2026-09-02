@@ -222,6 +222,51 @@ func _append_csv(row: Dictionary) -> void:
 
 ## Une note peut contenir une virgule. Sans echappement, la colonne suivante
 ## se decale et le CSV devient faux sans prevenir.
+## Relit les courses du jour depuis leurs JSON — docs/02 §5, « Historique du
+## jour ». Le jour est le jour LOCAL, celui qui nomme le CSV ; `started_at` est
+## ecrit en UTC, d'ou la conversion. Un fichier illisible ou d'un autre format
+## est ignore en silence : l'historique ne doit jamais empecher de courir.
+func load_day(now: Dictionary = Time.get_datetime_dict_from_system()) -> Array[RaceResult]:
+	var found: Array[RaceResult] = []
+	if not DirAccess.dir_exists_absolute(_races_dir):
+		return found
+	var bias_s := int(Time.get_time_zone_from_system().get("bias", 0)) * 60
+	for name: String in DirAccess.get_files_at(_races_dir):
+		if name.get_extension() != "json":
+			continue
+		var data := JsonStore.read(_races_dir.path_join(name))
+		if data.is_empty() or str(data.get("format", "")) != "silversprint-race/1":
+			continue
+		var started := str(data.get("started_at", ""))
+		if not _is_same_local_day(started, bias_s, now):
+			continue
+		found.append(RaceResult.from_json(data))
+	# `started_at` est a la seconde : deux courses dans la meme seconde n'existent
+	# qu'en test, mais l'ordre doit rester deterministe — l'uuid tranche.
+	found.sort_custom(
+		func(a: RaceResult, b: RaceResult) -> bool:
+			if a.started_at_iso != b.started_at_iso:
+				return a.started_at_iso < b.started_at_iso
+			return a.uuid < b.uuid
+	)
+	return found
+
+
+static func _is_same_local_day(started_utc_iso: String, bias_s: int, now: Dictionary) -> bool:
+	# Une date malformee vaut 0 (1970) : jamais « aujourd'hui ».
+	if started_utc_iso.length() < 19:
+		return false
+	var unix := Time.get_unix_time_from_datetime_string(started_utc_iso)
+	if unix <= 0:
+		return false
+	var local := Time.get_datetime_dict_from_unix_time(unix + bias_s)
+	return (
+		int(local["year"]) == int(now["year"])
+		and int(local["month"]) == int(now["month"])
+		and int(local["day"]) == int(now["day"])
+	)
+
+
 func _escape_csv(value: String) -> String:
 	if value.contains(",") or value.contains("\"") or value.contains("\n"):
 		return "\"%s\"" % value.replace("\"", "\"\"")

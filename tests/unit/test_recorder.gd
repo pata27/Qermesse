@@ -313,3 +313,82 @@ func test_rejeu_d_une_trace_reelle_ou_la_derniere_trame_manque() -> void:
 	assert_eq(replayed.ranking, original.ranking, "meme classement")
 	assert_gt(replayed.finished_ms[1], 0, "Bob est arrive au rejeu aussi")
 	assert_eq(replayed.finished_ms[1], original.finished_ms[1], "au meme instant")
+
+
+# =============================================================================
+# Historique du jour — docs/02 §5
+# =============================================================================
+
+## Ecrit un JSON de course minimal date d'un autre jour : il ne doit pas
+## entrer dans l'historique d'aujourd'hui.
+func _write_foreign_day_race(uuid: String, started_at: String) -> void:
+	var file := FileAccess.open(_races.path_join("%s.json" % uuid), FileAccess.WRITE)
+	file.store_string(JSON.stringify({
+		"format": "silversprint-race/1",
+		"uuid": uuid,
+		"started_at": started_at,
+		"finished_at": started_at,
+		"config": {"mode": "distance", "active_riders": [0, 1]},
+		"result": {"ranking": [1, 0], "elapsed_ms": 9000, "end_reason": 1},
+	}))
+	file.close()
+
+
+func test_l_historique_du_jour_est_relu_depuis_les_json() -> void:
+	var first := _run_recorded_race(_config(), [45.0, 43.0])
+	var second := _run_recorded_race(_config(), [40.0, 44.0])
+	_write_foreign_day_race("veille", "2000-01-01T22:30:00")
+	_write_foreign_day_race("brouillon", "pas-une-date")
+	assert_eq(DirAccess.get_files_at(_races).size(), 4, "quatre fichiers sur disque")
+
+	# Un recorder NEUF, comme apres un redemarrage du logiciel.
+	var reloaded := Recorder.new(_logs, _races).load_day()
+	assert_eq(reloaded.size(), 2, "seules les courses du jour")
+	# Les deux courses sont parties dans la meme seconde : l'ordre de depart
+	# est teste plus bas, sur des dates distinctes.
+	var uuids := [reloaded[0].uuid, reloaded[1].uuid]
+	uuids.sort()
+	var expected := [first.uuid, second.uuid]
+	expected.sort()
+	assert_eq(uuids, expected, "les deux courses du jour, rien d'autre")
+
+	var relu: RaceResult = reloaded[0] if reloaded[0].uuid == second.uuid else reloaded[1]
+	assert_eq(relu.ranking, second.ranking, "meme classement")
+	assert_eq(relu.winner(), 1, "Bob a gagne la seconde")
+	assert_eq(relu.mode, "distance")
+	assert_eq(relu.elapsed_ms, second.elapsed_ms)
+	assert_eq(relu.end_reason, RaceRule.EndReason.ALL_FINISHED)
+	assert_eq(relu.finished_ms[0], second.finished_ms[0])
+	assert_eq(relu.finished_ms[1], second.finished_ms[1])
+	assert_almost_eq(relu.distance_m[1], second.distance_m[1], 0.01)
+	assert_almost_eq(relu.avg_kph[1], second.avg_kph[1], 0.01)
+	assert_almost_eq(relu.max_kph[1], second.max_kph[1], 0.01)
+	assert_false(relu.interrupted)
+	assert_eq(relu.finished_at_iso, second.finished_at_iso)
+	assert_not_null(relu.config, "la configuration est relue aussi")
+	assert_eq(relu.config.active_riders, [0, 1])
+
+
+func test_le_jour_est_le_jour_local_celui_du_csv() -> void:
+	# Une course partie a 23 h 30 en heure locale d'un fuseau UTC+2 est ecrite
+	# « 21:30 UTC » : elle est du jour local. Une autre a 00 h 30 locale, ecrite
+	# la veille en UTC, l'est aussi. On construit les deux a partir d'un
+	# « maintenant » fictif, le 15 juin, avec le fuseau de la machine.
+	var bias_s := int(Time.get_time_zone_from_system()["bias"]) * 60
+	var local_midnight := Time.get_unix_time_from_datetime_dict(
+		{"year": 2030, "month": 6, "day": 15, "hour": 0, "minute": 0, "second": 0}
+	)
+	var utc_of := func(local_unix: int) -> String:
+		return Time.get_datetime_string_from_unix_time(local_unix - bias_s)
+	_write_foreign_day_race("nuit", utc_of.call(local_midnight + 30 * 60))
+	_write_foreign_day_race("soir", utc_of.call(local_midnight + 23 * 3600 + 30 * 60))
+	_write_foreign_day_race("lendemain", utc_of.call(local_midnight + 24 * 3600 + 60))
+	_write_foreign_day_race("veille", utc_of.call(local_midnight - 60))
+
+	var day := Recorder.new(_logs, _races).load_day(
+		{"year": 2030, "month": 6, "day": 15, "hour": 20, "minute": 0, "second": 0}
+	)
+	var uuids: Array[String] = []
+	for result: RaceResult in day:
+		uuids.append(result.uuid)
+	assert_eq(uuids, ["nuit", "soir"], "les deux courses du 15 juin local, dans l'ordre")

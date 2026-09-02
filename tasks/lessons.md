@@ -369,3 +369,11 @@
   « `docs/01` §5.4 » pour la dernière trame `R:` jamais émise ; la section ne contenait pas ce que je
   lui faisais dire, et affirmait même le contraire (« `F:` jamais une condition »). Le document
   normatif se corrige AVANT le code — c'est la règle — et un renvoi se vérifie en ouvrant la section.
+* **Godot n'est pas dans le PATH : `./.tools/Godot_v4.5-stable_linux.x86_64`.** Six minutes à
+  chercher un binaire « disparu » alors qu'il n'a jamais été ailleurs. Une commande qui a marché dans
+  une session précédente a marché avec un chemin ; le retrouver dans le journal avant de fouiller le
+  disque.
+* **« Du jour » veut dire persistant.** L'historique des courses du jour n'existait qu'en mémoire :
+  un redémarrage en soirée le vidait alors que les JSON étaient sur disque. Quand un libellé nomme
+  une portée (le jour, la session, l'événement), vérifier que la donnée survit vraiment à cette
+  portée — et penser au fuseau : `started_at` est en UTC, le CSV est nommé en heure locale.

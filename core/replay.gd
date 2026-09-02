@@ -50,25 +50,9 @@ static func load_file(path: String) -> Loaded:
 		out.error = "format inconnu : %s" % str(data.get("format", "(absent)"))
 		return out
 
-	var raw_config: Dictionary = data.get("config", {})
-	var config := RaceConfig.new()
-	config.mode = _mode_from_name(str(raw_config.get("mode", "distance")))
-	var riders: Array[int] = []
-	for value: Variant in raw_config.get("active_riders", []):
-		riders.append(int(value))
-	config.active_riders = riders
-	config.distance_m = float(raw_config.get("distance_m", 500.0))
-	config.duration_s = float(raw_config.get("duration_s", 60.0))
-	config.gap_m = float(raw_config.get("gap_m", 50.0))
-	config.roller_mm = float(raw_config.get("roller_mm", Physics.DEFAULT_ROLLER_MM))
-	config.false_start_policy = raw_config.get("false_start_policy", 1)
-	config.pursuit_time_cap_s = float(raw_config.get("pursuit_time_cap_s", 300.0))
-	config.pursuit_distance_cap_m = float(raw_config.get("pursuit_distance_cap_m", 5000.0))
-	config.distance_timeout_s = float(raw_config.get("distance_timeout_s", 600.0))
-
 	var result: Dictionary = data.get("result", {})
 	out.uuid = str(data.get("uuid", ""))
-	out.config = config
+	out.config = config_from_dict(data.get("config", {}))
 	out.roster = data.get("roster", {})
 	out.samples = data.get("samples", [])
 	out.hardware_finishes = data.get("hardware_finishes", [])
@@ -125,6 +109,26 @@ static func replay(loaded: Loaded) -> RaceResult:
 		engine.on_rider_finish(int(finishes[next_finish][0]), int(finishes[next_finish][1]))
 		next_finish += 1
 	return produced[0] if not produced.is_empty() else null
+
+
+## Relit le bloc `config` d'un JSON de course — le rejeu et l'historique du
+## jour en ont le meme besoin.
+static func config_from_dict(raw_config: Dictionary) -> RaceConfig:
+	var config := RaceConfig.new()
+	config.mode = _mode_from_name(str(raw_config.get("mode", "distance")))
+	var riders: Array[int] = []
+	for value: Variant in raw_config.get("active_riders", []):
+		riders.append(int(value))
+	config.active_riders = riders
+	config.distance_m = float(raw_config.get("distance_m", 500.0))
+	config.duration_s = float(raw_config.get("duration_s", 60.0))
+	config.gap_m = float(raw_config.get("gap_m", 50.0))
+	config.roller_mm = float(raw_config.get("roller_mm", Physics.DEFAULT_ROLLER_MM))
+	config.false_start_policy = raw_config.get("false_start_policy", 1)
+	config.pursuit_time_cap_s = float(raw_config.get("pursuit_time_cap_s", 300.0))
+	config.pursuit_distance_cap_m = float(raw_config.get("pursuit_distance_cap_m", 5000.0))
+	config.distance_timeout_s = float(raw_config.get("distance_timeout_s", 600.0))
+	return config
 
 
 static func _mode_from_name(name: String) -> RaceConfig.Mode:

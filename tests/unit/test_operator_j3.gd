@@ -310,6 +310,40 @@ func test_l_interface_construite_avant_l_entree_dans_l_arbre_fonctionne() -> voi
 # =============================================================================
 
 
+func test_l_historique_du_jour_survit_a_un_redemarrage() -> void:
+	# Une course JSON deja sur disque, datee d'aujourd'hui : un controleur et
+	# un panneau NEUFS — le logiciel vient d'etre relance — doivent la lister.
+	var recorder := Recorder.new(_logs, _races)
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.DISTANCE
+	config.active_riders = [0, 1]
+	config.distance_m = 100.0
+	recorder.begin_race(config, {0: {"name": "Alice", "dossard": 7}})
+	var result := RaceResult.new()
+	result.mode = "distance"
+	result.ranking = [1, 0]
+	result.elapsed_ms = 8000
+	result.end_reason = RaceRule.EndReason.ALL_FINISHED
+	result.finished_ms[1] = 7900
+	result.finished_ms[0] = 8000
+	recorder.finish_race(result)
+
+	var controller := AppController.new()
+	controller.preferences_enabled = false
+	controller.recorder_logs_dir = _logs
+	controller.recorder_races_dir = _races
+	add_child_autofree(controller)
+	var panel := OperatorPanel.new()
+	add_child_autofree(panel)
+	panel.setup(controller)
+
+	assert_eq(controller.history().size(), 1, "l'historique est relu au demarrage")
+	assert_eq(panel.results_panel().history_count(), 1, "et le panneau le montre")
+	panel.results_panel().select_history(0)
+	assert_string_contains(panel.results_panel().table_text(), "tous arrives")
+	assert_string_contains(panel.results_panel().table_text(), "7.90 s")
+
+
 func test_le_tableau_marque_l_instant_d_elimination_au_lieu_de_zero() -> void:
 	# Un resultat de poursuite construit a la main : le survivant a un temps
 	# d'arrivee, l'elimine n'en a pas mais a un instant d'elimination.

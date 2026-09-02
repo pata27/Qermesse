@@ -108,6 +108,7 @@ piège : il valide un code PC qui échouera sur le vrai matériel.
 | Amorce de `lastUpdateMillis` | `raceStart()` l'initialise à `raceStartMillis`, valeur **absolue**, comparée ensuite à un temps **relatif** : la première trame `R:` part immédiatement. Reproduit. |
 | Fin en distance | Attend **les quatre** pistes ; avec 2 capteurs la course ne finit jamais — le bug de la v1 |
 | Arrêt du flux `R:` | Plus aucune trame après la fin firmware |
+| Dernière `R:` jamais émise | En distance, `checkDistanceBased()` coupe `raceStarted` dans la passe qui compte le dernier tick : la trame `R:` qui le porterait ne part jamais, seul `<i>F:` l'atteste (`01` §5.6). Reproduit — c'est ce qui a révélé le bug PC « reste 1 m ». |
 | `ERROR:` malformé | Double préfixe, et l'octet **brut** émis par `Serial.println(char)` |
 | `<i>F:` négatif | En mode temps ≤ 32 s, `raceLengthSecs * 1000` peut sortir négatif |
 | `m` | Mode mock interne, y compris le double comptage tick calculé + tick sur front |

@@ -81,6 +81,8 @@ func initialize() -> void:
 	_link.state_changed.connect(_on_link_state)
 
 	recorder = Recorder.new(recorder_logs_dir, recorder_races_dir)
+	# Un redemarrage en pleine soiree ne vide pas « Courses du jour ».
+	_history = recorder.load_day()
 
 	engine.command_requested.connect(_on_command_requested)
 	engine.state_changed.connect(func(p: int, c: int) -> void: race_state_changed.emit(p, c))

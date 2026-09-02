@@ -54,6 +54,7 @@ décrit le déroulé normal d'une soirée.
 5. **STOP** interrompt ; **Relancer** réarme la même configuration.
 6. À l'arrivée : célébration, puis podium sur l'écran public. Le panneau **Résultats** montre le
    même classement, et la course entre dans **Courses du jour**. Le CSV est écrit au fil de l'eau.
+   Cette liste survit à un redémarrage : elle est relue depuis les fichiers de course au lancement.
 
 ## 5. Si ça coince
 

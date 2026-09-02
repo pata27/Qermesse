@@ -65,6 +65,42 @@ func end_reason_name() -> String:
 	return "indetermine"
 
 
+## Relit un JSON de course (`recorder._write_json`) tel quel, SANS rejouer :
+## c'est l'historique du jour, pas le rejeu — lui recalcule tout (replay.gd).
+## `data` est le document entier ; le bloc `result` est lu par rider, indexe
+## par piste, comme il a ete ecrit.
+static func from_json(data: Dictionary) -> RaceResult:
+	var out := RaceResult.new()
+	var block: Dictionary = data.get("result", {})
+	out.uuid = str(data.get("uuid", ""))
+	out.started_at_iso = str(data.get("started_at", ""))
+	out.finished_at_iso = str(data.get("finished_at", ""))
+	out.config = Replay.config_from_dict(data.get("config", {}))
+	out.mode = str(data.get("config", {}).get("mode", ""))
+	# JSON n'a qu'un type numerique : tout revient en float.
+	for value: Variant in block.get("ranking", []):
+		out.ranking.append(int(value))
+	out.elapsed_ms = int(block.get("elapsed_ms", 0))
+	out.end_reason = int(block.get("end_reason", 0)) as RaceRule.EndReason
+	out.interrupted = bool(block.get("interrupted", false))
+	out.interruption_note = str(block.get("interruption_note", ""))
+	for rider: int in range(Protocol.MAX_RIDERS):
+		out.finished_ms[rider] = int(_nth(block.get("finished_ms", []), rider, 0))
+		out.eliminated_ms[rider] = int(_nth(block.get("eliminated_ms", []), rider, 0))
+		out.distance_m[rider] = float(_nth(block.get("distance_m", []), rider, 0.0))
+		out.avg_kph[rider] = float(_nth(block.get("avg_kph", []), rider, 0.0))
+		out.max_kph[rider] = float(_nth(block.get("max_kph", []), rider, 0.0))
+		out.eliminated[rider] = bool(_nth(block.get("eliminated", []), rider, false))
+		out.false_started[rider] = bool(_nth(block.get("false_started", []), rider, false))
+	return out
+
+
+static func _nth(values: Variant, index: int, fallback: Variant) -> Variant:
+	if values is Array and index < (values as Array).size():
+		return (values as Array)[index]
+	return fallback
+
+
 static func from_state(state: RaceState, rule: RaceRule, reason: RaceRule.EndReason) -> RaceResult:
 	var result := RaceResult.new()
 	result.config = state.config.duplicate_config()

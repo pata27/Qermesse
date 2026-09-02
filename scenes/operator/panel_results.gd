@@ -12,6 +12,9 @@ var _csv_label: Label
 func setup(controller: AppController) -> void:
 	_controller = controller
 	_build()
+	# Les courses deja sur disque aujourd'hui — le logiciel a pu etre relance.
+	for result: RaceResult in _controller.history():
+		_add_history_item(result)
 	_controller.race_finished.connect(_on_race_finished)
 
 
@@ -102,12 +105,22 @@ func show_result(result: RaceResult) -> void:
 	_csv_label.text = "CSV : %s" % _controller.recorder.csv_path()
 
 
-func _on_race_finished(result: RaceResult) -> void:
-	show_result(result)
+## Selectionne une course de l'historique, comme un clic dans la liste.
+func select_history(index: int) -> void:
+	_history.select(index)
+	_on_history_selected(index)
+
+
+func _add_history_item(result: RaceResult) -> void:
 	_history.add_item(
 		"%s  %s  vainqueur piste %d"
 		% [result.finished_at_iso, result.mode, result.winner() + 1]
 	)
+
+
+func _on_race_finished(result: RaceResult) -> void:
+	show_result(result)
+	_add_history_item(result)
 
 
 func _on_history_selected(index: int) -> void:
