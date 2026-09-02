@@ -166,6 +166,28 @@ func test_une_poursuite_decidee_au_plafond_n_est_pas_annoncee_interrompue() -> v
 	assert_string_contains(shown, "plafond", "et le motif reste affiche")
 
 
+func test_le_bandeau_vainqueur_ne_barre_pas_une_victoire_au_plafond() -> void:
+	# « VAINQUEUR — P1 Alice [INTERROMPUE] » : le bandeau se contredisait
+	# lui-meme. Au plafond, docs/02 §3 dit que celui qui mene gagne.
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.PURSUIT
+	config.active_riders = [0, 1]
+	var capped := RaceResult.new()
+	capped.mode = "poursuite"
+	capped.config = config
+	capped.ranking = [0, 1]
+	capped.interrupted = true
+	capped.end_reason = RaceRule.EndReason.TIME_CAP
+	capped.rider_names = {0: "Alice", 1: "Bob"}
+	_controller.race_finished.emit(capped)
+	assert_string_contains(_hud.notice_text(), "VAINQUEUR")
+	assert_false(_hud.notice_text().contains("INTERROMPUE"), "il a bien gagne")
+
+	capped.end_reason = RaceRule.EndReason.NONE
+	_controller.race_finished.emit(capped)
+	assert_string_contains(_hud.notice_text(), "INTERROMPUE", "la, la course a ete arretee")
+
+
 func test_une_course_arretee_est_bien_annoncee_interrompue() -> void:
 	var stopped := RaceResult.new()
 	stopped.mode = "distance"

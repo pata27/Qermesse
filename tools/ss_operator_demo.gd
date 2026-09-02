@@ -133,7 +133,7 @@ func _report(result: RaceResult) -> void:
 	print("")
 	print("=== resultat ===")
 	print("mode %s, fin : %s%s" % [result.mode, result.end_reason_name(),
-		"  [INTERROMPUE]" if result.interrupted else ""])
+		"  [INTERROMPUE]" if result.was_stopped() else ""])
 	for rider: int in result.ranking:
 		print("  rang %d  piste %d  %-8s %7.1f m  %6.2f s  moy %5.1f km/h  max %5.1f km/h"
 			% [result.rank_of(rider), rider + 1,

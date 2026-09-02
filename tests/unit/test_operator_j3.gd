@@ -866,6 +866,30 @@ func test_le_panneau_course_nomme_le_vainqueur_du_depart() -> void:
 	)
 
 
+func test_le_tableau_ne_barre_pas_une_course_decidee_au_plafond() -> void:
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.PURSUIT
+	config.active_riders = [0, 1]
+	var capped := RaceResult.new()
+	capped.mode = "poursuite"
+	capped.config = config
+	capped.ranking = [0, 1]
+	capped.interrupted = true
+	capped.end_reason = RaceRule.EndReason.TIME_CAP
+	capped.interruption_note = "plafond de securite atteint : plafond de duree"
+	capped.rider_names = {0: "Alice", 1: "Bob"}
+
+	_panel.results_panel().show_result(capped)
+	var table := _panel.results_panel().table_text()
+	assert_false(table.contains("INTERROMPUE"), "elle s'est decidee, elle n'a pas ete arretee")
+	assert_string_contains(table, "plafond de duree", "et le motif se lit")
+
+	capped.end_reason = RaceRule.EndReason.NONE
+	capped.interruption_note = "arret operateur"
+	_panel.results_panel().show_result(capped)
+	assert_string_contains(_panel.results_panel().table_text(), "INTERROMPUE : arret operateur")
+
+
 func test_un_nom_long_ne_desaligne_pas_le_tableau_des_resultats() -> void:
 	# Les colonnes du tableau operateur sont a largeur fixe : un nom plus long
 	# que sa colonne poussait tout le reste de la ligne vers la droite, et le

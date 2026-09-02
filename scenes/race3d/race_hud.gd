@@ -872,7 +872,7 @@ func _on_finished(result: RaceResult) -> void:
 		% [
 			winner + 1,
 			Roster.shorten(result.rider_name(winner)),
-			"   [INTERROMPUE]" if result.interrupted else "",
+			"   [INTERROMPUE]" if result.was_stopped() else "",
 		]
 	)
 	# Le podium laisse d'abord la célébration se jouer : arriver par-dessus les

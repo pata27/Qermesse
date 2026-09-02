@@ -158,8 +158,11 @@ func finish_race(result: RaceResult) -> String:
 				"vitesse_max_kph": result.max_kph[rider],
 				"rang": result.rank_of(rider),
 				"note": (
+					# Une course decidee au plafond porte son motif de fin, pas
+					# le mot « interrompue » : seul un ARRET n'a pas de
+					# vainqueur (docs/02 §3).
 					"INTERROMPUE : %s" % result.interruption_note
-					if result.interrupted
+					if result.was_stopped()
 					else result.end_reason_name()
 				),
 			}

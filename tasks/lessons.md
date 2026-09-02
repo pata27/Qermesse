@@ -462,3 +462,8 @@
   voile passait à une taille nulle et le classement se tassait en haut à gauche : j'avais ajouté le
   nœud à l'arbre avant de le configurer, l'inverse de l'ordre d'origine. Toute extraction d'un
   élément visible se termine par une capture, pas seulement par une suite verte.
+* **Un concept qui se calcule à cinq endroits finit par diverger aux cinq.** « Cette course a-t-elle
+  été arrêtée, ou seulement décidée autrement ? » était réécrit à la main dans le podium, deux
+  bandeaux, un tableau et le CSV — et n'était juste que dans un seul. Corrigé écran par écran trois
+  fois avant que je pense à le NOMMER dans `RaceResult`. Quand une même question se repose ailleurs,
+  lui donner un nom au lieu de recopier sa réponse.

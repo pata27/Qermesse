@@ -75,7 +75,7 @@ func show_result(result: RaceResult) -> void:
 		% [
 			result.mode,
 			result.end_reason_name(),
-			"  [INTERROMPUE : %s]" % result.interruption_note if result.interrupted else "",
+			"  [INTERROMPUE : %s]" % result.interruption_note if result.was_stopped() else "",
 		]
 	)
 	lines.append("rang  piste  nom                distance   temps       moy      max")
@@ -147,7 +147,7 @@ func _add_history_item(result: RaceResult) -> void:
 	# Une course ARRETEE n'a pas de vainqueur — la nommer ainsi serait un
 	# resultat invente. Un plafond de securite, lui, en a un : « celui qui
 	# mene gagne » (docs/02 §3), et il reste annonce comme tel.
-	if result.interrupted and result.end_reason == RaceRule.EndReason.NONE:
+	if result.was_stopped():
 		outcome = "INTERROMPUE"
 	_history.add_item("%s  %s  %s" % [result.finished_at_local(), result.mode, outcome])
 

@@ -56,6 +56,18 @@ func finished_at_local() -> String:
 	return "%02d:%02d" % [int(local["hour"]), int(local["minute"])]
 
 
+## La course a-t-elle ete ARRETEE, ou seulement decidee autrement ?
+##
+## `interrupted` couvre deux situations que rien ne separait a l'affichage, et
+## la confusion a ete corrigee ecran par ecran, trois fois, avant d'etre nommee
+## ici. Un plafond de securite est une fin LEGITIME : docs/02 §3 dit que celui
+## qui mene gagne, et l'annoncer « INTERROMPUE » contredit la regle du jeu
+## devant le public. Un arret — operateur, lien perdu, fermeture — n'a pas de
+## vainqueur : lui seul merite le mot.
+func was_stopped() -> bool:
+	return interrupted and end_reason == RaceRule.EndReason.NONE
+
+
 ## Vrai si un autre rider classe a franchi dans la MEME trame — docs/02 §1 :
 ## ex aequo « photo-finish », que l'interface doit dire.
 func is_dead_heat(rider: int) -> bool:

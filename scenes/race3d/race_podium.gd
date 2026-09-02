@@ -139,8 +139,7 @@ func show_result(result: RaceResult, objective: String) -> void:
 	# public dit le contraire. Seul un abandon — arret operateur, lien perdu,
 	# fermeture — n'a pas de vainqueur. C'est la regle deja appliquee a la
 	# liste des courses du jour, et jamais reportee ici.
-	var stopped := result.interrupted and result.end_reason == RaceRule.EndReason.NONE
-	_title.text = "INTERROMPUE" if stopped else "ARRIVÉE"
+	_title.text = "INTERROMPUE" if result.was_stopped() else "ARRIVÉE"
 	_note.text = (
 		result.interruption_note if result.interrupted
 		else "%s — %s" % [objective, result.end_reason_name()]
