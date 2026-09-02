@@ -417,3 +417,11 @@
   laissait un dossier derrière lui passait seul et tombait au passage suivant ; je l'ai commité
   entre les deux. Un test qui écrit sur disque nettoie avant ET après, et la preuve d'idempotence
   est de lancer la suite deux fois de suite.
+* **L'à-coup à l'ouverture d'une lame n'est pas le préchauffage — piste déjà creusée, ne pas la
+  reprendre.** Trois à-coups reproductibles (25–35 ms) à l'ouverture des deux premières lames, jamais
+  à la troisième. Écarté par la mesure : ce n'est pas l'allègement par volets (identique avec
+  `_relieve_for_panes` neutralisé), ni une réallocation de cible (`_slice_width` ne dépend que de
+  l'index). Chauffer les volets sur plusieurs images avec une caméra visée sur le peloton ne change
+  rien non plus, et coûte du débit — essai annulé. Signature : ces images ne dessinent que 185
+  primitives quand une image normale à quatre volets en dessine 414 en 8 ms. C'est un gel côté
+  pilote, pas du travail. À reprendre avec un vrai profileur GPU, pas à l'intuition.
