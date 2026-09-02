@@ -195,6 +195,52 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 
 ---
 
+## Consolidation continue *(31 août – 3 septembre)*
+
+Trente tours d'une boucle « trouver, corriger, prouver ». Aucun de ces points n'était au plan :
+ce sont des défauts trouvés en relisant les documents normatifs, en regardant des captures et en
+se servant du logiciel. Chacun est couvert par un test rouge avant correction.
+
+**Ce que le logiciel dit maintenant à l'opérateur** — `DEPANNAGE` demandait de le remarquer soi-même
+- [x] Une piste cochée mais vide est signalée dix secondes après le départ *(c'est le bug de la v1
+      déplacé d'un cran : le PC attend toutes les pistes actives)*
+- [x] Une pointe humainement invraisemblable est signalée, **sans être effacée** — à distinguer du
+      filtre de `01` §6.3, qui rejette l'impossible
+- [x] Des trames perdues sont signalées en course : le seul cas qui fausse réellement une mesure
+- [x] Un fichier de réglages illisible, un journal impossible à écrire, un tick rejeté
+- [x] Le panneau course tient un journal de cinq lignes : une alerte n'est plus effacée par la suivante
+
+**Traces et rejeu**
+- [x] Une course **interrompue** garde sa trace, et se rejoue en rendant son classement partiel
+- [x] `tools/ss_replay.gd` — rejoue une course et vérifie son classement *(93 courses réelles
+      rejouées sans divergence)*
+- [x] Deux **traces de référence** au dépôt, antérieures à plusieurs changements du moteur, rejouées
+      à chaque exécution de la suite — le format d'hier se relit, l'arbitrage n'a pas dérivé
+- [x] Le panneau résultats donne le chemin du fichier à envoyer au développeur
+
+**Ce qu'une soirée enchaînée révèle**
+- [x] La course suivante part sans « interrompre » la précédente *(FSM `docs/02` respectée)*
+- [x] Tout ce qu'un second départ doit remettre à zéro : roue libre, vitesses lissées, tension,
+      lames, secousse, problèmes d'enregistrement
+- [x] Fermer le logiciel en pleine course arrête aussi le boîtier
+- [x] « Courses du jour » relu du disque, à l'heure locale, avec les noms du départ
+
+**Réglages, écrans, fichiers**
+- [x] Volume, niveau de qualité et plein écran persistés — trois réglages exposés sans être écrits
+- [x] Les noms affichés sont ceux du départ et tiennent dans leur place *(quatre écrans, une seule
+      composition)*
+- [x] Une course décidée au plafond n'est plus annoncée « INTERROMPUE » *(cinq afficheurs, une seule
+      question posée dans `RaceResult`)*
+- [x] Horodatage du CSV à l'heure de la salle, avec son décalage
+- [x] Les démos n'écrivent plus dans les données de l'opérateur
+
+**Vérifications**
+- [x] Parcours d'un tiers sur clone vierge — `tasks/preuves/2026-09-03-clone-vierge.md`
+- [x] État au 3 septembre : **201 tests GUT**, **2/2 natifs**, lint propre sur cinq dossiers,
+      application lancée sans erreur, traces de référence conformes
+
+---
+
 ## Décisions en attente (`docs/06` §5)
 
 - [x] Poursuite 3–4 riders → **élimination progressive** *(tranché, session initiale ; `docs/02` §3 mis à jour)*
