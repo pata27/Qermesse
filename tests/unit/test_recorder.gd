@@ -592,6 +592,35 @@ func test_l_historique_du_jour_est_relu_depuis_les_json() -> void:
 	assert_eq(relu.config.active_riders, [0, 1])
 
 
+func test_le_fichier_garde_le_nom_entier_pas_celui_qui_tient_a_l_ecran() -> void:
+	# Defaut introduit par la troncature des noms longs : `to_recorder_map`
+	# passait par `display_name()`, si bien que le nom ECRIT AU DISQUE etait
+	# ampute et portait des points de suspension. Les fichiers doivent garder
+	# ce que l'operateur a saisi ; c'est l'affichage qui borne, pas la donnee.
+	var roster := Roster.new()
+	roster.set_active(0, true)
+	roster.rider(0).name = "Jean-Baptiste de la Tour du Pin"
+	roster.set_active(1, true)
+
+	_recorder.begin_race(_config(), roster.to_recorder_map())
+	var result := RaceResult.new()
+	result.mode = "distance"
+	result.ranking = [0, 1]
+	result.end_reason = RaceRule.EndReason.ALL_FINISHED
+	result.finished_ms[0] = 8000
+	result.finished_ms[1] = 9000
+	_recorder.finish_race(result)
+
+	assert_eq(result.rider_name(0), "Jean-Baptiste de la Tour du Pin", "le nom entier est ecrit")
+	assert_eq(result.display_name(0).length(), Roster.MAX_DISPLAY_NAME, "l'ecran, lui, borne")
+	# Une piste sans nom reste identifiable a la relecture, sans que le fichier
+	# invente un nom que personne n'a saisi.
+	assert_eq(result.rider_name(1), "Piste 2")
+
+	var relu := Recorder.new(_logs, _races).load_day()[0]
+	assert_eq(relu.rider_name(0), "Jean-Baptiste de la Tour du Pin", "et il survit au disque")
+
+
 func test_le_resultat_porte_les_noms_du_depart_et_les_relit() -> void:
 	var result := _run_recorded_race(_config(), [45.0, 43.0])
 	assert_eq(result.rider_name(0), "Alice", "le nom du depart, porte par le resultat")

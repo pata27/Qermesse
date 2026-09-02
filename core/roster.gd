@@ -31,10 +31,17 @@ class Rider:
 	var color: String = "#FFFFFF"
 	var active: bool = false
 
+	## Le nom ENTIER, tel qu'il sera ecrit dans les fichiers : ce que
+	## l'operateur a saisi, ou « Piste N » s'il n'a rien saisi — un fichier
+	## doit se lire seul, sans connaitre la convention d'affichage.
+	func full_name() -> String:
+		return name if not name.is_empty() else "Piste %d" % (lane + 1)
+
+
+	## Le meme, borne a ce qu'un ecran peut montrer. La troncature est un
+	## effet d'AFFICHAGE : elle se compose par-dessus, elle ne remplace pas.
 	func display_name() -> String:
-		# Un rider sans nom reste identifiable : on ne laisse jamais une ligne
-		# vide a l'ecran spectacle.
-		return Roster.shorten(name) if not name.is_empty() else "Piste %d" % (lane + 1)
+		return Roster.shorten(full_name())
 
 	func to_dict() -> Dictionary:
 		return {
@@ -91,11 +98,17 @@ func set_active(lane: int, active: bool) -> void:
 
 
 ## Pour le CSV : {lane: {name, dossard}} — docs/02 §5.
+## Ce que le recorder ecrit au disque : le nom ENTIER.
+##
+## Cette fonction passait par `display_name()`, qui borne a la largeur
+## affichable depuis qu'un nom long debordait de sa carte. Consequence non
+## voulue : le nom ECRIT dans le CSV et le JSON etait ampute, points de
+## suspension compris. C'est l'affichage qui borne, jamais la donnee.
 func to_recorder_map() -> Dictionary:
 	var out := {}
 	for entry: Rider in riders:
 		if entry.active:
-			out[entry.lane] = {"name": entry.display_name(), "dossard": entry.dossard}
+			out[entry.lane] = {"name": entry.full_name(), "dossard": entry.dossard}
 	return out
 
 
