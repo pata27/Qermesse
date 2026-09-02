@@ -23,6 +23,7 @@ add_executable(serial_link_tests
   tests/test_line_parser.cpp
   tests/test_ring_buffer.cpp
   tests/test_link_driver.cpp
+  tests/test_port_selection.cpp
   tests/test_integration_pty.cpp
 )
 target_link_libraries(serial_link_tests PRIVATE serial_link_core)

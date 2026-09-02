@@ -25,7 +25,9 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
       *(test de charge 2 threads / 100 000 trames)*
 - [x] Énumération des ports avec VID/PID — `/sys/class/tty`, IOKit, SetupAPI
 - [x] Sélection : port choisi → allowlist VID/PID → motif de nom. **Pas de fallback « dernier port »**
-      *(preuve : 32 ports réels sur la machine, 0 candidat retenu)*
+      *(preuve : 32 ports réels sur la machine, 0 candidat retenu — et depuis le 2026-09-02, sept cas
+      doctest dans `tests/test_port_selection.cpp` : ordre de confiance, absence de repli, liste noire,
+      port forcé absent de l'énumération, libellés des motifs)*
 - [x] Handshake `s` puis `v`, attente `V:SS_v...`, 3 essais, timeout 2 s
 - [x] `IDENTIFIED` = seule condition d'autorisation du départ
 - [x] `send_command` : allowlist + bornage 7 chiffres **et** 1..32767, refus des `t` dangereux
