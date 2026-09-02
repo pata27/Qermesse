@@ -48,8 +48,25 @@ godot --headless --script tools/ss_monitor.gd -- --sim --distance 100 --duree 20
 | J1-ém — lien série validé contre l'émulateur, via le GDExtension | **franchi** |
 | J1 — validation sur l'Arduino réel | en attente du matériel |
 | J2 — cœur métier vert en headless | **franchi** |
+| J3 — course complète à l'interface opérateur, au simulateur | **franchi** |
+| J4 — 60 fps stables en 1080p sur GPU intégré, 4 coureurs | **franchi** |
+| J5 — trois modes, deux fenêtres, son | **franchi** (son vérifié sur pièces) |
+| J6 — un tiers installe sur machine vierge et fait courir deux personnes | à faire |
 
 Preuves dans `tasks/preuves/`.
+
+## Ce que fait le logiciel
+
+* **Deux fenêtres** : le panneau de pilotage sur l'écran de l'opérateur, la scène sur le
+  projecteur — écran et plein écran choisis depuis le panneau. *Sous Wayland, le compositeur
+  décide : voir `docs/DEPANNAGE.md`.*
+* **Trois modes** : distance, temps, poursuite à élimination progressive. L'écran se scinde en
+  autant de volets que de paquets, jusqu'à quatre.
+* **Le son démarre coupé.** En événementiel la sono est gérée séparément ; un bouton l'active.
+  Tout est synthétisé, aucun fichier audio.
+* **Trois niveaux de qualité**, détectés au premier lancement, et une scène qui s'allège d'elle-même
+  quand l'image se scinde.
+* **Sans matériel** : un simulateur intégré et un émulateur de firmware sur vrai port série.
 
 ## Documentation
 
@@ -65,6 +82,7 @@ Preuves dans `tasks/preuves/`.
 | `docs/07-EMULATEUR-FIRMWARE.md` | émulateur de firmware `ss_emu` |
 | `docs/RECETTE.md` | checklist matériel — jalon J1 et avant chaque release |
 | `docs/DEPANNAGE.md` | dépannage terrain, écrit pour l'opérateur |
+| `docs/MANUEL-OPERATEUR.md` | déroulé d'une soirée, panneau par panneau |
 
 ## Outils
 
