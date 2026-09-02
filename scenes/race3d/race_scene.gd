@@ -808,7 +808,9 @@ func _coast(delta: float, state: RaceState, positions: Dictionary) -> void:
 			finished.append(lane)
 		elif not state.eliminated[lane]:
 			everyone_done = false
-	finished.sort_custom(func(a: int, b: int) -> bool: return state.finished_ms[a] < state.finished_ms[b])
+	finished.sort_custom(
+		func(a: int, b: int) -> bool: return state.finished_ms[a] < state.finished_ms[b]
+	)
 
 	var order: Array[int] = finished.duplicate()
 	for lane: int in _interpolators:

@@ -438,3 +438,7 @@
   podium et bandeau spectacle, puis bandeau du panneau course — parce que chaque fois je m'étais
   arrêté au consommateur que j'avais sous les yeux. Après une correction de ce genre, faire le
   `grep` de l'ancienne source d'information sur tout le dépôt AVANT de refermer.
+* **Le linter de la CI se lance en local, pas au push.** Soixante commits s'étaient accumulés avec
+  treize violations de `gdlint` — la CI aurait été rouge dès la première tentative, et le diagnostic
+  aurait porté sur du code écrit deux semaines plus tôt. Un tour de boucle qui touche du GDScript
+  finit par `gdlint core hardware scenes tests tools`, au même titre que la suite de tests.

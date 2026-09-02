@@ -411,5 +411,8 @@ func _until(condition: Callable, max_frames: int) -> void:
 func _check_deadline() -> void:
 	if _deadline_us > 0 and Time.get_ticks_usec() > _deadline_us:
 		var state := "?" if _controller == null else str(_controller.engine.state())
-		printerr("DELAI DEPASSE : %.0f s de temps mur, etat moteur %s — l'outil s'arrete" % [_deadline_s, state])
+		printerr(
+			"DELAI DEPASSE : %.0f s de temps mur, etat moteur %s — l'outil s'arrete"
+			% [_deadline_s, state]
+		)
 		quit(3)

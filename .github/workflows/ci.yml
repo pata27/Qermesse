@@ -31,7 +31,9 @@ jobs:
           python-version: "3.12"
       - run: pip install "gdtoolkit==4.*"
       - name: gdlint
-        run: gdlint core hardware scenes tests
+        # `tools` compris : les outils de preuve sont du code du projet, et un
+        # outil qui ne passe pas le linter est un outil qu'on relira mal.
+        run: gdlint core hardware scenes tests tools
 
   cpp:
     name: Tests C++ (${{ matrix.os }})

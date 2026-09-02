@@ -23,14 +23,6 @@ const MAX_DISPLAY_NAME := 18
 const MAX_DOSSARD := 6
 
 
-## Ramene un nom a la largeur affichable, en montrant qu'il est coupe. Point
-## de passage unique : la carte, le podium et le tableau y viennent tous.
-static func shorten(name: String) -> String:
-	if name.length() <= MAX_DISPLAY_NAME:
-		return name
-	return "%s…" % name.substr(0, MAX_DISPLAY_NAME - 1)
-
-
 class Rider:
 	extends RefCounted
 	var lane: int = 0
@@ -59,6 +51,14 @@ class Rider:
 		return rider
 
 var riders: Array[Rider] = []
+
+
+## Ramene un nom a la largeur affichable, en montrant qu'il est coupe. Point
+## de passage unique : la carte, le podium et le tableau y viennent tous.
+static func shorten(name: String) -> String:
+	if name.length() <= MAX_DISPLAY_NAME:
+		return name
+	return "%s…" % name.substr(0, MAX_DISPLAY_NAME - 1)
 
 
 func _init() -> void:

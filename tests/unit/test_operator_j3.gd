@@ -511,7 +511,10 @@ func test_le_test_capteurs_fait_vraiment_bouger_les_pistes() -> void:
 	assert_false(_controller.sensor_test_active())
 	await wait_frames(5)
 	assert_string_contains(hardware.sensor_text(0), "—", "affichage remis a zero")
-	assert_eq(_controller.link_state(), Protocol.State.IDENTIFIED, "le lien est pret pour une vraie course")
+	assert_eq(
+		_controller.link_state(), Protocol.State.IDENTIFIED,
+		"le lien est pret pour une vraie course"
+	)
 	assert_true(_controller.can_start_race(), "et START est possible")
 
 
@@ -538,7 +541,10 @@ func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interro
 
 	await wait_frames(2)
 	race_panel.refresh()
-	assert_false(race_panel.start_button().disabled, "START est de nouveau possible : %s" % _controller.start_blocked_reason())
+	assert_false(
+		race_panel.start_button().disabled,
+		"START est de nouveau possible : %s" % _controller.start_blocked_reason()
+	)
 	race_panel.start_button().pressed.emit()
 	for i: int in range(900):
 		await wait_frames(1)

@@ -37,10 +37,6 @@ var preferences_enabled := true
 ## l'utilisateur.
 var settings_path := ""
 var roster_path := ""
-## Ce qui a mal tourne au chargement des fichiers de l'utilisateur. Un fichier
-## illisible remet tout a zero SANS empecher le demarrage — mais pas en
-## silence : le panneau course le dit. « Bruyamment », comme promis.
-var _startup_problems: Array[String] = []
 var recorder_logs_dir := ""
 var recorder_races_dir := ""
 
@@ -49,6 +45,10 @@ var roster := Roster.new()
 var engine := RaceEngine.new()
 var recorder: Recorder = null
 
+## Ce qui a mal tourne au chargement des fichiers de l'utilisateur. Un fichier
+## illisible remet tout a zero SANS empecher le demarrage — mais pas en
+## silence : le panneau course le dit. « Bruyamment », comme promis.
+var _startup_problems: Array[String] = []
 var _link: Link = null
 var _link_lost_since_ms: int = -1
 var _rejected_ticks: int = 0
@@ -259,7 +259,10 @@ func begin_sensor_test() -> void:
 			notice.emit("test capteurs : commande refusee par le lien : %s" % command)
 			_sensor_test_active = false
 			return
-	notice.emit("test capteurs : apres le decompte du boitier, tournez chaque rouleau, une piste a la fois")
+	notice.emit(
+		"test capteurs : apres le decompte du boitier, tournez chaque rouleau,"
+		+ " une piste a la fois"
+	)
 
 
 func end_sensor_test() -> void:

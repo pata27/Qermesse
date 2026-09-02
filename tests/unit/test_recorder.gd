@@ -273,26 +273,28 @@ func _mutate_result(name: String, current: Variant) -> Variant:
 	if name == "eliminated" or name == "false_started":
 		var flags: Array[bool] = [true, false, true, false]
 		return flags
+	# Un seul point de sortie : le `match` choisit, il ne rend pas.
+	var mutated: Variant = current
 	match typeof(current):
 		TYPE_BOOL:
-			return not bool(current)
+			mutated = not bool(current)
 		TYPE_INT:
-			return int(current) + 7
+			mutated = int(current) + 7
 		TYPE_FLOAT:
-			return float(current) + 3.5
+			mutated = float(current) + 3.5
 		TYPE_STRING:
-			return "%s-modifie" % str(current)
+			mutated = "%s-modifie" % str(current)
 		TYPE_PACKED_INT32_ARRAY:
 			var ints := PackedInt32Array()
 			for i: int in range((current as PackedInt32Array).size()):
 				ints.append(1000 + i)
-			return ints
+			mutated = ints
 		TYPE_PACKED_FLOAT32_ARRAY:
 			var floats := PackedFloat32Array()
 			for i: int in range((current as PackedFloat32Array).size()):
 				floats.append(11.5 + float(i))
-			return floats
-	return current
+			mutated = floats
+	return mutated
 
 
 func test_toutes_les_donnees_d_un_resultat_survivent_au_json() -> void:
@@ -512,7 +514,9 @@ func _write_foreign_day_race(uuid: String, started_at: String) -> void:
 	# Nomme comme `_make_uuid` : l'horodatage UTC du depart, puis le label.
 	var stamp := "00000000-000000"
 	if started_at.length() >= 19:
-		stamp = started_at.substr(0, 10).replace("-", "") + "-" + started_at.substr(11, 8).replace(":", "")
+		stamp = "%s-%s" % [
+			started_at.substr(0, 10).replace("-", ""), started_at.substr(11, 8).replace(":", "")
+		]
 	var file := FileAccess.open(_races.path_join("%s-%s.json" % [stamp, uuid]), FileAccess.WRITE)
 	file.store_string(JSON.stringify({
 		"format": "silversprint-race/1",
