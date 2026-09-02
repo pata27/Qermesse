@@ -148,6 +148,25 @@ l'identique.
 
 ---
 
+## Il n'y a pas de son
+
+**C'est voulu : le logiciel démarre muet.** En événementiel la sono est presque toujours gérée
+séparément, et un logiciel qui se met à sonner par-dessus la musique de la salle dès la première
+course est un problème, pas une fonctionnalité (`docs/04` §6). Le son ne s'allume que d'un geste
+de l'opérateur, une fois vérifié où il sort.
+
+* Panneau opérateur, section **Son** : le bouton affiche l'état — `SON COUPÉ` en rouge, `SON ACTIF`
+  en vert. Un clic bascule. Le curseur **Volume** n'agit que si le son est actif.
+* L'état est mémorisé : si le son a été activé la veille, il l'est encore au lancement.
+* Tout le son du logiciel passe par un bus audio dédié, `Course` : le couper ne touche pas au
+  volume de la machine, et le volume de la machine ne le rallume pas. Vérifier les deux.
+* Aucun fichier audio n'est nécessaire — les sons sont synthétisés au lancement. Un export qui
+  « n'a pas de son » n'a donc pas perdu de fichier : c'est le bouton.
+
+Ce que le son joue quand il est actif : bips de décompte, klaxon de départ, nappe de fond qui suit
+la vitesse (l'écart, en poursuite), cloche des cinquante derniers mètres, clameurs sur dépassement
+et franchissement, souffle de vent.
+
 ## Le vidéoprojecteur n'est pas détecté
 
 *(La fenêtre spectacle arrive au lot 5 — cette section sera complétée à ce moment-là.)*
