@@ -2,7 +2,10 @@
 """Construction du GDExtension `serial_link`.
 
 Chaine godot-cpp standard : SCons, godot-cpp en sous-module epingle sur
-`godot-4.5-stable`. C'est la seule partie du projet qui n'utilise pas CMake ;
+`godot-4.5-stable`, range dans `third_party/` — HORS de l'arborescence de
+ressources : place sous `addons/`, son projet d'exemple (`test/project/`)
+etait importe par Godot, icone comprise, et ses scripts scannes a chaque
+lancement. C'est la seule partie du projet qui n'utilise pas CMake ;
 tout le C++ testable (parseur, file SPSC, machine a etats du lien) se construit
 et se teste par CMake, sans Godot.
 
@@ -12,7 +15,7 @@ et se teste par CMake, sans Godot.
 
 import os
 
-env = SConscript("godot-cpp/SConstruct")
+env = SConscript("../../third_party/godot-cpp/SConstruct")
 
 env.Append(CPPPATH=["src/"])
 

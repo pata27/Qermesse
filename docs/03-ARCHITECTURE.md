@@ -8,7 +8,7 @@
 | Gameplay / UI | **GDScript** | itération rapide, hot-reload, largement suffisant pour de la logique à 100 Hz |
 | Cœur métier | **GDScript, en `RefCounted` purs sans dépendance à la scène** | testable en headless |
 | Port série | **GDExtension C++**, couche série écrite à la main | Godot n'a pas d'accès série natif. Module isolé, testable seul. Voir ci-dessous : `libserialport` a été écarté. |
-| Build natif | **SCons** (chaîne standard godot-cpp) | |
+| Build natif | **SCons** (chaîne standard godot-cpp, sous-module dans `third_party/`, hors ressources) | |
 | CI | **GitHub Actions**, matrice ubuntu / windows / macos | |
 
 ### Pourquoi pas `libserialport`
@@ -63,6 +63,7 @@ SilverSprint-v3/
 │   ├── src/line_parser.{h,cpp}    # découpage \r\n + parsing des trames — SANS dépendance Godot
 │   ├── SConstruct
 │   └── tests/                     # tests C++ natifs (doctest), tournent hors Godot
+├── third_party/                   # .gdignore — godot-cpp (sous-module), doctest : hors ressources
 ├── project.godot
 ├── core/                          # AUCUNE dépendance à un Node ou à une scène
 │   ├── protocol.gd                # encodage/décodage des trames — miroir GDScript de line_parser
