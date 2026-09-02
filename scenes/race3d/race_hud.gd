@@ -90,6 +90,9 @@ var _countdown_label: Label
 var _countdown_pulse := 0.0
 var _countdown_hold_s := 0.0
 var _compact := false
+## Vrai des le depart donne, et jusqu'a la course suivante : l'ecart de
+## poursuite et sa barre n'ont de sens qu'une fois que ca roule.
+var _under_way := false
 var _podium: ColorRect
 var _podium_title: Label
 var _podium_grid: GridContainer
@@ -736,9 +739,13 @@ func _refresh_objective() -> void:
 			_objective_label.text = "%.0f s" % config.duration_s
 		RaceConfig.Mode.PURSUIT:
 			_objective_label.text = "ecart %.0f m" % config.gap_m
+	# L'ECART N'APPARAIT QU'AU DEPART. Avant, tout le monde est sur la ligne :
+	# « 0.0 m » et une barre vide ne disent rien, et viennent concurrencer le
+	# chiffre du decompte — le moment le plus regarde de la soiree. En mode
+	# temps, ce meme moment montre les noms des coureurs, ce qui est utile.
 	var pursuit := config.mode == RaceConfig.Mode.PURSUIT
-	_gap_label.visible = pursuit
-	_tension.visible = pursuit
+	_gap_label.visible = pursuit and _under_way
+	_tension.visible = pursuit and _under_way
 	# En poursuite les cartes sont absentes : la bannière revient au milieu de
 	# l'écran. Dans les autres modes elle se centre dans l'espace qu'elles
 	# laissent libre.
@@ -747,7 +754,11 @@ func _refresh_objective() -> void:
 
 
 func _on_state(_previous: int, current: int) -> void:
+	if current == RaceEngine.State.RUNNING:
+		_under_way = true
+		_refresh_objective()
 	if current == RaceEngine.State.ARMING:
+		_under_way = false
 		rebuild_cards()
 		# LES LISSAGES REPARTENT DE ZÉRO. Ils survivaient aux cartes : à la
 		# deuxième course, la première trame R: faisait DÉCROÎTRE l'ancienne
@@ -956,6 +967,10 @@ func card_name_label(lane: int) -> Label:
 
 func card_speed_text(lane: int) -> String:
 	return "" if not _cards.has(lane) else ((_cards[lane] as Dictionary)["speed"] as Label).text
+
+
+func gap_visible() -> bool:
+	return _gap_label.visible
 
 
 func decision_text() -> String:

@@ -135,6 +135,22 @@ func test_le_lien_perdu_n_efface_pas_une_elimination_au_retour() -> void:
 	assert_string_contains(_hud.notice_text(), "ELIMINEE")
 
 
+func test_l_ecart_ne_s_affiche_pas_avant_le_depart() -> void:
+	# Vu sur une capture : pendant le decompte, l'ecran de poursuite montrait
+	# « 0.0 m » et une barre de tension vide, en concurrence avec le chiffre du
+	# decompte. Tout le monde est sur la ligne : l'ecart ne dit rien encore.
+	# En mode temps, le meme moment montre les noms des coureurs — utile.
+	_controller.settings.mode = RaceConfig.Mode.PURSUIT
+	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	assert_false(_hud.gap_visible(), "rien a montrer avant le depart")
+
+	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	assert_true(_hud.gap_visible(), "des que ca roule, c'est le sujet du mode")
+
+	_controller.race_state_changed.emit(RaceEngine.State.RUNNING, RaceEngine.State.FINISHED)
+	assert_true(_hud.gap_visible(), "et l'ecart final reste lisible")
+
+
 func test_la_jauge_de_decision_se_tait_une_fois_la_poursuite_decidee() -> void:
 	_controller.settings.mode = RaceConfig.Mode.PURSUIT
 	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
