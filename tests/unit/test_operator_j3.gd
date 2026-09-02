@@ -275,6 +275,78 @@ func test_stop_interrompt_la_course_et_le_csv_le_dit() -> void:
 	assert_has(events, "RACE_ABORTED")
 
 
+# =============================================================================
+# Lien perdu pendant la course — docs/01 §6.2
+# =============================================================================
+
+
+func _await_running() -> bool:
+	for i: int in range(300):
+		await wait_frames(1)
+		if _controller.engine.state() == RaceEngine.State.RUNNING:
+			return true
+	return false
+
+
+func _csv_events() -> Array[String]:
+	var events: Array[String] = []
+	for row: PackedStringArray in _read_csv_rows():
+		events.append(row[1])
+	return events
+
+
+func test_lien_perdu_puis_revenu_sous_trois_secondes_la_course_reprend() -> void:
+	assert_true(await _await_identified())
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+	var finished: Array[RaceResult] = []
+	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
+	_controller.settings.distance_m = 100.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+	await wait_frames(10)
+
+	_controller.simulate_link_loss()
+	await wait_frames(2)
+	assert_eq(_controller.link_state(), Protocol.State.LINK_LOST)
+	assert_has(notices, "LIEN PERDU", "bandeau d'alerte")
+	assert_eq(_controller.engine.state(), RaceEngine.State.RUNNING, "gel, pas abandon")
+
+	await wait_seconds(0.5)
+	_controller.simulate_link_return()
+	for i: int in range(600):
+		await wait_frames(1)
+		if not finished.is_empty():
+			break
+	assert_false(finished.is_empty(), "la course reprend et se termine")
+	assert_false(finished[0].interrupted, "fin normale : rien n'est perdu, elapsedMs est absolu")
+	var events := _csv_events()
+	assert_has(events, "LINK_LOST")
+	assert_has(events, "RACE_FINISH")
+	assert_does_not_have(events, "RACE_ABORTED")
+
+
+func test_lien_perdu_au_dela_de_trois_secondes_la_course_est_abandonnee() -> void:
+	assert_true(await _await_identified())
+	var aborted: Array[String] = []
+	_controller.race_aborted.connect(func(note: String) -> void: aborted.append(note))
+	_controller.settings.distance_m = 100.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+	await wait_frames(10)
+
+	_controller.simulate_link_loss()
+	await wait_seconds(2.5)
+	assert_eq(_controller.engine.state(), RaceEngine.State.RUNNING, "encore dans le delai de grace")
+	await wait_seconds(0.8)
+	assert_eq(_controller.engine.state(), RaceEngine.State.IDLE, "au-dela de 3 s : abandon")
+	assert_eq(aborted.size(), 1)
+	assert_string_contains(aborted[0], "grace")
+	var events := _csv_events()
+	assert_has(events, "LINK_LOST")
+	assert_eq(events[events.size() - 1], "RACE_ABORTED", "la derniere ligne du CSV")
+
+
 func test_l_interface_construite_avant_l_entree_dans_l_arbre_fonctionne() -> void:
 	# Regression : Godot ne declenche ni _enter_tree ni _ready de facon
 	# synchrone quand on ajoute un noeud depuis SceneTree._initialize(). Un

@@ -258,6 +258,15 @@ func set_simulator_profile(name: String) -> void:
 	_link.set_simulator_profile(name)
 
 
+## Câble arraché, puis rebranché — sur le boîtier SIMULÉ seulement.
+func simulate_link_loss() -> void:
+	_link.inject_link_loss()
+
+
+func simulate_link_return() -> void:
+	_link.inject_link_return()
+
+
 # --- Reactions au lien et au moteur ------------------------------------------
 
 func _on_command_requested(command: String) -> void:

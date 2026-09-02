@@ -142,3 +142,15 @@ func set_simulator_riders(count: int) -> void:
 func set_simulator_profile(name: String) -> void:
 	if _impl.has_method("set_profile"):
 		_impl.set_profile(name)
+
+
+## Coupure et retour du lien SIMULÉ — docs/01 §6.2, pour éprouver le délai de
+## grâce du PC sans arracher de câble. Sans effet sur le matériel.
+func inject_link_loss() -> void:
+	if _impl.has_method("inject_link_loss"):
+		_impl.inject_link_loss()
+
+
+func inject_link_return() -> void:
+	if _impl.has_method("inject_link_return"):
+		_impl.inject_link_return()
