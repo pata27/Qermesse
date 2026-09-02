@@ -39,7 +39,6 @@ const GO := Color("#2BE08A")
 ## Gris de second plan, pour les en-têtes et les mentions secondaires.
 const MUTED := Color("#8A94A6")
 ## Colonnes du podium : place, coureur, temps, moyenne, pointe.
-const PODIUM_COLUMNS := 5
 ## Délai avant l'apparition du podium, le temps que la célébration se joue.
 const PODIUM_DELAY_S := 5.0
 ## Milieu de l'espace libre à droite des cartes, en 1080p : là où vont la
@@ -93,10 +92,7 @@ var _compact := false
 ## Vrai des le depart donne, et jusqu'a la course suivante : l'ecart de
 ## poursuite et sa barre n'ont de sens qu'une fois que ca roule.
 var _under_way := false
-var _podium: ColorRect
-var _podium_title: Label
-var _podium_grid: GridContainer
-var _podium_note: Label
+var _podium: RacePodium
 var _podium_delay_s := 0.0
 var _pending_result: RaceResult = null
 var _notice: Label
@@ -134,16 +130,16 @@ func _build() -> void:
 	_band.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_band)
 
-	_mode_label = _make_label(28, INK)
+	_mode_label = make_label(28, INK)
 	_mode_label.position = Vector2(36, 18)
 	add_child(_mode_label)
 
-	_objective_label = _make_label(40, INK)
+	_objective_label = make_label(40, INK)
 	_objective_label.position = Vector2(36, 56)
 	add_child(_objective_label)
 
 	# Chrono en chiffres géants — docs/04 §5.
-	_clock_label = _make_label(84, INK)
+	_clock_label = make_label(84, INK)
 	_clock_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	_clock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_clock_label.position.y = 14
@@ -153,7 +149,7 @@ func _build() -> void:
 	# Centré dans l'espace LIBRE à droite des cartes, pas au milieu de l'écran :
 	# depuis que les cartes font 700 px, un bloc centré à 960 leur passait
 	# dessus, et les compteurs de vitesse et de cadence marchaient sur la barre.
-	_gap_label = _make_label(120, INK)
+	_gap_label = make_label(120, INK)
 	_gap_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_gap_label.position = Vector2(SCREEN_CENTRE_X - 320.0, 215)
 	_gap_label.size.x = 640
@@ -176,11 +172,17 @@ func _build() -> void:
 	add_child(_overlay)
 
 	_build_countdown()
-	_build_podium()
+	# CONFIGURE PUIS AJOUTE, dans cet ordre. L'inverse laissait le voile a une
+	# taille nulle : tout le classement se tassait en haut a gauche, sur une
+	# scene non assombrie. Vu a la capture, pas au test — un podium mal place
+	# reste un podium qui contient les bons chiffres.
+	_podium = RacePodium.new()
+	_podium.setup(_controller)
+	_overlay.add_child(_podium)
 
 	# Même place que le bloc poursuite, pour la même raison : centrée sur
 	# l'écran, la bannière passait sur la première carte.
-	_notice = _make_label(44, ALERT)
+	_notice = make_label(44, ALERT)
 	_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_notice.position = Vector2(CLEAR_CENTRE_X - 420.0, BAND_HEIGHT + 16)
 	_notice.size.x = 840
@@ -225,7 +227,7 @@ func rebuild_cards() -> void:
 		chip.size = Vector2(10, CARD_HEIGHT)
 		root.add_child(chip)
 
-		var name_label := _make_label(CARD_NAME_FONT, color)
+		var name_label := make_label(CARD_NAME_FONT, color)
 		name_label.text = "P%d  %s" % [lane + 1, rider.display_name()]
 		name_label.position = Vector2(CARD_NAME_X, 6)
 		# BORNÉ EN PIXELS, pas en caractères. Dix-huit caractères larges font
@@ -237,19 +239,19 @@ func rebuild_cards() -> void:
 		name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		root.add_child(name_label)
 
-		var speed_label := _make_label(40, INK)
+		var speed_label := make_label(40, INK)
 		speed_label.position = Vector2(CARD_SPEED_X, 2)
 		root.add_child(speed_label)
 
 		# Cadence — docs/04 §5. Déduite du développement déclaré par
 		# l'opérateur, puisque le capteur ne mesure que le rouleau.
-		var cadence_label := _make_label(28, MUTED)
+		var cadence_label := make_label(28, MUTED)
 		cadence_label.position = Vector2(CARD_WIDTH - 176.0, 52)
 		cadence_label.size.x = 160
 		cadence_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		root.add_child(cadence_label)
 
-		var distance_label := _make_label(28, INK)
+		var distance_label := make_label(28, INK)
 		distance_label.position = Vector2(26, 50)
 		root.add_child(distance_label)
 
@@ -419,11 +421,11 @@ func _build_tension() -> void:
 	middle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_tension.add_child(middle)
 
-	_tension_left = _make_label(26, MUTED)
+	_tension_left = make_label(26, MUTED)
 	_tension_left.position = Vector2(0.0, TENSION_HEIGHT + 6.0)
 	_tension.add_child(_tension_left)
 
-	_tension_right = _make_label(26, MUTED)
+	_tension_right = make_label(26, MUTED)
 	_tension_right.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_tension_right.position = Vector2(TENSION_WIDTH - 200.0, TENSION_HEIGHT + 6.0)
 	_tension_right.size.x = 200.0
@@ -431,7 +433,7 @@ func _build_tension() -> void:
 
 	# La jauge « temps restant avant décision » — docs/02 §3 —, au centre sous
 	# la barre, entre −G et +G : c'est l'autre façon dont la course peut tomber.
-	_decision_label = _make_label(26, MUTED)
+	_decision_label = make_label(26, MUTED)
 	_decision_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_decision_label.position = Vector2(200.0, TENSION_HEIGHT + 6.0)
 	_decision_label.size.x = TENSION_WIDTH - 400.0
@@ -506,139 +508,6 @@ func _layout_tension(delta: float) -> void:
 		bar.visible = true
 
 
-## PODIUM ET ÉCRAN DE FIN — docs/04 §5 : « temps, vitesse moyenne et vitesse de
-## pointe par rider ».
-##
-## Construit vide et masqué : il se remplit à l'arrivée. Le rendre à ce
-## moment-là éviterait quelques nœuds, mais construire une interface pendant que
-## la scène célèbre une arrivée est le meilleur moyen de faire hoqueter l'image
-## au pire instant — c'est déjà la leçon des confettis et des volets.
-func _build_podium() -> void:
-	_podium = ColorRect.new()
-	_podium.name = "Podium"
-	_podium.color = Color(0.02, 0.03, 0.05, 0.88)
-	_podium.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_podium.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_podium.visible = false
-	_overlay.add_child(_podium)
-
-	var column := VBoxContainer.new()
-	column.set_anchors_preset(Control.PRESET_FULL_RECT)
-	column.add_theme_constant_override("separation", 18)
-	column.alignment = BoxContainer.ALIGNMENT_CENTER
-	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_podium.add_child(column)
-
-	_podium_title = _make_label(72, INK)
-	_podium_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	column.add_child(_podium_title)
-
-	# Une grille plutôt que des libellés alignés à la main : les colonnes
-	# doivent rester alignées quels que soient la longueur des noms et le
-	# nombre de coureurs.
-	_podium_grid = GridContainer.new()
-	_podium_grid.columns = PODIUM_COLUMNS
-	_podium_grid.add_theme_constant_override("h_separation", 44)
-	_podium_grid.add_theme_constant_override("v_separation", 14)
-	_podium_grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	column.add_child(_podium_grid)
-
-	_podium_note = _make_label(30, MUTED)
-	_podium_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	column.add_child(_podium_note)
-
-
-## Remplit et montre le podium. Les temps, la moyenne et la pointe viennent du
-## `RaceResult`, donc du moteur : rien n'est recalculé ici.
-func _show_podium(result: RaceResult) -> void:
-	for child: Node in _podium_grid.get_children():
-		child.queue_free()
-
-	# LA TROISIÈME COLONNE DÉPEND DU MODE. En mode temps, tout le monde
-	# « arrive » à l'instant du gong (`rule_time.gd`) : un temps y serait le
-	# même sur chaque ligne et ne dirait rien. C'est la DISTANCE qui classe, et
-	# c'est elle qu'il faut montrer. En distance et en poursuite, c'est le temps.
-	var mode: RaceConfig.Mode = RaceConfig.Mode.DISTANCE if result.config == null \
-		else result.config.mode
-	var timed := mode != RaceConfig.Mode.TIME
-	# En poursuite, DEUX chiffres par coureur : le temps couru avant l'élimination
-	# — ou l'arrivée pour le survivant — et la distance parcourue. « Éliminé »
-	# seul ne disait ni quand ni après combien, et c'est tout l'intérêt.
-	var pursuit := mode == RaceConfig.Mode.PURSUIT
-	var headers: Array[String] = ["", "Coureur", "Temps" if timed else "Distance"]
-	if pursuit:
-		headers.append("Distance")
-	headers.append_array(["Moyenne", "Pointe"])
-	_podium_grid.columns = headers.size()
-	for header: String in headers:
-		var cell := _make_label(30, MUTED)
-		cell.text = header
-		_podium_grid.add_child(cell)
-
-	for rank: int in range(result.ranking.size()):
-		var rider: int = result.ranking[rank]
-		var color := Color(_controller.roster.rider(rider).color)
-		# La place et le nom prennent la couleur du coureur : c'est ainsi qu'on
-		# le reconnaît depuis les gradins, pas par son nom.
-		var place := _make_label(44, color)
-		place.text = "%d%s" % [rank + 1, "er" if rank == 0 else "e"]
-		_podium_grid.add_child(place)
-
-		var who := _make_label(44, color)
-		# LES NOMS DU DEPART, portes par le resultat — pas le roster courant.
-		# Renommer les pistes entre deux courses ne reecrit pas l'histoire, et
-		# l'ecran public doit dire la meme chose que le tableau operateur.
-		who.text = "P%d  %s" % [rider + 1, Roster.shorten(result.rider_name(rider))]
-		_podium_grid.add_child(who)
-
-		var figure := _make_label(44, INK)
-		if not timed:
-			figure.text = "%.1f m" % result.distance_m[rider]
-		elif result.finished_ms[rider] > 0:
-			figure.text = "%.2f s" % (float(result.finished_ms[rider]) / 1000.0)
-			# docs/02 §1 : meme trame, ex aequo — l'ecran le dit.
-			if result.is_dead_heat(rider):
-				figure.text += "  photo-finish"
-		elif result.eliminated[rider] and result.eliminated_ms[rider] > 0:
-			figure.text = "%.2f s ✕" % (float(result.eliminated_ms[rider]) / 1000.0)
-		elif result.eliminated[rider]:
-			figure.text = "éliminé"
-		else:
-			# Survivant d'un plafond de poursuite, ou course interrompue : il a
-			# couru jusqu'à la fin de la course — c'est ce temps-là. Le motif
-			# de fin, affiché avec le podium, dit que ce n'est pas une arrivée.
-			figure.text = "%.2f s" % (float(result.raced_ms(rider)) / 1000.0)
-		_podium_grid.add_child(figure)
-
-		if pursuit:
-			var covered := _make_label(44, INK)
-			covered.text = "%.1f m" % result.distance_m[rider]
-			_podium_grid.add_child(covered)
-
-		var avg := _make_label(44, INK)
-		avg.text = "%.1f km/h" % result.avg_kph[rider]
-		_podium_grid.add_child(avg)
-
-		var peak := _make_label(44, INK)
-		peak.text = "%.1f km/h" % result.max_kph[rider]
-		_podium_grid.add_child(peak)
-
-	# LE PODIUM A L'ÉCRAN POUR LUI SEUL. Le voile ne fait qu'assombrir ce qui
-	# est dessous ; en poursuite, l'écart géant en rouge et la barre de tension
-	# restaient lisibles à travers et venaient s'écraser sur le titre. Tout ce
-	# qui parle de la course EN COURS s'efface — l'armement suivant le remet.
-	_gap_label.visible = false
-	_tension.visible = false
-	_notice.visible = false
-	for entry: Dictionary in _cards.values():
-		(entry["root"] as Control).visible = false
-
-	_podium_title.text = "INTERROMPUE" if result.interrupted else "ARRIVÉE"
-	_podium_note.text = (
-		result.interruption_note if result.interrupted
-		else "%s — %s" % [_objective_label.text, result.end_reason_name()]
-	)
-	_podium.visible = true
 
 
 ## DÉCOMPTE PLEIN ÉCRAN — docs/04 §5.
@@ -666,7 +535,7 @@ func _build_countdown() -> void:
 	_countdown_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_countdown_veil.add_child(_countdown_holder)
 
-	_countdown_label = _make_label(300, INK)
+	_countdown_label = make_label(300, INK)
 	_countdown_label.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_countdown_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -717,7 +586,8 @@ func _layout_banner() -> void:
 	_notice.position.y = height + 16
 
 
-func _make_label(size: int, color: Color) -> Label:
+## Style commun de tout l'habillage — `RacePodium` s'en sert aussi.
+static func make_label(size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.add_theme_font_size_override("font_size", size)
 	label.add_theme_color_override("font_color", color)
@@ -951,14 +821,23 @@ func _on_aborted(note: String) -> void:
 	_covered_notice = ""
 
 
-## Tout le texte du podium, pour les tests : il est fait de labels dans une
-## grille, et c'est leur contenu qui est la promesse, pas leur disposition.
+## LE PODIUM A L'ÉCRAN POUR LUI SEUL. Le voile ne fait qu'assombrir ce qui est
+## dessous ; en poursuite, l'écart géant en rouge et la barre de tension
+## restaient lisibles à travers et venaient s'écraser sur le titre. Tout ce qui
+## parle de la course EN COURS s'efface — l'armement suivant le remet. Ces
+## widgets appartiennent au HUD, la décision reste donc ici ; la mise en page
+## du classement, elle, est partie dans `RacePodium`.
+func _show_podium(result: RaceResult) -> void:
+	_gap_label.visible = false
+	_tension.visible = false
+	_notice.visible = false
+	for entry: Dictionary in _cards.values():
+		(entry["root"] as Control).visible = false
+	_podium.show_result(result, _objective_label.text)
+
+
 func podium_text() -> String:
-	var parts: PackedStringArray = []
-	for child: Node in _podium_grid.get_children():
-		if child is Label:
-			parts.append((child as Label).text)
-	return " ".join(parts)
+	return _podium.text()
 
 
 func card_name_label(lane: int) -> Label:

@@ -457,3 +457,8 @@
   les démos y ont déposé 63 courses, et j'ai reproduit l'oubli dans deux fichiers de test. Corrigé une
   fois à l'appelant (les démos), il fallait le corriger à la source. Quand un drapeau porte une
   promesse, la tenir entièrement — ou la renommer pour ce qu'elle couvre vraiment.
+* **Extraire un widget dans son propre fichier peut casser sa mise en page sans casser un test.**
+  Le podium sorti de `race_hud.gd` gardait tous ses chiffres — les tests lisent son TEXTE — mais son
+  voile passait à une taille nulle et le classement se tassait en haut à gauche : j'avais ajouté le
+  nœud à l'arbre avant de le configurer, l'inverse de l'ordre d'origine. Toute extraction d'un
+  élément visible se termine par une capture, pas seulement par une suite verte.
