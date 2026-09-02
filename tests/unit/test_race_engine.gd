@@ -514,7 +514,7 @@ func test_la_vitesse_de_pointe_reste_plausible() -> void:
 
 
 # =============================================================================
-# La derniere trame `R:` n'arrive JAMAIS — docs/01 §5.4
+# La derniere trame `R:` n'arrive JAMAIS — docs/01 §5.6
 #
 # `ss_basic.ino` (`checkDistanceBased`, l. 285-307) met `raceStarted = false`
 # dans la passe meme ou le dernier tick fait franchir la ligne, et l'emission
