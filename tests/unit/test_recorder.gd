@@ -245,6 +245,80 @@ func test_le_json_contient_la_trace_complete_des_trames() -> void:
 	assert_eq((loaded.samples[0] as Array).size(), 5, "[t0,t1,t2,t3,elapsed_ms]")
 
 
+## Valeur distincte de `current`, ou `current` si le type n'est pas gere — le
+## test echoue alors en nommant le champ, ce qui est le comportement voulu :
+## un champ d'un type nouveau doit forcer une decision, pas passer en silence.
+func _mutate_result(name: String, current: Variant) -> Variant:
+	# Les tableaux TYPES ne se construisent pas generiquement : une `Array`
+	# nue refusee a l'affectation. Ces trois-la sont donc nommes.
+	if name == "ranking":
+		var ranking: Array[int] = [3, 1, 0, 2]
+		return ranking
+	if name == "eliminated" or name == "false_started":
+		var flags: Array[bool] = [true, false, true, false]
+		return flags
+	match typeof(current):
+		TYPE_BOOL:
+			return not bool(current)
+		TYPE_INT:
+			return int(current) + 7
+		TYPE_FLOAT:
+			return float(current) + 3.5
+		TYPE_STRING:
+			return "%s-modifie" % str(current)
+		TYPE_PACKED_INT32_ARRAY:
+			var ints := PackedInt32Array()
+			for i: int in range((current as PackedInt32Array).size()):
+				ints.append(1000 + i)
+			return ints
+		TYPE_PACKED_FLOAT32_ARRAY:
+			var floats := PackedFloat32Array()
+			for i: int in range((current as PackedFloat32Array).size()):
+				floats.append(11.5 + float(i))
+			return floats
+	return current
+
+
+func test_toutes_les_donnees_d_un_resultat_survivent_au_json() -> void:
+	# Le JSON de course est ce que relit « Courses du jour » et ce qu'on envoie
+	# au developpeur devant un resultat suspect. Un champ ajoute a RaceResult
+	# et oublie dans `_write_json` ou dans `from_json` fausserait l'historique
+	# en silence. Ce test enumere les champs DECLARES : il s'entretient seul.
+	#
+	# Les valeurs sont FABRIQUEES, pas issues d'une course : un champ dont la
+	# valeur reelle vaut son defaut — `interruption_note` d'une course qui
+	# s'est bien terminee — passerait sans rien prouver.
+	var result := RaceResult.new()
+	# Champs que le recorder possede : il les ecrase a l'enregistrement.
+	var owned := ["uuid", "started_at_iso", "finished_at_iso", "rider_names", "config"]
+	var expected := {}
+	for property: Dictionary in result.get_property_list():
+		if not (int(property["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE):
+			continue
+		var name := str(property["name"])
+		if owned.has(name):
+			continue
+		var before: Variant = result.get(name)
+		var after: Variant = _mutate_result(name, before)
+		assert_ne(after, before, "champ %s : type non gere par le test, a completer" % name)
+		result.set(name, after)
+		expected[name] = after
+
+	assert_gt(expected.size(), 8, "la reflexion doit voir les champs du resultat")
+	_recorder.begin_race(_config(), {0: {"name": "Alice", "dossard": 7}})
+	assert_false(_recorder.finish_race(result).is_empty(), "le JSON doit s'ecrire")
+
+	var relu := Recorder.new(_logs, _races).load_day()[0]
+	for name: String in expected:
+		assert_eq(relu.get(name), expected[name], "champ %s : perdu par le JSON" % name)
+	# Ce que le recorder possede fait l'aller-retour aussi.
+	assert_eq(relu.uuid, result.uuid)
+	assert_eq(relu.started_at_iso, result.started_at_iso)
+	assert_eq(relu.finished_at_iso, result.finished_at_iso)
+	assert_eq(relu.rider_name(0), "Alice", "les noms du depart viennent du roster")
+	assert_not_null(relu.config, "la configuration est relue")
+
+
 func test_rejeu_d_une_course_distance_le_classement_est_identique() -> void:
 	var original := _run_recorded_race(_config(), [45.0, 43.0])
 	var loaded := Replay.load_file(_races.path_join("%s.json" % original.uuid))
