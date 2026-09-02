@@ -413,3 +413,7 @@
   littéral passé à un `Array[int]` échouait 60 fois par seconde après chaque arrivée, depuis des
   jours, invisible parce que mes greps ne cherchaient que « capture : ». Toute exécution d'un outil
   se termine par `grep -c "SCRIPT ERROR"` — et le chiffre attendu est zéro.
+* **Commit après la suite complète, pas après le test ciblé — et la suite deux fois.** Un test qui
+  laissait un dossier derrière lui passait seul et tombait au passage suivant ; je l'ai commité
+  entre les deux. Un test qui écrit sur disque nettoie avant ET après, et la preuve d'idempotence
+  est de lancer la suite deux fois de suite.

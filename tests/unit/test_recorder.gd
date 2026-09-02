@@ -183,7 +183,11 @@ func test_les_problemes_d_ecriture_sont_ceux_de_la_course_en_cours() -> void:
 	# Un journal impossible a ecrire pour une course, puis le disque revient :
 	# la course suivante ne doit pas etre accusee a tort.
 	var blocked := ProjectSettings.globalize_path(TEST_ROOT).path_join("logs-bloque")
+	# Le passage precedent laisse un DOSSIER de ce nom : l'enlever d'abord,
+	# sinon ouvrir un fichier a sa place rend null.
+	_remove_dir(blocked)
 	var file := FileAccess.open(blocked, FileAccess.WRITE)
+	assert_not_null(file, "le fichier-bouchon doit pouvoir s'ecrire")
 	file.store_string("pas un dossier")
 	file.close()
 	var recorder := Recorder.new(blocked, _races)
@@ -195,6 +199,17 @@ func test_les_problemes_d_ecriture_sont_ceux_de_la_course_en_cours() -> void:
 	DirAccess.make_dir_recursive_absolute(blocked)
 	recorder.begin_race(_config())
 	assert_true(recorder.problems().is_empty(), "plus rien a reprocher a la course suivante")
+	_remove_dir(blocked)
+
+
+## Supprime un dossier et son contenu (un niveau) — `remove_absolute` refuse
+## un dossier non vide.
+func _remove_dir(path: String) -> void:
+	if not DirAccess.dir_exists_absolute(path):
+		return
+	for name: String in DirAccess.get_files_at(path):
+		DirAccess.remove_absolute(path.path_join(name))
+	DirAccess.remove_absolute(path)
 
 
 func test_les_survivants_d_un_plafond_de_poursuite_ont_un_temps_couru() -> void:
