@@ -218,10 +218,6 @@ func acceleration() -> float:
 	return _accel
 
 
-func target_position() -> Vector3:
-	return _target_position
-
-
 ## Place la caméra SUR sa cible, sans interpolation. Indispensable quand une
 ## vue apparaît : sans cela, la seconde caméra de l'écran scindé entrait en
 ## volant depuis l'origine du monde et montrait le sol de très près pendant une

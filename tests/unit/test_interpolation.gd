@@ -267,3 +267,24 @@ func test_le_nom_de_niveau_fait_l_aller_retour() -> void:
 			RenderQuality.Level.HIGH]:
 		var name := RenderQuality.new(level).level_name()
 		assert_eq(RenderQuality.level_from_name(name), level)
+
+
+func test_l_affichage_suit_la_mesure_sans_jamais_la_devancer() -> void:
+	# LE CONTRAT DE L'INTERPOLATEUR, jamais eprouve : l'affichage comble
+	# l'attente entre deux trames, mais il ne doit pas INVENTER de l'avance. Il
+	# reste derriere la mesure — ou la rejoint — et jamais devant, sans quoi un
+	# coureur franchirait la ligne a l'ecran avant de l'avoir franchie.
+	var interp := RiderInterpolator.new()
+	var measured := 0.0
+	for step: int in range(120):
+		# Une trame sur quatre : entre les deux, l'affichage extrapole.
+		if step % 4 == 0:
+			measured += 0.5
+			interp.push_sample(measured, 12.5)
+		interp.update(1.0 / 60.0)
+		assert_eq(interp.measured_m(), measured, "la mesure est celle qu'on a poussee")
+		assert_lte(
+			interp.display_m(), measured + 0.001,
+			"l'affichage ne devance jamais la mesure a l'image %d" % step
+		)
+	assert_gt(interp.display_m(), measured - 1.0, "et il ne decroche pas non plus")

@@ -348,10 +348,6 @@ func _build_hud() -> void:
 	_hud.setup(_controller)
 
 
-func hud() -> RaceHud:
-	return _hud
-
-
 ## Écran scindé : au-delà d'une dizaine de mètres d'écart, cadrer tout le monde
 ## est impossible. La vue du poursuivant vient alors se poser dans l'image.
 func _build_split() -> void:

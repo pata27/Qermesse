@@ -117,5 +117,3 @@ func final_ranking(state: RaceState) -> Array[int]:
 	return ranking
 
 
-func target_ticks() -> int:
-	return _target_ticks

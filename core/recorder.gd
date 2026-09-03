@@ -75,10 +75,6 @@ func csv_path() -> String:
 	return _csv_path
 
 
-func current_uuid() -> String:
-	return _uuid
-
-
 ## Ouvre une course. `roster` associe un numero de piste a {name, dossard}.
 func begin_race(config: RaceConfig, roster: Dictionary = {}) -> String:
 	_uuid = _make_uuid()

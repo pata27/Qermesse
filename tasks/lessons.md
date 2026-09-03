@@ -818,3 +818,21 @@ une phrase ne la rend pas lue.
 branchées — `REFRESH_S` économise quatre-vingt kilo-octets de sortie, `TARGET_FPS` fait dire au
 rapport de perf la cible qu'il juge — et trois n'avaient plus de raison d'être. Un sweep mécanique
 les aurait toutes supprimées, en perdant deux intentions justes.
+
+## Une fonction morte est parfois un test manquant
+
+Douze accesseurs n'avaient aucun appelant. Le réflexe — les supprimer tous — aurait été faux pour
+trois d'entre eux : `lane_text` donne la ligne par piste du panneau Course, `measured_m` permet de
+comparer l'affichage à la mesure dans l'interpolateur, `gap_text` expose l'hystérésis du chiffre
+d'écart. Trois comportements réels que rien n'éprouvait, et dont l'accesseur était précisément la
+prise qui manquait pour les éprouver.
+
+**Leçon** : devant une fonction sans appelant, demander d'abord ce qu'elle donne accès à. Si c'est
+un comportement non testé, écrire le test plutôt que supprimer la prise. Les neuf autres faisaient
+double emploi avec un accesseur voisin — celles-là partent.
+
+**Et le test faux, encore une fois, avant le code faux** : j'ai d'abord écrit que « une variation
+sous le pas ne réécrit rien ». C'est faux : l'hystérésis compare au dernier chiffre IMPRIMÉ, pas à
+la dernière variation, si bien que de petites variations accumulées finissent par franchir le pas.
+Le contrat réel est « à écart stable, plus une seule réécriture » — et c'est celui-là qui empêche
+le scintillement.

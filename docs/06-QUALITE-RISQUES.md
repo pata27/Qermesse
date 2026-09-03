@@ -10,6 +10,10 @@
    Cela vaut aussi pour une **constante** : `TARGET_FPS := 60.0` qui n'est lu par rien annonce un
    budget que personne n'applique, et `REFRESH_S` un rafraîchissement que personne ne respecte.
    Chacune est soit lue, soit supprimée — un test le vérifie, commentaires exclus du décompte.
+   **Idem pour une fonction** : un accesseur sans appelant est une API qu'on croit avoir et qui
+   n'a jamais servi. Soit elle décrit un comportement qui mérite son test — c'était le cas de
+   trois des douze trouvées —, soit elle fait double emploi et disparaît. Les méthodes virtuelles
+   de Godot sont hors décompte : c'est le moteur qui les appelle.
 6. **Le protocole série est documenté avant d'être codé**, et `docs/01` reste la source de vérité.
 7. **Aucune tâche cochée sans preuve** : sortie de test, capture, ou vidéo.
 

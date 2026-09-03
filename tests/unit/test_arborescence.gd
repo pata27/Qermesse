@@ -153,3 +153,50 @@ static func _without_comments(source: String) -> String:
 			kept += glyph
 		out += kept + "\n"
 	return out
+
+
+## Fonctions declarees et jamais appelees — meme esprit que les constantes.
+##
+## Un accesseur sans appelant est une API qu'on croit avoir et qui n'a jamais
+## servi. Sur les douze trouves, trois decrivaient un comportement qui meritait
+## un test — la ligne par piste du panneau Course, le contrat de
+## l'interpolateur, l'hysteresis du chiffre d'ecart — et neuf faisaient double
+## emploi avec un accesseur voisin.
+##
+## Les methodes VIRTUELLES de Godot sont exclues : c'est le moteur qui les
+## appelle, jamais le code. Les tests comptent comme appelants : eprouver une
+## methode est un usage legitime.
+func test_aucune_fonction_n_est_declaree_pour_rien() -> void:
+	var texts: Dictionary = {}
+	for root: String in SCANNED:
+		var files := PackedStringArray()
+		_walk(root, files)
+		for path: String in files:
+			if path.get_extension() != "gd":
+				continue
+			var file := FileAccess.open(path, FileAccess.READ)
+			if file != null:
+				texts[path] = _without_comments(file.get_as_text())
+
+	var corpus := ""
+	for text: Variant in texts.values():
+		corpus += str(text)
+
+	var virtual: Array[String] = [
+		"_ready", "_init", "_process", "_physics_process", "_notification",
+		"_enter_tree", "_exit_tree", "_input", "_initialize", "_draw",
+		"before_each", "before_all", "after_each", "after_all",
+	]
+	var dead: Array[String] = []
+	var declaration := RegEx.create_from_string("(?m)^(?:static )?func ([a-zA-Z_][a-zA-Z0-9_]*)\\(")
+	for path: Variant in texts.keys():
+		if str(path).contains("/tests/"):
+			continue
+		for found: RegExMatch in declaration.search_all(str(texts[path])):
+			var name := found.get_string(1)
+			if virtual.has(name) or name.begins_with("test_"):
+				continue
+			var uses := RegEx.create_from_string("\\b%s\\b" % name).search_all(corpus).size()
+			if uses <= 1:
+				dead.append("%s : %s" % [str(path).get_file(), name])
+	assert_eq(dead, [] as Array[String], "des fonctions que personne n'appelle")

@@ -652,3 +652,31 @@ func test_l_interface_ne_colle_pas_aux_bords_de_la_fenetre() -> void:
 		roster.global_position.y - _panel.global_position.y, float(OperatorPanel.MARGIN), 2.0,
 		"et en haut"
 	)
+
+
+func test_la_ligne_par_piste_dit_l_etat_de_chaque_coureur() -> void:
+	# Le panneau Course tient une ligne par piste — distance, vitesse d'ecran,
+	# et le SUFFIXE qui dit ce qui est arrive au coureur. Rien ne l'eprouvait :
+	# l'accesseur existait sans aucun appelant.
+	assert_true(await _await_identified())
+	var race_panel := _panel.race_panel()
+	_controller.roster.rider(0).name = "Lucie"
+	_controller.roster.set_active(0, true)
+	_controller.roster.set_active(1, true)
+	race_panel.refresh()
+	assert_string_contains(race_panel.lane_text(0), "P1", "la piste est nommee")
+	assert_string_contains(race_panel.lane_text(0), "Lucie", "et le coureur aussi")
+
+	_controller.settings.distance_m = 100.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+	var finished: Array[RaceResult] = []
+	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
+	for i: int in range(900):
+		await wait_frames(1)
+		if not finished.is_empty():
+			break
+	assert_false(finished.is_empty(), "la course se termine")
+	assert_string_contains(
+		race_panel.lane_text(0), "ARRIVÉ", "et la ligne dit que le coureur a franchi"
+	)

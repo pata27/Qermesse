@@ -134,9 +134,3 @@ func tension(state: RaceState) -> float:
 	return clampf(state.spread_m() / _gap_m, 0.0, 1.0)
 
 
-func gap_threshold_m() -> float:
-	return _gap_m
-
-
-func elimination_order() -> Array[int]:
-	return _elimination_order.duplicate()

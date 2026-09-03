@@ -424,10 +424,6 @@ func openness() -> float:
 	return top
 
 
-func is_open() -> bool:
-	return _live_panes > 0
-
-
 func amount() -> float:
 	return openness()
 

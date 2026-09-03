@@ -51,5 +51,3 @@ func final_ranking(state: RaceState) -> Array[int]:
 	return ranking
 
 
-func limit_ms() -> int:
-	return _limit_ms

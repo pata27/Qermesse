@@ -44,10 +44,6 @@ func use_serial() -> bool:
 	return true
 
 
-func backend() -> Backend:
-	return _backend
-
-
 func is_simulated() -> bool:
 	return _backend == Backend.SIMULATOR
 

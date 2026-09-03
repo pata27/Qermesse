@@ -384,3 +384,33 @@ func test_le_podium_n_explique_pas_une_marque_absente() -> void:
 	var text := _podium_apres(result)
 	assert_false(text.contains("✕"), "aucune croix")
 	assert_false(text.contains("= éliminé"), "donc aucune legende")
+
+
+func test_le_chiffre_d_ecart_ne_bat_pas_a_ecart_stable() -> void:
+	# Le gros chiffre de la poursuite est lisse PUIS filtre : il ne se reecrit
+	# que si la valeur lissee s'ecarte d'au moins `GAP_STEP_M` du DERNIER
+	# CHIFFRE IMPRIME — et non de la derniere variation, nuance qui m'a d'abord
+	# fait ecrire un test faux. Sans ce filtre, le dernier chiffre battait a
+	# chaque image. Rien ne l'eprouvait.
+	var tension := RaceTension.new()
+	tension.build(1328.0)
+	add_child_autofree(tension)
+	tension.visible = true
+
+	tension.set_gap(10.0, 50.0)
+	for step: int in range(240):
+		tension.advance(1.0 / 60.0)
+	var settled := tension.gap_text()
+	assert_string_contains(settled, "m", "le chiffre est ecrit avec son unite")
+
+	# A cible constante, plus une seule reecriture : c'est la propriete qui
+	# empeche le scintillement.
+	for step: int in range(240):
+		tension.advance(1.0 / 60.0)
+		assert_eq(tension.gap_text(), settled, "immobile a ecart stable")
+
+	# Un ecart qui change vraiment, lui, se voit.
+	tension.set_gap(20.0, 50.0)
+	for step: int in range(240):
+		tension.advance(1.0 / 60.0)
+	assert_ne(tension.gap_text(), settled, "un ecart qui change vraiment se voit")
