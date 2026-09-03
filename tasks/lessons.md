@@ -493,3 +493,18 @@ travail était de rattraper le code, puis d'ouvrir le garde-fou qui pétrifiait 
 **Comment le retrouver** : quand deux implémentations doivent s'accorder, comparer leurs listes
 plutôt que leurs comportements. `--list-profiles` contre les clés de `PROFILES` : douze contre
 cinq se voit en une seconde, alors qu'aucun test ne s'en plaignait.
+
+## Une définition juste peut trahir l'intention qu'elle sert
+
+`docs/02` §5 exigeait qu'un redémarrage en pleine soirée ne vide pas l'historique, puis définissait
+« le jour » comme le jour du calendrier. Les deux phrases se contredisaient sans que rien ne le
+signale : une soirée de goldsprints passe minuit, donc un redémarrage à 00 h 30 vidait précisément
+l'historique que la phrase précédente protégeait. Le CSV se scindait au même instant.
+
+**Leçon** : quand une spec énonce une intention puis la définition qui doit la servir, vérifier que
+la définition tient sur les cas du terrain, pas seulement sur le cas nominal. Ici l'intention était
+« la soirée » et la définition disait « le calendrier » ; il a fallu nommer la journée
+d'exploitation, qui bascule à 5 h.
+
+**Comment le retrouver** : lire les horaires réels de l'usage. Un goldsprint court de 20 h à 1 h.
+Toute frontière temporelle placée à minuit tombe donc au milieu de l'événement.

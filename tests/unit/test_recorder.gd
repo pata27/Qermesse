@@ -102,8 +102,19 @@ func test_l_horodatage_du_csv_se_lit_a_l_heure_de_la_salle() -> void:
 	_recorder.begin_race(_config())
 	var stamp := _read_csv_lines()[1].split(",")[0]
 
+	# L'horodatage porte le jour du fichier — SAUF entre minuit et 5 h, ou la
+	# journee d'exploitation est celle de la veille (docs/02 §5). Une course de
+	# 00 h 40 est ecrite « 2030-06-16T00:40 » dans le CSV du 15 : c'est voulu,
+	# et c'est ce que l'operateur attend d'une soiree qui passe minuit.
 	var day := AppPaths.daily_log_name().substr(0, 10).replace("_", "-")
-	assert_true(stamp.begins_with(day), "%s doit porter le jour du fichier, %s" % [stamp, day])
+	var evening := AppPaths.operating_day(Time.get_datetime_dict_from_system())
+	var today := "%04d-%02d-%02d" % [evening["year"], evening["month"], evening["day"]]
+	assert_eq(day, today, "le fichier porte la journee d'exploitation")
+	var stamp_day := stamp.substr(0, 10)
+	if int(Time.get_datetime_dict_from_system()["hour"]) >= AppPaths.DAY_ROLLOVER_HOUR:
+		assert_eq(stamp_day, day, "en journee, horodatage et fichier portent la meme date")
+	else:
+		assert_ne(stamp_day, day, "apres minuit, le CSV est celui de la veille")
 
 	# Et il porte son decalage : un horodatage sans fuseau ne veut rien dire.
 	var bias := int(Time.get_time_zone_from_system()["bias"])
@@ -657,11 +668,13 @@ func test_l_heure_d_arrivee_se_lit_en_heure_locale() -> void:
 	assert_eq(RaceResult.new().finished_at_local(), "", "pas d'heure, pas de texte")
 
 
-func test_le_jour_est_le_jour_local_celui_du_csv() -> void:
+func test_le_jour_est_la_journee_d_exploitation_celle_du_csv() -> void:
 	# Une course partie a 23 h 30 en heure locale d'un fuseau UTC+2 est ecrite
-	# « 21:30 UTC » : elle est du jour local. Une autre a 00 h 30 locale, ecrite
-	# la veille en UTC, l'est aussi. On construit les deux a partir d'un
-	# « maintenant » fictif, le 15 juin, avec le fuseau de la machine.
+	# « 21:30 UTC » : elle est de la journee locale. Une autre a 00 h 01 le
+	# LENDEMAIN l'est aussi — meme soiree, apres minuit (docs/02 §5). Celle de
+	# 00 h 30 le 15, en revanche, appartient a la soiree du 14 : c'est la
+	# journee d'exploitation qui tranche, pas le calendrier. On construit tout
+	# a partir d'un « maintenant » fictif, le 15 juin, avec le fuseau machine.
 	var bias_s := int(Time.get_time_zone_from_system()["bias"]) * 60
 	var local_midnight := Time.get_unix_time_from_datetime_dict(
 		{"year": 2030, "month": 6, "day": 15, "hour": 0, "minute": 0, "second": 0}
@@ -679,4 +692,55 @@ func test_le_jour_est_le_jour_local_celui_du_csv() -> void:
 	var uuids: Array[String] = []
 	for result: RaceResult in day:
 		uuids.append(result.uuid)
-	assert_eq(uuids, ["nuit", "soir"], "les deux courses du 15 juin local, dans l'ordre")
+	assert_eq(uuids, ["soir", "lendemain"], "la soiree du 15 juin, minuit franchi, dans l'ordre")
+
+
+func test_une_soiree_qui_passe_minuit_reste_une_seule_journee() -> void:
+	# LE CAS DU TERRAIN. Un goldsprint tourne de 20 h a 1 h du matin. Si le
+	# logiciel redemarre a 00 h 30 — plantage, machine changee —, `docs/02` §5
+	# exige que l'historique ne soit PAS vide. Decoupe au calendrier, il l'etait :
+	# les courses de 20 h a 23 h 59 portaient la veille.
+	var bias_s := int(Time.get_time_zone_from_system()["bias"]) * 60
+	var local_midnight := Time.get_unix_time_from_datetime_dict(
+		{"year": 2030, "month": 6, "day": 16, "hour": 0, "minute": 0, "second": 0}
+	)
+	var utc_of := func(local_unix: int) -> String:
+		return Time.get_datetime_string_from_unix_time(local_unix - bias_s)
+	_write_foreign_day_race("avant-minuit", utc_of.call(local_midnight - 4 * 3600))
+	_write_foreign_day_race("apres-minuit", utc_of.call(local_midnight + 20 * 60))
+	# La veille au soir : une AUTRE soiree, qui ne doit pas remonter.
+	_write_foreign_day_race("veille", utc_of.call(local_midnight - 28 * 3600))
+
+	# Il est 00 h 30 le 16 juin ; l'operateur relance le logiciel.
+	var day := Recorder.new(_logs, _races).load_day(
+		{"year": 2030, "month": 6, "day": 16, "hour": 0, "minute": 30, "second": 0}
+	)
+	var uuids: Array[String] = []
+	for result: RaceResult in day:
+		uuids.append(result.uuid)
+	assert_eq(uuids, ["avant-minuit", "apres-minuit"], "toute la soiree, des deux cotes de minuit")
+
+
+func test_le_csv_dapres_minuit_porte_la_date_de_la_soiree() -> void:
+	# Meme decoupe pour le nom du fichier : sinon la soiree se scinderait en
+	# deux CSV, et l'operateur en exporterait la moitie.
+	assert_eq(
+		AppPaths.daily_log_name({"year": 2030, "month": 6, "day": 16, "hour": 0, "minute": 10}),
+		"2030_06_15_SilverSprintRaceLog.csv",
+		"00 h 10 appartient a la soiree de la veille"
+	)
+	assert_eq(
+		AppPaths.daily_log_name({"year": 2030, "month": 6, "day": 16, "hour": 23, "minute": 50}),
+		"2030_06_16_SilverSprintRaceLog.csv",
+		"23 h 50 est du jour meme"
+	)
+	assert_eq(
+		AppPaths.daily_log_name({"year": 2030, "month": 6, "day": 16, "hour": 5, "minute": 0}),
+		"2030_06_16_SilverSprintRaceLog.csv",
+		"5 h pile ouvre la journee"
+	)
+	assert_eq(
+		AppPaths.daily_log_name({"year": 2030, "month": 6, "day": 1, "hour": 4, "minute": 59}),
+		"2030_05_31_SilverSprintRaceLog.csv",
+		"la bascule traverse aussi les changements de mois"
+	)

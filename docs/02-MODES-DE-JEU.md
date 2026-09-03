@@ -171,9 +171,16 @@ Fichier : `<données_app>/logs/YYYY_MM_DD_SilverSprintRaceLog.csv`, **append ré
 Colonnes : `timestamp_iso, event, mode, rider, dossard, distance_m, temps_ms, vitesse_moy_kph, vitesse_max_kph, rang, note`
 
 `timestamp_iso` est en **heure locale avec son décalage** (`2026-09-02T22:49:00+02:00`) : le CSV est
-le fichier que l'opérateur ouvre dans un tableur, et il est nommé par le jour local — les deux
-doivent concorder. Le JSON de course, lui, horodate en **UTC** : c'est un artefact machine, et
-l'historique du jour fait la conversion à la relecture.
+le fichier que l'opérateur ouvre dans un tableur, et il est nommé par la journée d'exploitation —
+les deux doivent concorder. Le JSON de course, lui, horodate en **UTC** : c'est un artefact
+machine, et l'historique du jour fait la conversion à la relecture.
+
+**La journée d'exploitation n'est pas la journée du calendrier.** Elle commence à **5 h locales**
+et se termine à 5 h le lendemain. Une soirée de goldsprints passe minuit ; découper au douzième
+coup ferait de la course de 00 h 10 la première d'une nouvelle journée, sur un nouveau fichier,
+dans un historique vide — au beau milieu de l'événement. Une course de 00 h 10 appartient donc à
+la journée de la veille, et son CSV porte la date de la veille. Aucun goldsprint ne court à
+5 h du matin : la coupure est là où il ne se passe jamais rien.
 
 Événements écrits : `RACE_START`, `FALSE_START`, `RIDER_FINISH`, `RIDER_ELIMINATED`,
 `RACE_FINISH`, `RACE_ABORTED`, `LINK_LOST`, `TICK_REJECTED`.
@@ -208,11 +215,12 @@ soit quelques centaines de Ko : négligeable.
 
 **Historique du jour.** La liste « Courses du jour » du panneau de résultats est **relue depuis
 les JSON au lancement**, pas seulement alimentée par les courses de la session : un redémarrage du
-logiciel en pleine soirée — plantage, changement de machine, mise à jour — ne la vide pas. Le
-« jour » est le jour **local**, celui qui nomme le CSV ; `started_at` étant écrit en UTC, la
-conversion est faite à la relecture. Les courses sont listées dans l'ordre de départ. Seuls les
-fichiers dont le nom horodaté (`YYYYMMDD-HHMMSS-xxxx.json`, UTC) peut tomber dans le jour local sont
-ouverts : le dossier `races/` grossit de plusieurs Mo par soirée et ne s'élague jamais.
+logiciel en pleine soirée — plantage, changement de machine, mise à jour — ne la vide pas, **y
+compris après minuit**. Le « jour » est la journée d'exploitation définie plus haut, celle qui
+nomme le CSV : de 5 h locales à 5 h le lendemain. `started_at` étant écrit en UTC, la conversion
+est faite à la relecture. Les courses sont listées dans l'ordre de départ. Seuls les
+fichiers dont le nom horodaté (`YYYYMMDD-HHMMSS-xxxx.json`, UTC) peut tomber dans la journée
+d'exploitation sont ouverts : le dossier `races/` grossit de plusieurs Mo par soirée et ne s'élague jamais.
 Un résultat porte **les noms des riders tels qu'ils étaient au départ** : l'écran de résultats et
 l'historique affichent ceux-là, jamais le roster courant — renommer les pistes entre deux courses
 ne réécrit pas l'histoire.

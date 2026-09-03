@@ -13,6 +13,8 @@ extends RefCounted
 
 const APP_NAME_UNIX := "silversprint"
 const APP_NAME_OTHER := "SilverSprint"
+## Heure locale a laquelle bascule la journee d'exploitation — docs/02 §5.
+const DAY_ROLLOVER_HOUR := 5
 
 
 static func app_folder() -> String:
@@ -47,8 +49,25 @@ static func races_dir() -> String:
 	return data_dir().path_join("races")
 
 
+## Date de la journee d'exploitation qui contient `now` — docs/02 §5.
+##
+## Une soiree de goldsprints passe minuit. Decoupee au calendrier, la course de
+## 00 h 10 ouvrait une journee neuve : nouveau CSV, historique vide, en plein
+## evenement. La journee bascule donc a 5 h locales, heure ou aucun goldsprint
+## ne court. Une heure absente vaut MIDI, pas minuit : `{2026, 8, 31}` designe
+## la journee du 31, et non celle qui commence a 5 h le 30.
+static func operating_day(now: Dictionary) -> Dictionary:
+	var unix := Time.get_unix_time_from_datetime_dict({
+		"year": now["year"], "month": now["month"], "day": now["day"],
+		"hour": int(now.get("hour", 12)), "minute": int(now.get("minute", 0)),
+		"second": int(now.get("second", 0)),
+	})
+	return Time.get_datetime_dict_from_unix_time(unix - DAY_ROLLOVER_HOUR * 3600)
+
+
 static func daily_log_name(now: Dictionary = Time.get_datetime_dict_from_system()) -> String:
-	return "%04d_%02d_%02d_SilverSprintRaceLog.csv" % [now["year"], now["month"], now["day"]]
+	var day := operating_day(now)
+	return "%04d_%02d_%02d_SilverSprintRaceLog.csv" % [day["year"], day["month"], day["day"]]
 
 
 ## Cree le dossier s'il manque. Rend false et remplit `problem` en cas d'echec —

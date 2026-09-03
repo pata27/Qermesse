@@ -265,14 +265,20 @@ func load_day(now: Dictionary = Time.get_datetime_dict_from_system()) -> Array[R
 	# ne recouvre que deux dates UTC au plus. Tout autre fichier est ecarte
 	# SANS etre ouvert — le dossier ne s'elague jamais, chaque fichier pese
 	# des centaines de Ko de trace.
-	var local_midnight := Time.get_unix_time_from_datetime_dict(
-		{"year": now["year"], "month": now["month"], "day": now["day"],
-		"hour": 0, "minute": 0, "second": 0}
+	# La fenetre va de 5 h a 5 h le lendemain (docs/02 §5). Comme toute plage de
+	# vingt-quatre heures, elle touche au plus deux dates UTC — mais ce ne sont
+	# plus les memes qu'avec un decoupage a minuit, d'ou le recalcul.
+	var day := AppPaths.operating_day(now)
+	var window_start := Time.get_unix_time_from_datetime_dict(
+		{"year": day["year"], "month": day["month"], "day": day["day"],
+		"hour": AppPaths.DAY_ROLLOVER_HOUR, "minute": 0, "second": 0}
 	)
 	var candidates: PackedStringArray = []
-	for local_unix: int in [local_midnight, local_midnight + 24 * 3600 - 1]:
+	for local_unix: int in [window_start, window_start + 24 * 3600 - 1]:
 		var utc := Time.get_datetime_dict_from_unix_time(local_unix - bias_s)
-		candidates.append("%04d%02d%02d" % [utc["year"], utc["month"], utc["day"]])
+		var stamp := "%04d%02d%02d" % [utc["year"], utc["month"], utc["day"]]
+		if not candidates.has(stamp):
+			candidates.append(stamp)
 	_last_scan_opened = 0
 	for name: String in DirAccess.get_files_at(_races_dir):
 		if name.get_extension() != "json" or not candidates.has(name.substr(0, 8)):
@@ -309,11 +315,16 @@ static func _is_same_local_day(started_utc_iso: String, bias_s: int, now: Dictio
 	var unix := Time.get_unix_time_from_datetime_string(started_utc_iso)
 	if unix <= 0:
 		return false
-	var local := Time.get_datetime_dict_from_unix_time(unix + bias_s)
+	# La JOURNEE D'EXPLOITATION, pas la journee du calendrier : on compare les
+	# deux dates apres avoir recule de l'heure de bascule (docs/02 §5).
+	var started := AppPaths.operating_day(
+		Time.get_datetime_dict_from_unix_time(unix + bias_s)
+	)
+	var today := AppPaths.operating_day(now)
 	return (
-		int(local["year"]) == int(now["year"])
-		and int(local["month"]) == int(now["month"])
-		and int(local["day"]) == int(now["day"])
+		int(started["year"]) == int(today["year"])
+		and int(started["month"]) == int(today["month"])
+		and int(started["day"]) == int(today["day"])
 	)
 
 

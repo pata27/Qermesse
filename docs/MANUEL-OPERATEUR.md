@@ -95,3 +95,7 @@ Le dossier des résultats contient un **CSV** (une ligne par événement, toutes
 journée) et un **JSON par course** avec la trace complète des trames, rejouable. Le panneau
 Résultats affiche les deux chemins — celui du journal et celui de la course sélectionnée — et
 **Ouvrir le dossier des résultats** y mène directement.
+
+Une soirée qui passe minuit reste **une seule journée** : la bascule se fait à 5 h du matin. La
+course de 00 h 20 va donc dans le fichier de la veille, avec le reste de sa soirée, et
+**Courses du jour** ne se vide pas au douzième coup — même si le logiciel redémarre à 1 h.
