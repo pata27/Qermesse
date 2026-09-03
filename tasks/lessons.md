@@ -477,3 +477,19 @@
   `egaux`, qualité inconnue par `moyen`, mode inconnu par `distance`. Une faute de frappe suffisait
   à mesurer autre chose que ce que la commande annonçait — sans un mot, et sans moyen de le savoir
   après coup. Dans un outil qui produit des preuves, tout repli implicite est un mensonge en attente.
+
+## Le document normatif peut avoir raison contre le code
+
+`docs/07` §5 exigeait douze profils d'émulateur ; `ss_emu` n'en offrait que cinq. Les sept
+manquants, ajoutés au lot 5 côté `link_sim.gd`, n'existaient donc que dans le simulateur qui
+court-circuite la couche série : `ss_emu --profile eparpille` échouait, et ces scénarios
+n'étaient **jamais** joués sur un vrai pseudo-terminal. Le test C++ verrouillait même le retard
+avec `CHECK(profiles().size() == 5)`.
+
+**Leçon** : la règle « corriger le document avant le code » suppose que l'écart vienne du
+document. Il faut lire les deux dans les deux sens. Ici le document était juste et complet ; le
+travail était de rattraper le code, puis d'ouvrir le garde-fou qui pétrifiait l'écart.
+
+**Comment le retrouver** : quand deux implémentations doivent s'accorder, comparer leurs listes
+plutôt que leurs comportements. `--list-profiles` contre les clés de `PROFILES` : douze contre
+cinq se voit en une seconde, alors qu'aucun test ne s'en plaignait.

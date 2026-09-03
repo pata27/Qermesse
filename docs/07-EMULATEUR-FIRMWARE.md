@@ -147,6 +147,13 @@ Profils prédéfinis (`--profile`) — ce sont ceux exigés par `03` §5 :
 | `casse-par-etapes` | Le peloton se défait par étapes : 4 → 3+1 → 2+1+1 → 1+1+1+1 dans une seule course |
 | `accordeon` | Il se défait PUIS se recolle — vérifie que les volets disparaissent aussi |
 
+Les deux derniers profils exigent un mécanisme que la seule croisière ne donne pas : des
+**paliers**. Chaque rider porte une liste `{instant, nouvelle croisière}` ; le dernier palier
+atteint remplace sa vitesse de croisière. C'est ainsi qu'un peloton se défait puis se recolle.
+`link_sim.gd` a le même mécanisme sous le nom `SCHEDULES`, avec les mêmes valeurs : les deux
+simulateurs doivent offrir les **mêmes profils**, sans quoi une commande qui marche avec l'un
+échoue avec l'autre.
+
 `--riders <n>` fixe le nombre de capteurs **câblés**. Les broches au-delà restent bloquées à HIGH,
 comme un connecteur vide. **Le défaut est 2**, qui correspond au boîtier de l'utilisateur et qui est
 exactement la configuration où la v1 se bloquait.

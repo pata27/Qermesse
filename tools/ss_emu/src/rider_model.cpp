@@ -52,6 +52,45 @@ std::vector<Profile> build_profiles() {
     abandon.riders[1].stop_at_s = 20.0;
     v.push_back(abandon);
 
+    // PROFILS DE PARTITION — ajoutes au lot 5 pour eprouver l'ecran scindé,
+    // et repris ici a l'identique de `link_sim.gd`. Sans eux, ces scenarios ne
+    // pouvaient etre joues qu'a travers le simulateur GDScript, qui
+    // court-circuite la couche serie : la scene 3D n'avait jamais tourne sur un
+    // peloton qui se defait EN PASSANT PAR un vrai pseudo-terminal.
+    Profile deux{"deux-groupes", "Deux paquets nets — la cassure tombe entre 2 et 3", {}};
+    deux.riders = {rider(52.0), rider(51.4), rider(40.0), rider(39.6)};
+    v.push_back(deux);
+
+    Profile eparpille{"eparpille", "Quatre coureurs qui s'egrenent — quatre volets", {}};
+    eparpille.riders = {rider(52.0), rider(47.0), rider(42.0), rider(37.0)};
+    v.push_back(eparpille);
+
+    Profile trois{"trois-plus-un", "Trois ensemble, un lache", {}};
+    trois.riders = {rider(46.0), rider(46.3), rider(45.8), rider(38.0)};
+    v.push_back(trois);
+
+    Profile deux_un_un{"deux-un-un", "Deux ensemble, puis deux laches separement", {}};
+    deux_un_un.riders = {rider(50.0), rider(50.3), rider(44.0), rider(38.0)};
+    v.push_back(deux_un_un);
+
+    Profile un_un_deux{"un-un-deux", "Un solo devant un isole devant une paire", {}};
+    un_un_deux.riders = {rider(52.0), rider(46.0), rider(40.0), rider(40.2)};
+    v.push_back(un_un_deux);
+
+    Profile casse{"casse-par-etapes", "Le peloton se defait un coureur a la fois", {}};
+    casse.riders = {rider(46.0), rider(46.0), rider(46.0), rider(46.0)};
+    casse.riders[3].steps = {{5.0, 36.0}};
+    casse.riders[2].steps = {{11.0, 40.0}};
+    casse.riders[1].steps = {{17.0, 42.0}};
+    v.push_back(casse);
+
+    Profile accordeon{"accordeon", "Il se defait puis SE RECOLLE", {}};
+    accordeon.riders = {rider(46.0), rider(46.0), rider(46.0), rider(46.0)};
+    accordeon.riders[3].steps = {{2.0, 38.0}, {14.0, 58.0}};
+    accordeon.riders[2].steps = {{4.0, 41.0}, {17.0, 55.0}};
+    accordeon.riders[1].steps = {{6.0, 43.0}, {20.0, 52.0}};
+    v.push_back(accordeon);
+
     return v;
 }
 
@@ -103,6 +142,11 @@ double RiderModel::speed_at(int rider, double t_s) const {
         return 0.0;
     }
     double v = s.cruise_kph;
+    for (const std::pair<double, double>& step : s.steps) {
+        if (t_s >= step.first) {
+            v = step.second;
+        }
+    }
     if (s.accel_kph_s > 0.0) {
         v = std::min(v, s.accel_kph_s * t_s);
     }

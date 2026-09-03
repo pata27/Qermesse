@@ -7,6 +7,7 @@
 #include <array>
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace ssemu {
@@ -24,6 +25,12 @@ struct RiderSpec {
     double surge_at_s = -1.0;    // instant d'une accélération finale
     double surge_kph = 0.0;      // gain de vitesse à cet instant
     double stop_at_s = -1.0;     // abandon
+    // Paliers de vitesse : {instant, nouvelle croisiere}. Le dernier palier
+    // atteint REMPLACE la croisiere — c'est ainsi qu'un peloton se defait puis
+    // se recolle. `link_sim.gd` a le meme mecanisme sous le nom `SCHEDULES` ;
+    // les deux simulateurs doivent offrir les memes profils, sans quoi une
+    // commande qui marche avec l'un echoue avec l'autre (docs/03 §5).
+    std::vector<std::pair<double, double>> steps;
 };
 
 struct Profile {

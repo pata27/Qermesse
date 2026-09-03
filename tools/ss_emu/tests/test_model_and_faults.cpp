@@ -47,14 +47,41 @@ struct Rig {
 // Profils
 // ===========================================================================
 
-TEST_CASE("les cinq profils de docs/07 §5 existent") {
+TEST_CASE("les douze profils existent, comme dans link_sim.gd") {
+    // Les cinq de reference, qui eprouvent le CONTRAT SERIE.
     for (const char* n :
          {"egaux", "ecart-leger", "domination", "remontee-finale", "abandon"}) {
         CAPTURE(n);
         CHECK(find_profile(n) != nullptr);
     }
+    // Les sept partitions du lot 5, qui eprouvent l'ecran scinde. Elles
+    // n'existaient que dans `link_sim.gd` : `ss_emu --profile eparpille`
+    // echouait, et ces scenarios ne pouvaient donc jamais etre joues a travers
+    // un vrai pseudo-terminal. Les deux simulateurs doivent offrir les memes
+    // profils (docs/03 §5) — cette liste et celle de `link_sim.gd` se lisent
+    // ensemble.
+    for (const char* n : {"deux-groupes", "eparpille", "trois-plus-un", "deux-un-un",
+                          "un-un-deux", "casse-par-etapes", "accordeon"}) {
+        CAPTURE(n);
+        CHECK(find_profile(n) != nullptr);
+    }
     CHECK(find_profile("inexistant") == nullptr);
-    CHECK(profiles().size() == 5);
+    CHECK(profiles().size() == 12);
+}
+
+TEST_CASE("un profil a paliers defait puis recolle le peloton") {
+    // `accordeon` : le retardataire ralentit, puis repart plus vite que les
+    // autres. Sans le mecanisme de paliers, sa vitesse resterait constante et
+    // l'ecran scinde ne se refermerait jamais — or c'est precisement le
+    // regroupement que ce profil doit eprouver.
+    Rig rig("accordeon", 4);
+    rig.send("x\nt60\ng\n");
+    rig.run_ms(10000.0);
+    CHECK(rig.model.speed_kph(3) < rig.model.speed_kph(0) - 5.0);  // lache
+    CHECK(rig.model.speed_kph(3) == doctest::Approx(38.0).epsilon(0.08));
+    rig.run_ms(12000.0);
+    CHECK(rig.model.speed_kph(3) > rig.model.speed_kph(0) + 5.0);  // il revient
+    CHECK(rig.model.speed_kph(0) == doctest::Approx(46.0).epsilon(0.08));
 }
 
 TEST_CASE("circonference : 114.3 mm donne bien 359.0 mm") {
