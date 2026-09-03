@@ -14,6 +14,13 @@ class_name RaceAudio
 extends Node
 
 const BUS_NAME := "Course"
+## Enregistrements reels — `audio/CREDITS.md`. La synthese reste derriere
+## chacun : un fichier absent est un son moins beau, jamais une soiree sans son.
+const SAMPLES := {
+	"cloche": "res://audio/samples/cloche.ogg",
+	"clameur": "res://audio/samples/clameur.ogg",
+	"reaction": "res://audio/samples/reaction.ogg",
+}
 ## Vitesse à laquelle la nappe et le vent atteignent leur pleine intensité.
 const FULL_SPEED_KPH := 55.0
 ## Accélération, en km/h par seconde, à partir de laquelle la foule réagit.
@@ -57,6 +64,8 @@ var _roar: AudioStreamPlayer
 var _pulse: AudioStreamPlayer
 var _drive: AudioStreamPlayer
 var _lead: AudioStreamPlayer
+## Musique du podium — majeur, plus lente, elle RESOUT. Voir `MusicForge`.
+var _anthem: AudioStreamPlayer
 var _beep: AudioStreamPlayer
 var _horn: AudioStreamPlayer
 var _bell: AudioStreamPlayer
@@ -122,6 +131,13 @@ func volume_db() -> float:
 ## Effacement courant du lit, en decibels — pour les tests. C'est le MECANISME
 ## qu'on observe, pas le niveau d'un joueur : celui-ci depend aussi de
 ## l'intensite, et un test qui le lirait dirait deux choses a la fois.
+## L'hymne du podium tourne-t-il ? Pour les tests : une fanfare de victoire qui
+## survivrait a un abandon, ou qui couvrirait le decompte suivant, ne se voit
+## dans aucune assertion sur les compteurs.
+func podium_playing() -> bool:
+	return _anthem.playing
+
+
 func duck_db() -> float:
 	return _duck_db
 
@@ -156,18 +172,40 @@ func _build_players() -> void:
 	_murmur = _make_player(SoundForge.crowd_bed(), -24.0)
 	_whoosh = _make_player(SoundForge.whoosh(), -10.0)
 	_knell = _make_player(SoundForge.knell(), -8.0)
-	_roar = _make_player(SoundForge.roar(), -3.0)
+	_roar = _make_player(_sampled("clameur", SoundForge.roar()), -2.0)
 	_pulse = _make_player(MusicForge.pulse(), -12.0)
 	_drive = _make_player(MusicForge.drive(), -60.0)
 	_lead = _make_player(MusicForge.lead(), -60.0)
+	_anthem = _make_player(MusicForge.anthem(), -14.0)
 	_beep = _make_player(SoundForge.beep(), -6.0)
 	_horn = _make_player(SoundForge.horn(), -4.0)
-	_bell = _make_player(SoundForge.bell(), -7.0)
+	# CES TROIS-LA SONT DES ENREGISTREMENTS. Une foule est faite de centaines de
+	# voix correlees, une cloche est une geometrie de bronze : approchees en
+	# code elles s'entendaient comme du bruit blanc et comme des bips. C'est la
+	# limite de l'exercice, pas un defaut d'implementation — docs/04 §6.
+	_bell = _make_player(_sampled("cloche", SoundForge.bell()), -5.0)
 	# Le buzzer du faux départ est le klaxon, une octave sous le départ : le
 	# même timbre dit « ligne de départ », la hauteur dit « pas comme ça ».
 	_buzzer = _make_player(SoundForge.horn(0.5), -4.0)
 	_buzzer.pitch_scale = 0.5
-	_crowd = _make_player(SoundForge.crowd(), -9.0)
+	_crowd = _make_player(_sampled("reaction", SoundForge.crowd()), -9.0)
+
+
+## L'enregistrement s'il est la, la synthese sinon.
+##
+## LE REPLI N'EST PAS DECORATIF. Un export mal ficele, un fichier corrompu, une
+## plateforme qui n'importe pas le Vorbis — et l'ecran public passerait une
+## soiree entiere muet sur ses trois sons les plus attendus. Un son moins beau
+## vaut infiniment mieux que pas de son.
+static func sampled_or(path: String, fallback: AudioStream) -> AudioStream:
+	if not ResourceLoader.exists(path):
+		return fallback
+	var stream := ResourceLoader.load(path) as AudioStream
+	return fallback if stream == null else stream
+
+
+static func _sampled(key: String, fallback: AudioStream) -> AudioStream:
+	return sampled_or(str(SAMPLES[key]), fallback)
 
 
 func _make_player(stream: AudioStream, db: float) -> AudioStreamPlayer:
@@ -208,6 +246,12 @@ func _on_race_state(_previous: int, current: int) -> void:
 	# qu'ils n'avaient jamais retenti.
 	if current == RaceEngine.State.ARMING:
 		cue_counts.clear()
+	# LE PODIUM S'EFFACE DEVANT LA COURSE SUIVANTE. L'hymne tourne tant que le
+	# classement est a l'ecran — parfois une minute — et il doit se taire au
+	# premier decompte. IDLE compte aussi : une course ABANDONNEE n'a pas de
+	# podium, et une fanfare de victoire sur un abandon serait grotesque.
+	if current == RaceEngine.State.ARMING or current == RaceEngine.State.IDLE:
+		_anthem.stop()
 	var now_running := current == RaceEngine.State.RUNNING
 	if now_running == _running:
 		return
@@ -384,6 +428,12 @@ func _on_race_finished(_result: RaceResult) -> void:
 	_duck()
 	_roar.play()
 	_cue("clameur")
+	# L'HYMNE ENTRE SOUS LA CLAMEUR, pas apres. La salle hurle, et la musique
+	# monte dessous : c'est ce qui transforme un resultat en ceremonie. Attendre
+	# la fin de la clameur aurait laisse un trou de quatre secondes a l'instant
+	# ou le podium s'affiche.
+	_anthem.play()
+	_cue("podium")
 
 
 ## Clameur. `insistent` ignore le repos : un franchissement mérite toujours sa

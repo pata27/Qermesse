@@ -218,6 +218,27 @@ un son discret, c'est un son absent. La suite de tests le vérifie sur chaque fl
   nappe le temps de passer, puis tout remonte. Sans cela l'annonce se noie dans le fond qu'elle
   est censée interrompre.
 * Souffle de vent indexé sur la vitesse.
+### Synthèse d'abord, enregistrements là où elle échoue
+
+Tout est **synthétisé** par défaut : rien à télécharger, rien à perdre à l'export, et surtout tout
+ce qui doit suivre la course — hauteur des rouleaux, montée de la nappe, couches de musique en
+phase — ne peut pas être un échantillon figé.
+
+**Trois exceptions, et elles sont motivées** : la cloche et les deux réactions de foule viennent
+d'enregistrements réels. Une foule est faite de centaines de voix corrélées, une cloche est une
+géométrie de bronze ; approchées en code elles s'entendaient comme « du bruit blanc » et « plein de
+bips ». Ce n'est pas un défaut d'implémentation qu'un tour de plus aurait corrigé, c'est la limite
+de l'exercice.
+
+Les fichiers sont **versionnés dans le dépôt** (122 Ko en Vorbis mono) : rien n'est téléchargé pour
+construire, la règle de reproductibilité portait sur le build et elle tient. **Aucune clause de
+partage à l'identique n'est acceptée** — CC0, domaine public ou CC-BY seulement : une clause SA
+suivrait le fichier dans toute distribution, et cela ne se décide pas au détour d'un choix de
+bruitage. Sources, auteurs et modifications sont dans `audio/CREDITS.md`.
+
+**Un échantillon manquant ne fait pas taire le logiciel** : la synthèse reste en place derrière
+chacun et prend le relais. Un fichier absent est un son moins beau, jamais une soirée sans son.
+
 **Ce qui a sonné se constate, il ne s'écoute pas.** Chaque son déclenché est noté (`last_cue`,
 `cue_counts`) : c'est la seule façon de prouver la bande-son dans une suite qui tourne sans carte
 son, et la seule façon honnête de la valider quand la consigne interdit d'en juger à l'oreille.

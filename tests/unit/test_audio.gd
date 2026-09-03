@@ -342,6 +342,15 @@ func test_tout_son_continu_existe_sur_un_haut_parleur_d_ordinateur() -> void:
 		)
 
 
+## Niveau atteint a une fraction donnee d'un flux, sur 200 ms.
+func _level_at(stream: AudioStreamWAV, fraction: float) -> float:
+	var start := int(float(_frames(stream)) * fraction)
+	var level := 0.0
+	for k: int in range(start, mini(start + SoundForge.MIX_RATE / 5, _frames(stream))):
+		level = maxf(level, absf(float(stream.data.decode_s16(k * 2)) / 32768.0))
+	return level
+
+
 ## Attend des images de RENDU. Le remix vertical et l'effacement du lit vivent
 ## dans `_process` : `wait_physics_frames` n'en declenche aucun, et les niveaux
 ## restaient a leur valeur de construction — le test lisait alors le montage,
@@ -354,7 +363,12 @@ func _idle_frames(count: int) -> void:
 ## Compte les FRAPPES d'un flux : les montées franches du niveau, espacées
 ## d'au moins 150 ms pour ne compter qu'une fois chaque coup.
 func _onsets(stream: AudioStreamWAV) -> int:
-	var window := SoundForge.MIX_RATE / 200  # 5 ms
+	# FENETRE LONGUE, 50 ms. Les partiels d'une cloche sont doubles et
+	# legerement desaccordes : ils BATTENT l'un contre l'autre, et c'est ce
+	# battement qui fait entendre du bronze. Sur une fenetre de 5 ms il
+	# ressemblait a une suite de frappes — le detecteur en comptait douze sur
+	# un glas qui n'en a qu'une, et accusait un son parfaitement juste.
+	var window := SoundForge.MIX_RATE / 20
 	var levels: Array[float] = []
 	var i := 0
 	while i + window < _frames(stream):
@@ -370,14 +384,14 @@ func _onsets(stream: AudioStreamWAV) -> int:
 	# son commence par une frappe. L'oublier faisait compter zero coup au glas,
 	# qui n'en a qu'un — et le test aurait accuse un son parfaitement juste.
 	var onsets := 1 if not levels.is_empty() and levels[0] > ceiling * 0.2 else 0
-	var rest := 30
+	var rest := 5
 	for k: int in range(1, levels.size()):
 		rest = maxi(0, rest - 1)
 		# Une frappe : le niveau bondit de moitie et depasse un cinquieme du
 		# maximum du flux. Le repos evite de compter la meme deux fois.
-		if rest == 0 and levels[k] > levels[k - 1] * 1.5 and levels[k] > ceiling * 0.2:
+		if rest == 0 and levels[k] > levels[k - 1] * 1.8 and levels[k] > ceiling * 0.25:
 			onsets += 1
-			rest = 30
+			rest = 5
 	return onsets
 
 
@@ -401,11 +415,13 @@ func test_la_clameur_d_arrivee_est_autre_chose_qu_une_reaction() -> void:
 	# Et elle TIENT : au tiers de sa duree elle est encore a plein regime, la
 	# ou la petite clameur est deja passee. C'est ce plateau qui fait la
 	# difference entre une salle qui reagit et une salle qui explose.
-	var third := _frames(roar) / 3
-	var late := 0.0
-	for k: int in range(third, third + SoundForge.MIX_RATE / 10):
-		late = maxf(late, absf(float(roar.data.decode_s16(k * 2)) / 32768.0))
-	assert_gt(late, 0.5, "au tiers de sa duree, la salle hurle encore")
+	#
+	# Compare a SON PROPRE maximum, et non a une valeur absolue : la clameur est
+	# faite de centaines de voix qui se superposent au hasard, si bien que son
+	# echantillon le plus fort est une coincidence et non son niveau utile. Un
+	# seuil absolu mesurait cette coincidence.
+	assert_gt(_level_at(roar, 1.0 / 3.0), _peak(roar) * 0.4, "au tiers, la salle hurle encore")
+	assert_lt(_level_at(cheer, 1.0 / 3.0 + 0.5), _peak(cheer) * 0.4, "la petite est deja passee")
 
 
 func test_les_trois_couches_de_musique_restent_en_phase() -> void:
@@ -475,3 +491,105 @@ func test_une_annonce_efface_le_lit_puis_il_remonte() -> void:
 
 	await _idle_frames(240)
 	assert_eq(audio.duck_db(), 0.0, "puis il revient tout seul")
+
+
+func test_chaque_enregistrement_est_present_et_lisible() -> void:
+	# Trois sons seulement viennent d'enregistrements — la cloche et les deux
+	# reactions de foule — parce que la synthese les rend mal : « du bruit
+	# blanc » et « plein de bips ». Le reste est synthetise, et doit le rester :
+	# rien de fige ne peut suivre la vitesse ni boucler en phase.
+	for key: String in RaceAudio.SAMPLES:
+		var path: String = RaceAudio.SAMPLES[key]
+		assert_true(ResourceLoader.exists(path), "« %s » est dans le depot" % key)
+		var stream := ResourceLoader.load(path) as AudioStream
+		assert_not_null(stream, "« %s » se charge" % key)
+		assert_gt(stream.get_length(), 1.0, "« %s » n'est pas un fichier vide" % key)
+
+
+func test_un_enregistrement_manquant_ne_fait_pas_taire_le_logiciel() -> void:
+	# Un export mal ficele, un fichier corrompu, une plateforme qui n'importe
+	# pas le Vorbis — et l'ecran public passerait une soiree entiere muet sur
+	# ses trois sons les plus attendus. La synthese reste derriere chacun.
+	var fallback := SoundForge.bell()
+	var missing := RaceAudio.SAMPLES.duplicate()
+	assert_true(missing.has("cloche"), "la cle existe bien")
+	# On ne peut pas supprimer un fichier du depot depuis un test ; on eprouve
+	# donc le chemin de repli sur une cle dont le fichier n'existe pas.
+	assert_eq(
+		RaceAudio.sampled_or("res://audio/samples/absent.ogg", fallback), fallback,
+		"un chemin absent rend la synthese"
+	)
+	assert_ne(
+		RaceAudio.sampled_or(RaceAudio.SAMPLES["cloche"], fallback), fallback,
+		"et un chemin present rend l'enregistrement"
+	)
+
+
+func test_chaque_enregistrement_est_credite_et_sans_partage_a_l_identique() -> void:
+	# docs/04 §6 : CC0, domaine public ou CC-BY, jamais CC BY-SA. Une clause SA
+	# suivrait le fichier modifie dans toute distribution du logiciel, et cela
+	# ne se decide pas au detour d'un choix de bruitage.
+	var file := FileAccess.open("res://audio/CREDITS.md", FileAccess.READ)
+	assert_not_null(file, "le fichier de credits existe")
+	var lines := file.get_as_text().split("\n")
+	for key: String in RaceAudio.SAMPLES:
+		var name: String = str(RaceAudio.SAMPLES[key]).get_file()
+		var row := ""
+		for line: String in lines:
+			if line.begins_with("|") and line.contains(name):
+				row = line
+		assert_false(row.is_empty(), "« %s » a sa ligne dans le tableau" % name)
+		# LA LIGNE DU FICHIER, pas le document. Chercher « BY-SA » partout
+		# interdisait d'EXPLIQUER pourquoi cette clause est ecartee — et la
+		# garde accusait le paragraphe qui la refuse. Une garde ne doit pas
+		# rendre impossible d'ecrire ce qu'elle defend.
+		assert_false(row.contains("BY-SA"), "« %s » : pas de partage a l'identique" % name)
+		assert_false(row.contains("ShareAlike"), "« %s » : ni sous son autre nom" % name)
+		assert_true(
+			row.contains("CC0") or row.contains("omaine public") or row.contains("CC BY"),
+			"« %s » : une licence permissive, nommee" % name
+		)
+
+
+func test_le_podium_a_sa_musique_et_l_abandon_ne_l_a_pas() -> void:
+	# La musique de course est mineure et ne se resout jamais : de la tension
+	# qui ne retombe pas, ce qu'on veut SOUS une course. Un podium demande
+	# l'inverse — une resolution. D'ou une autre musique, en majeur et plus
+	# lente, qui entre SOUS la clameur : attendre qu'elle finisse laisserait un
+	# trou de quatre secondes a l'instant ou le classement s'affiche.
+	var rig := _rig()
+	var controller: AppController = rig[0]
+	var audio: RaceAudio = rig[1]
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	controller.race_finished.emit(RaceResult.new())
+	assert_eq(int(audio.cue_counts.get("podium", 0)), 1, "le podium a sa musique")
+	assert_eq(int(audio.cue_counts.get("clameur", 0)), 1, "et la salle hurle par-dessus")
+
+	# Elle se tait au decompte suivant, sans quoi elle se superposerait a lui.
+	controller.race_state_changed.emit(RaceEngine.State.RESULTS, RaceEngine.State.ARMING)
+	assert_false(audio.podium_playing(), "l'hymne s'arrete devant la course suivante")
+
+	# UNE COURSE ABANDONNEE N'A PAS DE PODIUM. Une fanfare de victoire sur un
+	# abandon serait grotesque, et l'abandon ramene le moteur a IDLE.
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	controller.race_state_changed.emit(RaceEngine.State.RUNNING, RaceEngine.State.IDLE)
+	assert_false(audio.podium_playing(), "rien ne joue apres un abandon")
+	assert_eq(int(audio.cue_counts.get("podium", 0)), 0, "et aucun hymne n'a ete lance")
+
+
+func test_l_hymne_du_podium_boucle_et_resout_en_majeur() -> void:
+	var anthem := MusicForge.anthem()
+	assert_eq(anthem.loop_mode, AudioStreamWAV.LOOP_FORWARD, "le classement reste, la musique aussi")
+	# Quatre mesures et non deux : le podium tient parfois une minute a l'ecran,
+	# et une boucle courte s'entendrait comme une boucle.
+	assert_almost_eq(
+		float(_frames(anthem)) / SoundForge.MIX_RATE,
+		MusicForge.ANTHEM_BEAT_S * float(MusicForge.ANTHEM_BARS) * 4.0, 0.001,
+		"quatre mesures a 100 a la noire"
+	)
+	assert_gt(
+		float(_frames(anthem)) / SoundForge.MIX_RATE, MusicForge.LOOP_S,
+		"plus longue que la musique de course"
+	)

@@ -35,6 +35,15 @@ const BASS_STEPS := [0, 0, 12, 0, -2, -2, 10, -2]
 ## Le thème, en demi-tons au-dessus du la 440, sur une pentatonique mineure.
 const LEAD_STEPS := [0, 7, 3, 10, 12, 10, 7, 3]
 
+## Podium : 100 à la noire, quatre mesures. 9,6 s, soit 423 360 échantillons —
+## un compte entier, donc une boucle sans clic comme les autres.
+const ANTHEM_BEAT_S := 60.0 / 100.0
+const ANTHEM_BARS := 4
+## Do, sol, la mineur, fa — en demi-tons depuis le la. La marche la plus
+## naturellement montante qui soit, et elle retombe sur elle-même.
+const ANTHEM_ROOTS := [3, -2, 0, -4]
+const ANTHEM_MINOR := [false, false, true, false]
+
 
 static func _frames() -> int:
 	return int(LOOP_S * MIX_RATE)
@@ -89,6 +98,40 @@ static func lead() -> AudioStreamWAV:
 		# L'octave au-dessus, deux fois plus courte, sur la croche : l'arpège
 		# scintille au lieu de marteler.
 		_pluck(samples, start + int(BEAT_S * 0.5 * MIX_RATE), hertz * 2.0, BEAT_S * 0.3)
+	return _loop(samples)
+
+
+## LA MUSIQUE DU PODIUM. Autre tempo, autre mode, autre propos.
+##
+## La musique de course est mineure et ne se résout jamais : c'est de la tension
+## qui ne retombe pas, ce qu'on veut sous une course. Un podium demande
+## exactement l'inverse — une résolution. D'où le majeur, un tempo plus lent, et
+## une marche d'accords qui retombe sur elle-même : do, sol, la mineur, fa.
+##
+## Quatre mesures et non deux : le classement reste à l'écran jusqu'au départ
+## suivant, parfois une minute. Une boucle courte s'entendrait comme une boucle.
+static func anthem() -> AudioStreamWAV:
+	var beats := ANTHEM_BARS * 4
+	var frames := int(float(beats) * ANTHEM_BEAT_S * MIX_RATE)
+	var samples := PackedFloat32Array()
+	samples.resize(frames)
+	for bar: int in range(ANTHEM_BARS):
+		var root: float = float(ANTHEM_ROOTS[bar])
+		var third: float = 3.0 if bool(ANTHEM_MINOR[bar]) else 4.0
+		for beat: int in range(4):
+			var start := int((float(bar * 4 + beat)) * ANTHEM_BEAT_S * MIX_RATE)
+			# Le pied sur les temps FORTS seulement : un podium se marche, il ne
+			# se court pas.
+			if beat % 2 == 0:
+				_kick(samples, start)
+				_bass(samples, start, _hertz(110.0, root), ANTHEM_BEAT_S * 1.8)
+			# L'accord s'égrène : fondamentale, tierce, quinte, octave — un
+			# arpège monte, et c'est ce qui s'entend comme une victoire.
+			var degree: float = [0.0, third, 7.0, 12.0][beat]
+			_pluck(samples, start, _hertz(440.0, root + degree), ANTHEM_BEAT_S * 1.4)
+			_pluck(
+				samples, start, _hertz(220.0, root + degree), ANTHEM_BEAT_S * 1.4
+			)
 	return _loop(samples)
 
 

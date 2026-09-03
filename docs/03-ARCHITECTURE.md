@@ -93,7 +93,11 @@ SilverSprint-v3/
 ├── art/
 │   └── shaders/                   # néon, piste, foule, maillot, lame, traînée, overlay
 ├── audio/
-│   └── race_audio.gd              # bande-son, bus dédié, coupée par défaut (04 §6)
+│   ├── race_audio.gd              # bande-son, bus dédié, coupée par défaut (04 §6)
+│   ├── sound_forge.gd             # synthèse des bruitages — aucun fichier requis
+│   ├── music_forge.gd             # musique de course en trois couches, et podium
+│   ├── samples/                   # les trois sons que la synthèse rend mal (CREDITS.md)
+│   └── CREDITS.md                 # sources, auteurs, licences, modifications
 ├── tools/                         # OUTILS DE PREUVE — la CI en lance trois
 │   ├── ss_emu/                    # émulateur du firmware sur pseudo-terminal (doc 07)
 │   ├── ss_monitor.gd              # validation du lien série — l'outil du jalon J1

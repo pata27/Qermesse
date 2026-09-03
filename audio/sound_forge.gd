@@ -17,14 +17,44 @@ const MIX_RATE := 44100
 ## Marge sous le plein niveau. Une somme de partiels dépasse facilement 1.0 ;
 ## écrêter produit un craquement, ce qui est le contraire de l'effet voulu.
 const HEADROOM := 0.86
-## Partiels d'une cloche, en multiples INHARMONIQUES de la fondamentale :
-## rapport, poids, vitesse d'extinction. Partagés par la cloche et le glas.
-## Formants d'une foule qui crie, et leur poids. Ce sont des voix, pas du bruit.
-const ROAR_FORMANTS: Array[float] = [500.0, 1200.0, 2600.0]
-const ROAR_WEIGHTS: Array[float] = [1.0, 0.6, 0.28]
+## Formants d'une foule qui crie, et leur poids — la voyelle « a » ouverte.
+const ROAR_FORMANTS: Array[float] = [700.0, 1150.0, 2550.0]
+const ROAR_WEIGHTS: Array[float] = [1.0, 0.55, 0.22]
+## Amortissement des formants. 0,08 vaut un Q de plus de douze : une bande
+## ETROITE. La premiere version montait a 0,55 — un Q de moins de deux, trois
+## bandes larges qui se recouvraient et redonnaient du bruit blanc, ce que
+## l'oreille a immediatement reconnu.
+const ROAR_DAMPING := 0.08
+## Nombre de voix de la clameur. Assez pour qu'aucune ne s'entende seule, assez
+## peu pour qu'elles ne fusionnent pas en souffle.
+const ROAR_VOICES := 220
+
+## Partiels d'une VRAIE cloche : rapport a la fondamentale, poids, extinction.
+##
+## Une cloche de fonderie porte des partiels nommes — le bourdon une octave
+## SOUS la note frappee, la prime, la tierce mineure, la quinte, la nominale a
+## l'octave — puis un chapelet d'inharmoniques. C'est cet empilement, et lui
+## seul, qui fait entendre du metal.
+##
+## La premiere version en empilait quatre, tres espaces, et les eteignait vite
+## pour que les coups de la volee ne se recouvrent pas : chaque frappe durait
+## quelques centiemes et s'entendait comme un BIP. Le retour de l'utilisateur
+## etait juste. Une cloche, ca resonne — c'est meme tout ce qui la definit.
 const BELL_PARTIALS := [
-	[1.00, 1.00, 2.0], [2.76, 0.55, 3.2], [5.40, 0.30, 4.8], [8.93, 0.16, 6.6]
+	[0.50, 0.42, 0.9],
+	[1.00, 1.00, 1.1],
+	[1.19, 0.72, 1.4],
+	[1.50, 0.48, 1.7],
+	[2.00, 0.52, 2.0],
+	[2.55, 0.26, 2.9],
+	[3.01, 0.20, 3.5],
+	[4.18, 0.13, 4.6],
+	[5.43, 0.09, 5.8],
 ]
+## Desaccord du jumeau de chaque partiel, en fraction. Une cloche n'est jamais
+## parfaitement symetrique : ses deux modes propres battent l'un contre l'autre,
+## et ce battement lent est ce qui distingue le bronze d'un orgue.
+const BELL_BEAT := 0.0035
 
 
 ## Bip de décompte : une sinusoïde courte, attaque nette et chute rapide.
@@ -69,9 +99,8 @@ static func horn(seconds: float = 0.75) -> AudioStreamWAV:
 
 ## UNE FRAPPE de cloche, ajoutée dans `samples` à partir de `start`.
 ##
-## Partiels INHARMONIQUES à décroissance séparée : c'est ce qui distingue une
-## cloche d'un orgue. Ses partiels ne sont pas des multiples entiers de la
-## fondamentale, et les aigus s'éteignent les premiers.
+## Chaque partiel est DOUBLE, l'un legerement desaccorde de l'autre : les deux
+## battent lentement, et c'est ce battement qu'on reconnait comme du bronze.
 static func _strike(
 	samples: PackedFloat32Array, start: int, hertz: float, gain: float, decay: float
 ) -> void:
@@ -79,16 +108,15 @@ static func _strike(
 		var t := float(i - start) / MIX_RATE
 		var value := 0.0
 		for partial: Array in BELL_PARTIALS:
+			var base := hertz * float(partial[0])
+			var fade := exp(-t * float(partial[2]) * decay)
 			value += (
-				sin(TAU * hertz * float(partial[0]) * t)
-				* float(partial[1])
-				* exp(-t * float(partial[2]) * decay)
-			)
-		# LE BATTANT. Un choc de métal commence par un bruit, pas par une note :
+				sin(TAU * base * t) + sin(TAU * base * (1.0 + BELL_BEAT) * t)
+			) * 0.5 * float(partial[1]) * fade
+		# LE BATTANT. Un choc de metal commence par un bruit, pas par une note :
 		# sans ces quelques millisecondes de transitoire, la cloche s'entend
-		# comme un bip long — et c'est exactement le reproche qui lui a été
-		# fait.
-		var clapper := exp(-t * 220.0) * sin(TAU * 3100.0 * t) * 0.5
+		# comme une nappe qui apparait.
+		var clapper := exp(-t * 160.0) * sin(TAU * 2900.0 * t) * 0.35
 		samples[i] += (value + clapper) * gain * minf(t / 0.001, 1.0)
 
 
@@ -98,27 +126,27 @@ static func _strike(
 ## que tout coureur reconnaît. Un coup unique se prend pour un bip ; la volée ne
 ## se confond avec rien. Les frappes faiblissent et se rapprochent légèrement,
 ## comme une cloche qu'on secoue.
-static func bell(seconds: float = 3.0, strikes: int = 4) -> AudioStreamWAV:
+static func bell(seconds: float = 4.2, strikes: int = 3) -> AudioStreamWAV:
 	var frames := int(seconds * MIX_RATE)
 	var samples := PackedFloat32Array()
 	samples.resize(frames)
-	# LES COUPS INTERMEDIAIRES S'ETEIGNENT VITE, le dernier resonne. C'est ce
-	# que fait une cloche qu'on agite : chaque coup coupe le precedent, et le
-	# dernier reste. Des coups a decroissance egale se recouvraient en une
-	# bouillie ou l'on n'entendait plus qu'une frappe et demie.
+	# LES COUPS SE RECOUVRENT, et c'est normal. Une cloche qu'on agite sonne
+	# par-dessus sa propre resonance ; c'est meme ce qui fait la volee. La
+	# version precedente ecourtait chaque coup pour les separer proprement, et
+	# n'obtenait que des bips bien detaches.
 	#
-	# Et les gains ne descendent pas regulierement : une main qui secoue une
-	# cloche ne frappe pas deux fois pareil. C'est cette irregularite qui la
-	# fait entendre comme un objet et non comme une boucle.
-	var gains := [1.0, 0.88, 0.96, 1.0]
+	# Les gains ne descendent pas regulierement : une main qui secoue une
+	# cloche ne frappe pas deux fois pareil, et c'est cette irregularite qui la
+	# fait entendre comme un objet.
+	var gains := [1.0, 0.82, 0.94]
 	for strike: int in range(strikes):
 		var last := strike == strikes - 1
 		_strike(
 			samples,
-			int(float(strike) * 0.32 * MIX_RATE),
-			784.0,
+			int(float(strike) * 0.52 * MIX_RATE),
+			622.0,
 			float(gains[strike % gains.size()]),
-			0.7 if last else 2.6
+			0.55 if last else 1.15
 		)
 	return _wav(samples, false)
 
@@ -133,7 +161,7 @@ static func knell(seconds: float = 2.4) -> AudioStreamWAV:
 	var frames := int(seconds * MIX_RATE)
 	var samples := PackedFloat32Array()
 	samples.resize(frames)
-	_strike(samples, 0, 196.0, 1.0, 0.45)
+	_strike(samples, 0, 233.0, 1.0, 0.42)
 	return _wav(samples, false)
 
 
