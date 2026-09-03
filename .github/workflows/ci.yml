@@ -57,6 +57,25 @@ jobs:
       - name: Tester
         run: ctest --test-dir build --build-config RelWithDebInfo --output-on-failure
 
+      # LE TEMOIN INDEPENDANT, sur un vrai pseudo-terminal. `ss_probe.py` n'a
+      # aucun code commun avec l'emulateur ni avec le module natif : c'est ce
+      # qui en fait un temoin croise au jalon J1. La CI ne le touchait pas —
+      # il pouvait cesser de fonctionner sans que rien ne le dise, jusqu'au
+      # jour ou on en a besoin pour arbitrer entre deux implementations.
+      #
+      # Linux seulement : Windows n'a pas de pseudo-terminal POSIX.
+      - name: Temoin independant sur pseudo-terminal
+        if: runner.os == 'Linux'
+        run: |
+          python3 -m py_compile tools/ss_probe.py
+          mkdir -p .run
+          ./build/tools/ss_emu/ss_emu --pty --link ./.run/ttyCI --riders 2 \
+            --profile egaux --quiet &
+          EMU=$!
+          sleep 2
+          python3 tools/ss_probe.py ./.run/ttyCI --duration 16 --metres 100
+          kill $EMU || true
+
       # L'EMULATEUR SE CONSTRUIT AUSSI SEUL, et le README documente cette
       # commande-la. Elle etait cassee : `tools/ss_emu/CMakeLists.txt` n'avait
       # ni `cmake_minimum_required` ni `project()`, si bien que CMake refusait

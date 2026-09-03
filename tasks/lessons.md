@@ -1108,3 +1108,22 @@ positif, et les deux symétriques.
 pas de virage. Le code visait le bon geste — le balancement du sprinteur en danseuse — et le
 document était resté sur un modèle mental de vélodrome. Deuxième fois cette nuit que la direction
 artistique est en retard sur une décision de rendu déjà prise.
+
+## Le témoin croisé n'était surveillé par personne
+
+`ss_probe.py` est la sonde indépendante du jalon J1 : aucun code commun avec l'émulateur ni avec le
+module natif, c'est ce qui lui permet d'arbitrer entre deux implémentations. La CI ne la touchait
+pas — pas même un `py_compile`. Elle pouvait cesser de fonctionner sans que rien ne le dise,
+jusqu'au jour où l'on en aurait eu besoin pour trancher.
+
+Elle sortait par ailleurs à zéro quand la course qu'elle arme ne produit aucune arrivée — boîtier
+muet, mauvais port, firmware différent : exactement les symptômes qu'on vient chercher. Elle
+annonçait donc « OK » sur le chemin cassé qu'elle est censée détecter.
+
+**Leçon** : un témoin doit être surveillé comme le reste, et il doit échouer sur ce qu'il est
+chargé de voir. La règle vaut trois fois cette nuit — `ss_replay`, `ss_race3d_demo --mesure`, et
+maintenant `ss_probe.py`.
+
+**Séquence CI rejouée en entier localement** avant tout cela, puisque je l'avais modifiée trois
+fois sans jamais la lancer : lint, C++ racine, émulateur seul, import, suite GUT, module chargé,
+rejeu des traces, course complète. Onze étapes, toutes vertes.

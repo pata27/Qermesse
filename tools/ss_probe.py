@@ -153,6 +153,7 @@ def main():
     reconnect_at = None
 
     last_paint = 0.0
+    finishes = 0
     while time.monotonic() - start < args.duration:
         now = time.monotonic()
         lines = []
@@ -199,6 +200,7 @@ def main():
             if line.startswith(b"CD:"):
                 events.append(f"[{now - start:6.2f}s] decompte {line.decode()}")
             elif RE_FINISH.match(line):
+                finishes += 1
                 events.append(f"[{now - start:6.2f}s] arrivee {line.decode()}")
             elif line.startswith(b"FS:"):
                 events.append(f"[{now - start:6.2f}s] FAUX DEPART {line.decode()}")
@@ -247,7 +249,15 @@ def main():
 
     sys.stderr.write("\n")
     print(f"trames inconnues : {link.unknown}")
+    print(f"arrivees vues    : {finishes}")
     link.close()
+    # UNE SONDE QUI N'A RIEN VU NE DOIT PAS DIRE « OK ». Elle arme une course et
+    # attend ses `<i>F:` ; n'en voir aucune est le symptome meme qu'on vient
+    # chercher — boitier muet, mauvais port, firmware different. Sortir a zero
+    # en l'annoncant ferait passer un chemin casse pour un chemin verifie.
+    if finishes == 0:
+        print("ECHEC : aucune arrivee pendant la fenetre demandee.")
+        return 2
     return 0
 
 

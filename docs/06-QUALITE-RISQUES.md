@@ -42,8 +42,10 @@ réels que personne n'aurait su écrire à la main.
 ## 3. CI
 
 Matrice `ubuntu-latest` / `windows-latest` / `macos-latest` :
-build du GDExtension, tests C++, import du projet Godot, tests GUT headless, rejeu des traces de
-référence par `ss_replay`, course complète à l'interface, export des binaires.
+build du GDExtension, tests C++, émulateur construit seul comme le dit le README, import du projet
+Godot, tests GUT headless, rejeu des traces de référence par `ss_replay`, témoin indépendant
+`ss_probe.py` sur un vrai pseudo-terminal (Linux), course complète à l'interface, export des
+binaires.
 Sur tag : publication d'une release avec les trois artefacts.
 
 ## 4. Risques et parades
