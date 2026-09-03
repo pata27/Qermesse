@@ -190,7 +190,15 @@ func _run() -> void:
 		if lane < _names.size():
 			_controller.roster.rider(lane).name = _names[lane]
 	_controller.set_simulator_riders(_riders)
-	_controller.set_simulator_profile(_profile)
+	# UN PROFIL INCONNU ARRETE L'OUTIL. L'ignorer ferait tourner `egaux` en
+	# silence, et la capture produite montrerait autre chose que son nom.
+	if not _controller.set_simulator_profile(_profile):
+		printerr(
+			"ECHEC : profil inconnu « %s ». Disponibles : %s"
+			% [_profile, ", ".join(_controller.simulator_profiles())]
+		)
+		quit(1)
+		return
 	_controller.set_simulation_speed(_speed)
 	match _race_mode:
 		"temps":

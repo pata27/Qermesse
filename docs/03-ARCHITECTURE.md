@@ -210,14 +210,19 @@ par plateforme. **À n'activer que si le lot 1 dérape** — voir `04`, jalon J1
 
 ---
 
-## 5. Simulateur (`link_sim.gd`) — à écrire dès le lot 1
+## 5. Simulateur (`link_sim.gd`)
 
 Implémente la même interface que le lien série et génère un flux `R:` synthétique crédible :
 
 * courbe de puissance par rider avec accélération, plafond de vitesse et fatigue,
-* jitter et bruit sur la cadence pour ressembler à du vrai capteur,
-* profils prédéfinis : `égaux`, `écart léger`, `domination`, `remontée finale`, `abandon`,
-* injection de pannes à la demande : trame corrompue, perte de lien, faux départ, tick fantôme.
+* bruit sur la cadence pour ressembler à du vrai capteur,
+* **douze profils** : les cinq d'origine — `egaux`, `ecart-leger`, `domination`, `remontee-finale`,
+  `abandon` — plus sept ajoutés au lot 5 pour éprouver chaque partition de l'écran scindé
+  (`deux-groupes`, `eparpille`, `trois-plus-un`, `deux-un-un`, `un-un-deux`, `casse-par-etapes`,
+  `accordeon`). Un nom inconnu est **refusé**, jamais ignoré : silencieusement remplacé, il ferait
+  produire à une capture de preuve autre chose que ce qu'elle annonce.
+* injection de pannes : trame corrompue, perte et retour du lien, faux départ, tick fantôme,
+  trames perdues. Les huit pannes de l'émulateur, elles, sont listées dans `07` §6.
 
 Sans ça, aucun développement ni aucune démo n'est possible sans matériel branché, et la CI ne peut
 rien tester de bout en bout.

@@ -357,8 +357,12 @@ func set_simulator_riders(count: int) -> void:
 
 
 ## Profil du boîtier simulé — démonstrations et cas extrêmes.
-func set_simulator_profile(name: String) -> void:
-	_link.set_simulator_profile(name)
+func set_simulator_profile(name: String) -> bool:
+	return _link.set_simulator_profile(name)
+
+
+func simulator_profiles() -> Array:
+	return _link.simulator_profiles()
 
 
 ## Câble arraché, puis rebranché — sur le boîtier SIMULÉ seulement.

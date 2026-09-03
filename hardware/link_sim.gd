@@ -421,9 +421,21 @@ func set_wired_riders(count: int) -> void:
 
 ## Profil de course simulé — voir PROFILES. Sert aux démonstrations et à
 ## éprouver les cas extrêmes, comme un rider qui prend une avance décisive.
-func set_profile(name: String) -> void:
-	if PROFILES.has(name):
-		profile = name
+## Rend `false` si le nom est inconnu, et garde le profil courant.
+##
+## Cette fonction ignorait un nom inconnu en silence. Une faute de frappe dans
+## une commande de preuve faisait donc tourner `egaux` sans un mot, et la
+## capture produite montrait autre chose que ce qu'elle pretendait montrer.
+func set_profile(name: String) -> bool:
+	if not PROFILES.has(name):
+		return false
+	profile = name
+	return true
+
+
+## Les noms disponibles, pour que l'appelant puisse les proposer.
+func profiles() -> Array:
+	return PROFILES.keys()
 
 
 func get_stats() -> Dictionary:

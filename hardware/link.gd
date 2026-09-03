@@ -139,9 +139,13 @@ func set_simulator_riders(count: int) -> void:
 
 
 ## Profil du boîtier SIMULÉ. Sans effet sur le matériel.
-func set_simulator_profile(name: String) -> void:
-	if _impl.has_method("set_profile"):
-		_impl.set_profile(name)
+func set_simulator_profile(name: String) -> bool:
+	return bool(_impl.set_profile(name)) if _impl.has_method("set_profile") else false
+
+
+## Profils du boîtier SIMULÉ ; vide sur le matériel, qui n'en a pas.
+func simulator_profiles() -> Array:
+	return _impl.profiles() if _impl.has_method("profiles") else []
 
 
 ## Coupure et retour du lien SIMULÉ — docs/01 §6.2, pour éprouver le délai de

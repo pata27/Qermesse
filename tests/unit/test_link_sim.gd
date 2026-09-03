@@ -246,6 +246,22 @@ func test_trame_corrompue_remonte_en_unknown_sans_rien_casser() -> void:
 	assert_string_contains(unknown[0]["text"], "\\x01")
 
 
+func test_un_profil_inconnu_est_refuse_au_lieu_d_etre_ignore() -> void:
+	# `set_profile` ignorait un nom inconnu et gardait le precedent. Une faute
+	# de frappe dans une commande de preuve — `--profil eparpille` accentue,
+	# par exemple — faisait donc tourner `egaux` en silence, et la capture
+	# produite montrait tout autre chose que ce qu'elle pretendait montrer.
+	assert_true(_sim.set_profile("domination"), "un nom connu est accepte")
+	assert_eq(_sim.profile, "domination")
+
+	assert_false(_sim.set_profile("eparpillé"), "un nom inconnu est refuse")
+	assert_eq(_sim.profile, "domination", "et l'ancien profil reste en place")
+
+	var noms: Array = _sim.profiles()
+	assert_true(noms.has("egaux"), "la liste des profils est disponible pour le dire")
+	assert_gt(noms.size(), 5)
+
+
 func test_les_statistiques_du_simulateur_comptent_vraiment() -> void:
 	# Le panneau materiel les affiche : « Trames 0 » pendant qu'une course
 	# defile ressemblait a une panne du simulateur.
