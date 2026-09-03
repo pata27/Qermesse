@@ -129,8 +129,15 @@ func from_dict(data: Dictionary) -> void:
 		if target != null:
 			target.name = loaded.name
 			target.dossard = loaded.dossard
-			target.color = loaded.color
 			target.active = loaded.active
+			# LA COULEUR NE SE RELIT PAS. Elle vient de la palette figee
+			# (docs/04 §2) et sert a identifier une piste avec son numero
+			# (docs/03 §6) : aucun reglage ne l'expose, mais elle etait relue du
+			# fichier. Un roster edite a la main pouvait donner la meme couleur
+			# a deux pistes, ou une couleur invalide — et l'ecran public
+			# devenait ambigu. Plus subtil : le jour ou la palette changera, les
+			# rosters existants imposeraient encore les anciennes couleurs.
+			# Elle reste ECRITE dans le fichier, pour qui le lit.
 
 
 func save(path: String = "") -> bool:

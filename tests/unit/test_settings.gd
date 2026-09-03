@@ -261,6 +261,13 @@ func test_tous_les_champs_d_un_rider_font_l_aller_retour() -> void:
 		if name == "lane":
 			expected[name] = rider.lane
 			continue
+		# La couleur est ECRITE mais jamais RELUE : elle vient de la palette
+		# figee, et un fichier ne doit pas pouvoir donner la meme couleur a
+		# deux pistes. Exclusion voulue, pas un oubli — c'est ce test qui l'a
+		# exigee en tombant.
+		if name == "color":
+			expected[name] = rider.color
+			continue
 		var value: Variant = _mutate(rider.get(name), int(property["type"]))
 		rider.set(name, value)
 		expected[name] = value
@@ -322,6 +329,26 @@ func test_un_rider_sans_nom_reste_identifiable() -> void:
 	assert_eq(roster.rider(2).display_name(), "Piste 3")
 	roster.rider(2).name = "Chloe"
 	assert_eq(roster.rider(2).display_name(), "Chloe")
+
+
+func test_la_couleur_vient_de_la_palette_jamais_du_fichier() -> void:
+	# docs/04 §2 : « palette figee, une couleur par piste », et docs/03 §6 fait
+	# de la couleur une des deux facons d'identifier une piste. Aucun reglage
+	# ne l'expose — mais elle etait RELUE du fichier. Un roster edite a la main
+	# pouvait donc donner la meme couleur a deux pistes, ou une couleur
+	# invalide, et l'ecran public devenait ambigu. Plus subtil : le jour ou la
+	# palette changera, les rosters existants garderaient les anciennes.
+	var file := FileAccess.open(_path("couleurs.json"), FileAccess.WRITE)
+	file.store_string('{"riders": [' +
+		'{"lane": 0, "name": "Alice", "active": true, "color": "#FF2E88"},' +
+		'{"lane": 1, "name": "Bob", "active": true, "color": "pas-une-couleur"}]}')
+	file.close()
+
+	var roster := Roster.new()
+	assert_true(roster.load_from(_path("couleurs.json")))
+	assert_eq(roster.rider(0).name, "Alice", "le reste du fichier est bien relu")
+	assert_eq(roster.rider(0).color, Roster.DEFAULT_COLORS[0], "cyan, quoi que dise le fichier")
+	assert_eq(roster.rider(1).color, Roster.DEFAULT_COLORS[1], "et magenta pour la piste 2")
 
 
 func test_chaque_piste_a_sa_couleur_de_la_palette() -> void:

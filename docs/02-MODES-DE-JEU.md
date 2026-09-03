@@ -226,6 +226,9 @@ jour ne fait pas perdre ses réglages à l'opérateur. Chemins standards par OS 
 * Windows `%APPDATA%\SilverSprint\settings.json`
 
 Les noms des riders **sont persistés** (roster réutilisable d'une course à l'autre) — la v1 les
-perdait à chaque lancement. Réglages et roster sont écrits **à chaque fin de course** et à la
+perdait à chaque lancement. La **couleur**, en revanche, est écrite mais jamais relue : elle vient
+de la palette figée par piste (`04` §2), qui sert à identifier un coureur avec son numéro (`03` §6).
+Un fichier ne doit pas pouvoir donner la même couleur à deux pistes, ni figer une palette qui
+changerait. Réglages et roster sont écrits **à chaque fin de course** et à la
 fermeture, pas seulement à la fermeture : un plantage ou une coupure en soirée ne perd rien de ce
 qui a servi. Une écriture qui échoue est dite à l'opérateur.
