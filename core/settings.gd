@@ -143,6 +143,7 @@ func to_race_config(active_riders: Array[int]) -> RaceConfig:
 	config.false_start_policy = false_start_policy
 	config.false_start_penalty_m = false_start_penalty_m
 	config.roller_mm = roller_mm
+	config.speed_samples = speed_samples
 	return config
 
 

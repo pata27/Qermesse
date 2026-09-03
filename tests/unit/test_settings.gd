@@ -406,3 +406,84 @@ func test_le_developpement_ne_touche_a_aucun_calcul_de_course() -> void:
 		short_gear.arming_commands(), long_gear.arming_commands(),
 		"les commandes firmware ne dependent pas du developpement"
 	)
+
+
+func test_la_fenetre_de_lissage_reglee_atteint_vraiment_la_mesure() -> void:
+	# `docs/01` §7 : « Retenir 20 echantillons (~200 ms) […] Parametre expose en
+	# reglage avance. » Il l'etait a moitie : ecrit dans le fichier de reglages,
+	# borne a la relecture, et lu par PERSONNE. `SpeedSmoother` prenait toujours
+	# la constante. Un operateur qui l'aurait change n'aurait rien vu bouger.
+	var settings := Settings.new()
+	settings.speed_samples = 4
+	var config := settings.to_race_config([0, 1] as Array[int])
+	assert_eq(config.speed_samples, 4, "le reglage arrive dans la configuration")
+
+	# Une fenetre courte suit une ACCELERATION bien plus vite qu'une longue.
+	# La moyenne divise par le nombre d'echantillons DEJA vus : tant que la
+	# fenetre n'est pas pleine, les deux donnent la meme valeur. Il faut donc
+	# remplir, puis changer d'allure.
+	var slow_config := settings.to_race_config([0, 1] as Array[int])
+	slow_config.speed_samples = 40
+	var quick_state := RaceState.new(config)
+	var slow_state := RaceState.new(slow_config)
+	var physics := Physics.new(config.roller_mm)
+	var metres := 0.0
+	var ms := 0
+	# Quarante trames a allure lente : les deux fenetres sont pleines.
+	for step: int in range(40):
+		metres += 0.05
+		ms += 10
+		var ticks := physics.metres_to_ticks(metres)
+		quick_state.apply_sample([ticks, 0, 0, 0], ms)
+		slow_state.apply_sample([ticks, 0, 0, 0], ms)
+	# Puis quatre trames a allure double.
+	for step: int in range(4):
+		metres += 0.20
+		ms += 10
+		var ticks := physics.metres_to_ticks(metres)
+		quick_state.apply_sample([ticks, 0, 0, 0], ms)
+		slow_state.apply_sample([ticks, 0, 0, 0], ms)
+	assert_gt(
+		quick_state.speed_kph[0], slow_state.speed_kph[0],
+		"quatre echantillons suivent l'acceleration, quarante la lissent"
+	)
+
+
+func test_aucun_reglage_persiste_n_est_lettre_morte() -> void:
+	# LE DEFAUT DE CLASSE. Un champ ecrit dans `settings.json` que rien ne lit
+	# est une promesse faite a l'operateur et jamais tenue : il peut l'editer et
+	# ne verra rien changer. Chaque champ doit avoir un lecteur ailleurs.
+	var sources := ""
+	for dir: String in ["res://core", "res://scenes", "res://hardware", "res://audio"]:
+		sources += _read_scripts(dir)
+
+	var orphans: Array[String] = []
+	for entry: Dictionary in Settings.new().get_property_list():
+		if int(entry["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE == 0:
+			continue
+		var name := str(entry["name"])
+		if not sources.contains(".%s" % name):
+			orphans.append(name)
+	assert_eq(orphans, [] as Array[String], "des reglages persistes que rien ne lit")
+
+
+## Concatene les scripts d'un dossier, sans `settings.gd` lui-meme : c'est
+## AILLEURS qu'un reglage doit etre lu.
+func _read_scripts(path: String) -> String:
+	var out := ""
+	var dir := DirAccess.open(path)
+	if dir == null:
+		return out
+	dir.list_dir_begin()
+	var name := dir.get_next()
+	while not name.is_empty():
+		var full := path.path_join(name)
+		if dir.current_is_dir():
+			out += _read_scripts(full)
+		elif name.get_extension() == "gd" and name != "settings.gd":
+			var file := FileAccess.open(full, FileAccess.READ)
+			if file != null:
+				out += file.get_as_text()
+		name = dir.get_next()
+	dir.list_dir_end()
+	return out

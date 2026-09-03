@@ -32,6 +32,12 @@ var false_start_policy: FalseStartPolicy = FalseStartPolicy.WARN
 var false_start_penalty_m: float = 10.0
 
 var roller_mm: float = Physics.DEFAULT_ROLLER_MM
+## Fenetre de lissage de la vitesse MESUREE, en echantillons — docs/01 §7.
+## Vingt (~200 ms a 100 Hz) : la v1 lissait sur soixante, trop mou pour un rendu
+## de jeu ; la v2 sur dix, trop nerveux. Reglage avance, fige a l'armement comme
+## le reste : une fenetre qui changerait en cours de course rendrait deux
+## vitesses de la meme course incomparables.
+var speed_samples: int = Physics.SPEED_SAMPLES
 
 
 ## Rend une liste de problemes. Vide si la configuration est jouable.
@@ -46,6 +52,8 @@ func validate() -> Array[String]:
 		problems.append("une piste est déclarée deux fois")
 	if roller_mm <= 0.0:
 		problems.append("diamètre de rouleau invalide : %.1f mm" % roller_mm)
+	if speed_samples < 1 or speed_samples > 240:
+		problems.append("fenetre de lissage %d hors bornes 1..240" % speed_samples)
 
 	match mode:
 		Mode.DISTANCE:
@@ -154,6 +162,7 @@ func duplicate_config() -> RaceConfig:
 	copy.false_start_policy = false_start_policy
 	copy.false_start_penalty_m = false_start_penalty_m
 	copy.roller_mm = roller_mm
+	copy.speed_samples = speed_samples
 	return copy
 
 

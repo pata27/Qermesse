@@ -411,7 +411,13 @@ en mm**, mesuré physiquement (distance aimant → centre du rouleau, ×2).
 
 Lissage de la vitesse affichée : moyenne mobile. v1 utilisait 60 échantillons (~600 ms à 100 Hz),
 v2 utilisait 10 (~100 ms). **Retenir 20 échantillons (~200 ms)** : v1 était trop mou pour un rendu
-de jeu, v2 trop nerveux. Paramètre exposé en réglage avancé.
+de jeu, v2 trop nerveux.
+
+**Paramètre exposé en réglage avancé** : `speed_samples` dans `settings.json`, borné à 1..240. Il
+n'a volontairement pas de champ dans l'interface — un opérateur n'a aucune raison d'y toucher un
+soir de course, et un réglage qui rend deux vitesses incomparables n'a rien à faire à côté du
+bouton START. Comme tout le reste de la configuration, il est **figé à l'armement** (`02` §1) : le
+changer en cours de course rendrait indéfendables les deux moitiés du même classement.
 
 **La vitesse de pointe se mesure sur la vitesse lissée, jamais sur l'instantanée**, et seulement une
 fois la fenêtre pleine. À cette échelle, la vitesse instantanée n'a pas de sens : un tick vaut

@@ -722,3 +722,19 @@ avoir un lecteur, et c'est vérifiable par la machine — le test compare les cl
 diffèrent aussi par la foule, la brume et le halo — elle ne prouvait rien sur l'anticrénelage. La
 surcharge `SS_QOPT=msaa=…`, prévue par le code pour isoler un effet à la fois, donne la vraie
 comparaison : 1367 bords durs contre 1298, à niveau égal par ailleurs.
+
+## Le même défaut de classe, deux étages plus bas
+
+Après `msaa`, déclaré dans les profils de qualité et lu par personne, `speed_samples` : écrit dans
+`settings.json`, borné à la relecture, et sans aucun lecteur. `docs/01` §7 le réclamait pourtant —
+« paramètre exposé en réglage avancé ». Un opérateur pouvait l'éditer et ne rien voir changer.
+
+**Leçon** : quand un défaut de classe apparaît une fois, il est rentable de le chercher à tous les
+étages où la même forme existe. Ici trois dictionnaires de configuration — profils de qualité,
+réglages persistés, et demain d'autres — se vérifient de la même façon : chaque clé déclarée doit
+avoir un lecteur ailleurs, et une dizaine de lignes de test le tiennent.
+
+**Et vérifier la prémisse du test avant d'accuser le code** : ma première version comparait quatre
+échantillons à vingt sur quatre trames seulement. Les deux donnaient la même valeur, et c'était
+juste — la moyenne divise par le nombre d'échantillons DÉJÀ vus, donc tant que la fenêtre n'est pas
+pleine, sa taille ne change rien. Il fallait remplir, puis accélérer.

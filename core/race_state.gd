@@ -64,7 +64,10 @@ func _init(race_config: RaceConfig) -> void:
 	for i: int in range(n):
 		eliminated.append(false)
 		false_started.append(false)
-		_smoothers.append(SpeedSmoother.new())
+		# LA FENETRE VIENT DE LA CONFIGURATION, pas de la constante. Le reglage
+		# existait dans `settings.json`, borne a la relecture, et n'atteignait
+		# rien : un operateur qui l'aurait change n'aurait vu aucune difference.
+		_smoothers.append(SpeedSmoother.new(config.speed_samples))
 		_display_smoothers.append(SpeedSmoother.new(DISPLAY_WINDOW_SAMPLES))
 	reset()
 
