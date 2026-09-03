@@ -744,3 +744,35 @@ func test_le_csv_dapres_minuit_porte_la_date_de_la_soiree() -> void:
 		"2030_05_31_SilverSprintRaceLog.csv",
 		"la bascule traverse aussi les changements de mois"
 	)
+
+
+func test_le_csv_dit_qu_un_photo_finish_n_a_pas_pu_etre_departage() -> void:
+	# Sur cinquante metres, un tick vaut 36 cm et les trames tombent a 100 Hz :
+	# deux coureurs franchissent souvent DANS LA MEME TRAME. L'ecran dit alors
+	# « photo-finish » et le tableau operateur l'explique — le CSV, lui, ecrivait
+	# deux temps identiques avec les rangs 1 et 2, sans un mot. Relu six mois
+	# plus tard, rien ne distinguait un ex aequo d'une coincidence d'arrondi.
+	var config := _config()
+	var result := RaceResult.new()
+	result.mode = "distance"
+	result.ranking = [0, 1] as Array[int]
+	result.finished_ms = [5016, 5016, 0, 0] as Array[int]
+	result.distance_m = [50.0, 50.0, 0.0, 0.0] as Array[float]
+	result.end_reason = RaceRule.EndReason.ALL_FINISHED
+
+	_recorder.begin_race(config)
+	_recorder.finish_race(result)
+	# LU AVEC UN VRAI PARSEUR CSV : la note porte une virgule, donc le champ est
+	# entoure de guillemets. Un decoupage naif sur les virgules la coupait en
+	# deux — et c'est precisement ce que fait un tableur, correctement.
+	var notes: Array[String] = []
+	var file := FileAccess.open(_recorder.csv_path(), FileAccess.READ)
+	while not file.eof_reached():
+		var row := file.get_csv_line()
+		if row.size() > 10 and row[1] == "RACE_FINISH":
+			notes.append(row[10])
+	file.close()
+	assert_eq(notes.size(), 2, "une ligne par coureur")
+	for note: String in notes:
+		assert_string_contains(note, "photo-finish", "l'ex aequo est dit : %s" % note)
+		assert_string_contains(note, "tous arrivés", "sans perdre le motif de fin")

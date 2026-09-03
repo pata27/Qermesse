@@ -917,3 +917,22 @@ faisait déjà la couche audio, seule l'interface l'interdisait.
 **Trouvé par la même méthode que le tour précédent, dans l'autre sens** : en comparant les
 commandes du panneau au manuel, une seule manquait — « Volume ». En allant voir pourquoi elle
 n'était pas décrite, le défaut d'usage est apparu derrière l'omission.
+
+## Le fichier qui survit à la soirée doit se lire seul
+
+L'écran public disait « photo-finish », le tableau de l'opérateur l'expliquait — et le CSV écrivait
+deux temps identiques avec les rangs 1 et 2, sans un mot. Relu six mois plus tard, rien n'y
+distinguait un ex aequo d'une coïncidence d'arrondi. Or c'est le seul des trois qui survit à la
+soirée.
+
+**Leçon** : quand une information est portée par trois surfaces, se demander laquelle est encore
+là dans six mois. C'est celle-là qui doit être la plus explicite, pas la plus économe.
+
+**Trouvé par accident, en vérifiant autre chose** : je mesurais le taux de remplissage des colonnes
+du CSV — le `dossard` était vide, mais seulement parce que la démo n'en pose pas. En le vérifiant
+avec un vrai dossard, la sortie a montré deux coureurs à 5016 ms exactement. C'est cette ligne-là,
+pas ma question de départ, qui portait le défaut.
+
+**Et le test s'est trompé avant le code** : la note contient une virgule, donc le champ est entouré
+de guillemets. Mon découpage naïf sur les virgules la coupait en deux. Corrigé en lisant avec un
+vrai parseur CSV — ce qui prouve du même coup que l'échappement fonctionne.

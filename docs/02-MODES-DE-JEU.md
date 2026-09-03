@@ -198,7 +198,13 @@ la journée de la veille, et son CSV porte la date de la veille. Aucun goldsprin
 Événements écrits : `RACE_START`, `FALSE_START`, `RIDER_FINISH`, `RIDER_ELIMINATED`,
 `RACE_FINISH`, `RACE_ABORTED`, `LINK_LOST`, `TICK_REJECTED`.
 Une ligne `TICK_REJECTED` porte le rider et, en `note`, la raison du filtre (`01` §6.3) : un tick
-rejeté est loggué, jamais silencieusement absorbé. Le panneau matériel en tient le compte de la
+rejeté est loggué, jamais silencieusement absorbé.
+
+La `note` d'une ligne `RACE_FINISH` **décrit ce rider**, pas la course : l'instant de sa sortie
+s'il est éliminé, le motif s'il y a eu arrêt, et **`photo-finish`** s'il n'a pas pu être départagé.
+Sans cette mention, deux temps identiques avec les rangs 1 et 2 se relisent six mois plus tard
+comme une coïncidence d'arrondi — alors que sur cinquante mètres, où un tick vaut 36 cm et les
+trames tombent à 100 Hz, l'ex aequo est fréquent. Le panneau matériel en tient le compte de la
 session, avec le dernier motif — un capteur qui rebondit se voit avant de fausser une course.
 
 **Sens des colonnes sur une ligne `RACE_FINISH` — une par rider.** `temps_ms` est le **temps

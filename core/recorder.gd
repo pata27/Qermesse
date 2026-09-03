@@ -171,17 +171,35 @@ func finish_race(result: RaceResult) -> String:
 				# Une course decidee au plafond porte son motif de fin, pas le
 				# mot « interrompue » : seul un ARRET n'a pas de vainqueur
 				# (docs/02 §3).
-				"note": (
-					"éliminé à %.2f s" % (result.eliminated_ms[rider] / 1000.0)
-					if result.eliminated[rider] and result.eliminated_ms[rider] > 0
-					else "elimine" if result.eliminated[rider]
-					else "INTERROMPUE : %s" % result.interruption_note
-					if result.was_stopped()
-					else result.end_reason_name()
-				),
+				"note": _finish_note(result, rider),
 			}
 		)
 	return _write_json(result)
+
+
+## Note de la ligne `RACE_FINISH` d'un rider.
+##
+## Elle DECRIT CE RIDER, pas la course : dans un tableur, chaque ligne se lit
+## seule. Un elimine porte l'instant de sa sortie, un survivant d'arret porte le
+## motif, et un ex aequo porte « photo-finish » — sans quoi deux temps
+## identiques avec les rangs 1 et 2 se relisaient six mois plus tard comme une
+## coincidence d'arrondi. L'ecran public et le tableau operateur le disaient
+## deja ; le fichier qui survit a la soiree, non.
+static func _finish_note(result: RaceResult, rider: int) -> String:
+	var note := ""
+	if result.eliminated[rider]:
+		note = (
+			"éliminé à %.2f s" % (result.eliminated_ms[rider] / 1000.0)
+			if result.eliminated_ms[rider] > 0
+			else "éliminé"
+		)
+	elif result.was_stopped():
+		note = "INTERROMPUE : %s" % result.interruption_note
+	else:
+		note = result.end_reason_name()
+	if result.is_dead_heat(rider):
+		note += " — photo-finish, départagé par le numéro de piste"
+	return note
 
 
 func _make_uuid() -> String:
