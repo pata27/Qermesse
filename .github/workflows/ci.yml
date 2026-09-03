@@ -33,7 +33,13 @@ jobs:
       - name: gdlint
         # `tools` compris : les outils de preuve sont du code du projet, et un
         # outil qui ne passe pas le linter est un outil qu'on relira mal.
-        run: gdlint core hardware scenes tests tools
+        #
+        # `audio` compris AUSSI. Il manquait à cette liste depuis sa création :
+        # le dossier n'a jamais été relu par le linter, et il y dormait une
+        # erreur d'ordre de définitions. Un dossier de code du projet absent de
+        # cette ligne est un dossier sans garde — seul `addons/`, qui est du
+        # code tiers vendorisé, en est légitimement dehors.
+        run: gdlint core hardware scenes tests tools audio
 
   cpp:
     name: Tests C++ (${{ matrix.os }})

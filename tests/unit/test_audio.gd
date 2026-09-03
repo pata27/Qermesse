@@ -136,3 +136,93 @@ func test_la_politique_ignorer_ne_sonne_pas() -> void:
 	audio.setup(controller)
 	controller.false_start_detected.emit(0, RaceConfig.FalseStartPolicy.IGNORE)
 	assert_eq(audio.last_cue, "", "rien n'a ete declenche")
+
+
+## Monte un controleur et sa bande-son, isoles des reglages de l'utilisateur.
+func _rig() -> Array:
+	var controller := AppController.new()
+	controller.preferences_enabled = false
+	add_child_autofree(controller)
+	var audio := RaceAudio.new()
+	add_child_autofree(audio)
+	audio.setup(controller)
+	return [controller, audio]
+
+
+func test_le_decompte_et_le_depart_sonnent() -> void:
+	# docs/04 §6 : « bips de decompte, klaxon de depart ». Rien ne le verifiait :
+	# `last_cue` n'etait ecrit que par le faux depart, si bien que six des sept
+	# sons n'etaient constates par aucun test — dans un projet ou il est interdit
+	# d'en juger a l'oreille.
+	var rig := _rig()
+	var controller: AppController = rig[0]
+	var audio: RaceAudio = rig[1]
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	for value: int in [3, 2, 1, 0]:
+		controller.countdown_tick.emit(value)
+	assert_eq(int(audio.cue_counts.get("bip", 0)), 3, "un bip par seconde du decompte")
+	assert_eq(int(audio.cue_counts.get("klaxon", 0)), 1, "et le klaxon sur CD:0")
+	assert_eq(audio.last_cue, "klaxon", "le depart est le dernier son entendu")
+
+
+func test_la_cloche_sonne_aux_derniers_metres_et_une_seule_fois() -> void:
+	var rig := _rig()
+	var controller: AppController = rig[0]
+	var audio: RaceAudio = rig[1]
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.DISTANCE
+	config.distance_m = 250.0
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+
+	var state := RaceState.new(config)
+	var physics := Physics.new(config.roller_mm)
+	for metres: float in [100.0, 180.0, 205.0, 220.0, 240.0]:
+		var ticks := physics.metres_to_ticks(metres)
+		state.apply_sample([ticks, ticks, 0, 0], int(metres * 80.0))
+		controller.progress_updated.emit(state)
+	assert_eq(int(audio.cue_counts.get("cloche", 0)), 1, "une seule cloche, aux 50 derniers metres")
+
+
+func test_la_cloche_sonne_aussi_aux_dernieres_secondes_d_une_course_en_temps() -> void:
+	# docs/04 §6. Une course en temps n'a pas de metres : la cloche n'y sonnait
+	# JAMAIS, et le public n'avait aucune annonce de la fin — alors qu'en
+	# distance il en avait une. C'est le meme evenement, il se dit dans les deux
+	# modes.
+	var rig := _rig()
+	var controller: AppController = rig[0]
+	var audio: RaceAudio = rig[1]
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.TIME
+	config.duration_s = 60.0
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+
+	var state := RaceState.new(config)
+	var physics := Physics.new(config.roller_mm)
+	var ticks := 0
+	for second: int in [10, 30, 45, 52, 56]:
+		ticks = physics.metres_to_ticks(float(second) * 12.0)
+		state.apply_sample([ticks, ticks, 0, 0], second * 1000)
+		controller.progress_updated.emit(state)
+	assert_eq(int(audio.cue_counts.get("cloche", 0)), 1, "une seule cloche, aux dernieres secondes")
+
+
+func test_la_poursuite_n_a_pas_de_cloche() -> void:
+	# La fin y arrive quand l'ecart se referme : rien ne permet de l'annoncer.
+	var rig := _rig()
+	var controller: AppController = rig[0]
+	var audio: RaceAudio = rig[1]
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.PURSUIT
+	config.gap_m = 50.0
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+
+	var state := RaceState.new(config)
+	var physics := Physics.new(config.roller_mm)
+	for metres: float in [50.0, 150.0, 400.0]:
+		var lead := physics.metres_to_ticks(metres)
+		state.apply_sample([lead, physics.metres_to_ticks(metres * 0.6), 0, 0], int(metres * 80.0))
+		controller.progress_updated.emit(state)
+	assert_eq(int(audio.cue_counts.get("cloche", 0)), 0, "aucune cloche en poursuite")

@@ -134,9 +134,17 @@ fixe le plafond.
 ## 6. Audio
 
 * Nappe de fond dont l'intensité suit la vitesse du leader et, en poursuite, l'écart normalisé.
-* Bips de décompte, klaxon de départ, cloche du dernier tour / des derniers 50 m.
+* Bips de décompte, klaxon de départ, **cloche de la fin imminente** — une fois, jamais deux.
+  Un goldsprint n'a pas de tour et une course en temps n'a pas de mètres : la cloche sonne aux
+  **50 derniers mètres** en mode distance et aux **10 dernières secondes** en mode temps. En
+  poursuite elle se tait — la fin y arrive quand l'écart se referme, ce que rien ne permet
+  d'annoncer à l'avance.
 * Réactions de foule sur les dépassements, les accélérations et le franchissement.
 * Souffle de vent indexé sur la vitesse.
+**Ce qui a sonné se constate, il ne s'écoute pas.** Chaque son déclenché est noté (`last_cue`,
+`cue_counts`) : c'est la seule façon de prouver la bande-son dans une suite qui tourne sans carte
+son, et la seule façon honnête de la valider quand la consigne interdit d'en juger à l'oreille.
+
 * **Coupure audio globale d'un bouton** : en événementiel, la sono est souvent gérée séparément
   et un logiciel qui sonne par-dessus la musique est un problème. **La coupure ET le volume sont
   persistés** : ils se règlent la veille, une fois, et sont réappliqués au lancement suivant.

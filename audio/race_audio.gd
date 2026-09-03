@@ -20,9 +20,21 @@ const FULL_SPEED_KPH := 55.0
 const CROWD_ACCEL_KPH_S := 9.0
 ## Distance de la ligne, en mètres, à laquelle la cloche sonne une fois.
 const BELL_DISTANCE_M := 50.0
+## Temps restant, en secondes, à partir duquel la cloche sonne en mode temps.
+## Dix secondes : de quoi lancer un sprint final, sans sonner si tôt que
+## l'annonce ne veuille plus rien dire.
+const BELL_TIME_S := 10.0
 ## Repos entre deux clameurs : sans lui, une accélération soutenue déclencherait
 ## une réaction par image et la foule deviendrait un bourdonnement continu.
 const CROWD_COOLDOWN_S := 2.5
+
+## Ce qui a sonné — pour les tests, qui tournent sans carte son, et pour la
+## règle qui interdit d'en juger à l'oreille. `last_cue` donne le dernier son,
+## `cue_counts` le nombre de fois que chacun a été déclenché depuis le début de
+## la course. Sans ce témoin, six des sept sons ne pouvaient être vérifiés par
+## rien : seul le faux départ l'écrivait.
+var last_cue := ""
+var cue_counts: Dictionary = {}
 
 var _controller: AppController
 var _bus := 0
@@ -32,8 +44,6 @@ var _beep: AudioStreamPlayer
 var _horn: AudioStreamPlayer
 var _bell: AudioStreamPlayer
 var _buzzer: AudioStreamPlayer
-## Dernier son déclenché — pour les tests, qui tournent sans carte son.
-var last_cue := ""
 var _crowd: AudioStreamPlayer
 
 var _running := false
@@ -127,8 +137,10 @@ func _on_countdown(value: int) -> void:
 		# elle en est sans compter.
 		_beep.pitch_scale = 1.0 + (3 - value) * 0.06
 		_beep.play()
+		_cue("bip")
 	else:
 		_horn.play()
+		_cue("klaxon")
 
 
 ## docs/02 §4, AVERTISSEMENT : « bandeau + son ». `IGNORE`, lui, est « loggué
@@ -137,10 +149,16 @@ func _on_false_start(_rider: int, policy: int) -> void:
 	if policy == RaceConfig.FalseStartPolicy.IGNORE:
 		return
 	_buzzer.play()
-	last_cue = "faux-depart"
+	_cue("faux-depart")
 
 
 func _on_race_state(_previous: int, current: int) -> void:
+	# LE COMPTE REPART A L'ARMEMENT, pas au depart. Les bips du decompte et le
+	# klaxon sonnent AVANT que la course ne coure : remis a zero a l'entree en
+	# course, ils etaient effaces juste apres avoir sonne, et le temoin affirmait
+	# qu'ils n'avaient jamais retenti.
+	if current == RaceEngine.State.ARMING:
+		cue_counts.clear()
 	var now_running := current == RaceEngine.State.RUNNING
 	if now_running == _running:
 		return
@@ -151,6 +169,7 @@ func _on_race_state(_previous: int, current: int) -> void:
 		_intensity = 0.0
 		_drone.play()
 		_wind.play()
+		_cue("nappe")
 	else:
 		_drone.stop()
 		_wind.stop()
@@ -207,11 +226,28 @@ func _on_progress(state: RaceState) -> void:
 		_cheer()
 	_last_order = order
 
-	# Cloche des derniers mètres — une seule fois, en mode distance.
-	if not _bell_rung and state.config.mode == RaceConfig.Mode.DISTANCE:
-		if state.config.distance_m - state.distance_m[leader] <= BELL_DISTANCE_M:
-			_bell_rung = true
-			_bell.play()
+	# Cloche de la fin imminente — une seule fois, docs/04 §6.
+	#
+	# Un goldsprint n'a pas de tour, et une course en TEMPS n'a pas de mètres :
+	# la cloche n'y sonnait donc jamais, et le public n'avait aucune annonce de
+	# la fin alors qu'en distance il en avait une. C'est le même événement, il
+	# se dit dans les deux modes. La poursuite se tait : sa fin arrive quand
+	# l'écart se referme, ce que rien ne permet d'annoncer à l'avance.
+	if not _bell_rung and _final_stretch(state, leader):
+		_bell_rung = true
+		_bell.play()
+		_cue("cloche")
+
+
+## La course entre-t-elle dans ses derniers instants ?
+static func _final_stretch(state: RaceState, leader: int) -> bool:
+	match state.config.mode:
+		RaceConfig.Mode.DISTANCE:
+			return state.config.distance_m - state.distance_m[leader] <= BELL_DISTANCE_M
+		RaceConfig.Mode.TIME:
+			var left := state.config.duration_s - float(state.elapsed_ms) / 1000.0
+			return left <= BELL_TIME_S
+	return false
 
 
 func _on_rider_finished(_rider: int, _elapsed_ms: int, _rank: int) -> void:
@@ -230,3 +266,11 @@ func _cheer(insistent: bool = false) -> void:
 	_crowd_rest_s = CROWD_COOLDOWN_S
 	_crowd.pitch_scale = randf_range(0.94, 1.06)
 	_crowd.play()
+	_cue("foule")
+
+
+## Note ce qui vient de sonner. Le rendu audio lui-même n'est pas observable
+## depuis un test ; ce compteur l'est.
+func _cue(name: String) -> void:
+	last_cue = name
+	cue_counts[name] = int(cue_counts.get(name, 0)) + 1

@@ -208,7 +208,8 @@ de l'opérateur, une fois vérifié où il sort.
   « n'a pas de son » n'a donc pas perdu de fichier : c'est le bouton.
 
 Ce que le son joue quand il est actif : bips de décompte, klaxon de départ, nappe de fond qui suit
-la vitesse (l'écart, en poursuite), cloche des cinquante derniers mètres, clameurs sur dépassement
+la vitesse (l'écart, en poursuite), cloche de la fin imminente — cinquante derniers mètres en
+distance, dix dernières secondes en temps —, clameurs sur dépassement
 et franchissement, souffle de vent.
 
 ## Le vidéoprojecteur n'est pas détecté

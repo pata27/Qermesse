@@ -441,7 +441,7 @@
 * **Le linter de la CI se lance en local, pas au push.** Soixante commits s'étaient accumulés avec
   treize violations de `gdlint` — la CI aurait été rouge dès la première tentative, et le diagnostic
   aurait porté sur du code écrit deux semaines plus tôt. Un tour de boucle qui touche du GDScript
-  finit par `gdlint core hardware scenes tests tools`, au même titre que la suite de tests.
+  finit par `gdlint core hardware scenes tests tools audio`, au même titre que la suite de tests.
 * **Un outil de preuve ne doit jamais écrire dans les données de l'utilisateur.** Les démos font de
   vraies courses, donc de vrais enregistrements : elles ont déposé 63 courses dans la liste
   « Courses du jour » de l'opérateur en une journée, et la CI en ajoutait à chaque exécution. Les
@@ -644,3 +644,18 @@ port n'est pas retenu — `String::utf8` était déjà là, il n'y manquait que 
 dans un état pire que les deux extrêmes — à moitié corrigé, sans règle lisible. La frontière, elle,
 se décide et s'écrit : écran accentué, terminal ASCII, et un mot laissé tel quel parce qu'il doit
 rester identique dans trois endroits.
+
+## Un témoin de test peut mentir, et il faut le prouver aussi
+
+En complétant `cue_counts`, j'ai remis les compteurs à zéro à l'entrée EN COURSE. La première
+mesure a donc annoncé qu'aucun bip de décompte ni klaxon de départ n'avait sonné — alors que les
+deux sonnaient très bien. Le décompte précède la course : je remettais le témoin à zéro juste après
+qu'il eut noté ce qu'on voulait voir.
+
+**Leçon** : un instrument neuf se calibre contre un cas connu avant de servir de preuve. Ici le cas
+connu était « le décompte sonne » ; un témoin qui le nie accuse l'instrument, pas le produit.
+
+**Et un dossier absent de la liste du linter est un dossier sans garde.** `audio/` ne figurait ni
+dans le rituel ni dans la CI depuis sa création : une erreur d'ordre de définitions y dormait. Le
+critère est simple — tout dossier de code du projet est dans la ligne `gdlint` ; seul `addons/`,
+tiers et vendorisé, en est dehors.
