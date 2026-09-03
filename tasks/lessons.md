@@ -574,3 +574,18 @@ que de supposer qu'elle range ce qu'on lui donne.
 **Comment il a été trouvé** : en implémentant la même entrée « automatique » pour la qualité. Mon
 test échouait sur l'id ; en cherchant pourquoi, le sélecteur d'écran, en place depuis longtemps,
 s'est révélé porteur du même défaut. Corriger un endroit oblige à regarder ses voisins.
+
+## Une règle non outillée n'est pas une règle
+
+`docs/06` §1 pose sept règles non négociables. La cinquième — « pas d'asset orphelin » — était la
+seule qu'aucune machine ne vérifiait, et c'était la seule violée : `speed_lines.gdshader.uid`
+traînait dans le dépôt depuis que ses lignes de vitesse ont été fondues dans `overlay.gdshader`.
+Le `.gdshader` n'a même jamais été commité ; seul son `.uid` l'a été. Godot crée ces fichiers à
+l'import et ne les efface jamais.
+
+**Leçon** : devant une liste de règles, chercher d'abord celles que rien ne contrôle. Ce sont
+celles-là qui ont dérivé. Une règle tenue à la main est tenue jusqu'au jour où on regarde ailleurs.
+
+**Et une garde se prouve dans les deux sens.** J'ai fabriqué un `.uid` fantôme et un shader que
+personne ne nomme : les deux tests échouent sur eux, puis repassent au vert une fois supprimés.
+Un garde-fou qu'on n'a vu que vert ne prouve rien.
