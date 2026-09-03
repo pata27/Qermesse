@@ -1127,3 +1127,21 @@ maintenant `ss_probe.py`.
 **Séquence CI rejouée en entier localement** avant tout cela, puisque je l'avais modifiée trois
 fois sans jamais la lancer : lint, C++ racine, émulateur seul, import, suite GUT, module chargé,
 rejeu des traces, course complète. Onze étapes, toutes vertes.
+
+## Le moment le plus important n'était capturé par aucune preuve
+
+Le jeu de captures couvre neuf instants — décompte, départ, lancée, pleine course, premier,
+arrivée, célébration, regroupement, podium. Aucun ne montrait le **signal de départ** : `depart`
+est pris trois secondes après, quand le chrono a déjà remplacé le mot. Le « PARTEZ ! » plein écran,
+celui que les coureurs attendent et que les LED du boîtier doivent accompagner, n'avait jamais été
+vu en image.
+
+**Leçon** : un jeu de preuves se relit en se demandant ce qu'il ne montre PAS. Les instants
+manquants sont souvent les plus brefs — et la brièveté n'a rien à voir avec l'importance. Vérifié
+au passage que le mot n'est pas rogné : 72 px de marge à gauche, 61 à droite.
+
+**Troisième dérive de `docs/04` cette nuit** : le document annonçait `3 / 2 / 1 / GO`, l'écran dit
+`PARTEZ !`. Après la couleur de la piste et le roulis en danseuse. J'ai regardé s'il valait la
+peine d'outiller cette classe : non — la section cite aussi `500 m` et `CD:`, des exemples de
+format, et une garde qui les confondrait avec des littéraux d'écran accuserait à tort. Renoncer à
+une garde est parfois la bonne décision, à condition de dire pourquoi.

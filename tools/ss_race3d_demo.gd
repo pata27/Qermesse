@@ -376,6 +376,10 @@ func _measure() -> void:
 
 
 ## Quelques images fixes aux moments cles, pour REGARDER le rendu.
+##
+## `partez` est le signal de depart lui-meme, plein ecran. Il manquait : `depart`
+## est pris trois secondes plus tard, quand le chrono a deja remplace le mot.
+## L'instant que les coureurs attendent n'avait jamais ete vu en image.
 func _capture_stills() -> void:
 	DirAccess.make_dir_recursive_absolute(_video_dir)
 	var marks := {"depart": 3.0, "lancee": 9.0, "pleine": 18.0}
@@ -391,6 +395,18 @@ func _capture_stills() -> void:
 			shown_countdown = true
 		elif _controller.engine.state() == RaceEngine.State.RUNNING:
 			shown_countdown = true
+
+	# L'INSTANT DU DEPART, qui n'etait capture par aucune preuve. `depart` est
+	# pris trois secondes plus tard, quand le chrono a deja remplace le mot :
+	# le « PARTEZ ! » plein ecran, celui que les coureurs attendent et que les
+	# LED du boitier doivent accompagner, n'avait jamais ete vu en image.
+	#
+	# On l'attrape sur la transition vers EN COURSE — c'est `CD:0` qui la
+	# provoque (docs/01 §2), donc l'image suivante porte encore le mot.
+	while _controller.engine.state() == RaceEngine.State.COUNTDOWN:
+		await _step()
+	if _controller.engine.state() == RaceEngine.State.RUNNING:
+		await _shoot("partez")
 
 	var has_run := false
 	var racing := true

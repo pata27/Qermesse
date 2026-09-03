@@ -140,7 +140,7 @@ fixe le plafond.
   volet commun. La lame étant inclinée, un volet est plus étroit en haut qu'en bas : une carte trop
   large pour le sien est réduite jusqu'à y tenir.
 * **Poursuite** — l'écart occupe le centre de l'écran, avec la barre de tension entre `−G` et `+G`.
-* **Décompte** — plein écran, `3 / 2 / 1 / GO`, synchronisé sur les trames `CD:` du firmware
+* **Décompte** — plein écran, `3 / 2 / 1 / PARTEZ !`, synchronisé sur les trames `CD:` du firmware
   (jamais sur une horloge PC : les LED physiques et l'écran doivent être d'accord).
 * **Arrivée** — ralenti, podium, temps, vitesse moyenne et vitesse de pointe par rider. **Toute
   marque portée par une ligne est légendée sous le tableau** — la croix d'un éliminé, par exemple —
