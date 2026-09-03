@@ -690,3 +690,18 @@ seulement atteignable. L'absence de test est parfois le symptôme, pas la maladi
 la tenir — ou parce que personne n'a essayé. Il faut savoir lequel des deux, et l'écrire à côté de
 la case. Ici le test couvre le simulateur ; ce qu'il ne prouve pas, c'est que le vrai boîtier
 émette `FS:`, et c'est ce qui reste à cocher.
+
+## Corriger un cas, puis empêcher la classe
+
+Le faux départ n'était pas jouable depuis l'application : la façade `Link` ne le relayait pas. Le
+réflexe correct n'était pas de relayer ce cas-là et de passer à autre chose, mais de demander
+combien d'autres lui ressemblaient. Réponse : `inject_corrupt_frame`, dans le même angle mort — la
+trame corrompue est pourtant listée dans `docs/06` §2 parmi les pannes à éprouver.
+
+**Leçon** : après avoir corrigé un chaînon manquant, énumérer mécaniquement les chaînons de même
+forme. Ici trois listes — les `inject_*` du simulateur, les relais de la façade, les coutures
+`simulate_*` du contrôleur — se comparent en dix lignes de réflexion, et le test qui les compare
+vaut mieux que les deux correctifs qu'il rend inutiles à refaire.
+
+**Et il se prouve en rouge** : en retirant le relais, le test annonce « `Link` doit relayer
+`inject_corrupt_frame` » ; remis, il repasse au vert.

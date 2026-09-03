@@ -400,3 +400,58 @@ func test_une_elimination_est_ecrite_au_csv_avec_son_rang() -> void:
 		assert_false(line[3].is_empty(), "elle porte la piste")
 		assert_false(line[9].is_empty(), "et son rang")
 		assert_string_contains(line[10], "écart", "la note dit de combien")
+
+
+func test_une_trame_illisible_se_dit_a_l_operateur_sans_arreter_la_course() -> void:
+	# docs/06 §2 liste la trame corrompue parmi les pannes a eprouver, et
+	# `docs/01` §4 exige qu'aucune trame ne soit avalee en silence. Le
+	# simulateur savait en produire une ; rien ne pouvait la demander depuis
+	# l'application, et le chemin qui la remonte a l'operateur n'etait teste
+	# nulle part.
+	assert_true(await _await_identified())
+	_controller.settings.distance_m = 100.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+	_controller.simulate_corrupt_frame()
+	await wait_frames(10)
+
+	var said := false
+	for text: String in notices:
+		if text.contains("trame anormale"):
+			said = true
+	assert_true(said, "l'operateur est prevenu")
+	assert_eq(_controller.engine.state(), RaceEngine.State.RUNNING, "et la course continue")
+
+
+func test_chaque_panne_du_simulateur_est_atteignable_depuis_l_application() -> void:
+	# LE DEFAUT DE CLASSE, tenu par la machine. Deux injections sur six ne
+	# traversaient pas la facade `Link` : le faux depart et la trame corrompue.
+	# Elles existaient dans `link_sim`, personne ne pouvait les demander, et
+	# c'est pour cela qu'aucun test ne les couvrait. Une panne qu'on ne peut pas
+	# provoquer est une panne qu'on ne saura pas diagnostiquer le soir venu.
+	var sim: Node = (load("res://hardware/link_sim.gd") as GDScript).new()
+	var injections: Array[String] = []
+	for entry: Dictionary in sim.get_method_list():
+		var name := str(entry["name"])
+		if name.begins_with("inject_"):
+			injections.append(name)
+	sim.free()
+	assert_gt(injections.size(), 3, "le simulateur sait provoquer des pannes")
+
+	var link := Link.new()
+	var controller := AppController.new()
+	for injection: String in injections:
+		assert_true(
+			link.has_method(injection),
+			"`Link` doit relayer `%s`, sinon l'application ne peut pas la demander" % injection
+		)
+		var seam := injection.replace("inject_", "simulate_")
+		assert_true(
+			controller.has_method(seam),
+			"`AppController` doit exposer `%s`" % seam
+		)
+	link.free()
+	controller.free()

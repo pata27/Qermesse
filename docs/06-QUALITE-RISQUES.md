@@ -21,7 +21,7 @@
 | Outil de rejeu | GUT en sous-processus + CI | `tools/ss_replay` lui-même, verdicts ET codes de sortie, éprouvé sur une trace saine et une trace truquée. La suite exerçait `core/replay.gd` ; la ligne de commande que `DEPANNAGE` promet à l'opérateur n'était gardée par rien |
 | Deux fenêtres | GUT headless | `Main.open_spectacle()` monte la fenêtre spectacle et sa scène, avec le niveau de qualité et le plein écran issus des réglages. Une régression y casse l'écran du public, et se vérifiait jusqu'ici en branchant un vidéoprojecteur |
 | Traces de référence | GUT + `tests/fixtures/` | deux courses réelles enregistrées **avant** plusieurs changements du moteur, rejouées à chaque exécution : le format d'hier reste lisible et l'arbitrage n'a pas dérivé. Un test généré ne le prouve pas — il produit sa trace avec le code du jour |
-| Injection de pannes | `link_sim` | trame corrompue, perte de lien, tick fantôme, faux départ |
+| Injection de pannes | `link_sim` | trame corrompue, perte de lien, tick fantôme, faux départ, trames perdues. Chacune doit être **atteignable depuis l'application** : un test compare par réflexion les `inject_*` du simulateur, les relais de `Link` et les coutures `simulate_*` du contrôleur. Deux manquaient — une panne qu'on ne peut pas provoquer est une panne qu'on ne saura pas diagnostiquer le soir venu |
 | Arborescence | GUT headless | la **règle 5** du §1, tenue par la machine : aucun `.uid` sans sa ressource — Godot les crée à l'import et ne les efface jamais —, aucun fichier de `art/` que plus rien ne nomme, par son nom ou par son uid. `addons/` est hors périmètre : code tiers vendorisé |
 | Manuel matériel | checklist `docs/RECETTE.md` | avant chaque release |
 

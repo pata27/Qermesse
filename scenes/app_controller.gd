@@ -393,6 +393,11 @@ func simulate_phantom_tick(rider: int) -> void:
 	_link.inject_phantom_tick(rider)
 
 
+## Une trame illisible sur la ligne — sur le boîtier SIMULÉ.
+func simulate_corrupt_frame() -> void:
+	_link.inject_corrupt_frame()
+
+
 ## Des trames perdues faute d'avoir suivi le flux — sur le boîtier SIMULÉ.
 func simulate_dropped_frames(count: int) -> void:
 	_link.inject_dropped_frames(count)

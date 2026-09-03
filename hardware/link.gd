@@ -174,6 +174,13 @@ func inject_phantom_tick(rider: int) -> void:
 		_impl.inject_phantom_tick(rider)
 
 
+## Une trame illisible sur la ligne — docs/07 §6. Elle doit remonter en
+## `UNKNOWN` et se dire a l'operateur, jamais etre avalee en silence.
+func inject_corrupt_frame() -> void:
+	if _impl.has_method("inject_corrupt_frame"):
+		_impl.inject_corrupt_frame()
+
+
 func inject_dropped_frames(count: int) -> void:
 	if _impl.has_method("inject_dropped_frames"):
 		_impl.inject_dropped_frames(count)
