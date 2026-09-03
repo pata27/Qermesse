@@ -17,6 +17,28 @@ import os
 
 env = SConscript("../../third_party/godot-cpp/SConstruct")
 
+# `ar` REÇOIT DES MILLIERS DE CHEMINS ABSOLUS, et le shell a une limite.
+#
+# godot-cpp compile plus de trois mille fichiers, puis les archive en une seule
+# commande dont chaque argument porte le chemin complet du dépôt. Passé une
+# centaine de caractères de préfixe, la ligne dépasse `ARG_MAX` et l'archivage
+# échoue sur `sh: Argument list too long` — sans jamais nommer la cause.
+#
+# Le README traitait cela comme une fatalité et demandait de cloner dans un
+# chemin court. Ce n'en est pas une : SCons sait écrire les arguments dans un
+# fichier et appeler `ar @fichier`, ce que GNU ar comprend. La contrainte
+# disparaît, et avec elle un piège qui frappe d'abord ceux qui clonent le
+# projet là où leur système les met — c'est exactement ce qui est arrivé à la
+# CI, dont le chemin de travail est imposé.
+#
+# `MAXLINELENGTH` est le seuil au-delà duquel SCons bascule sur le fichier ;
+# en deçà, la commande part normalement. Posé sur le même objet `env` que
+# celui de godot-cpp, donc son archive en bénéficie aussi — c'est elle qui
+# échouait.
+if env["platform"] == "linux":
+    env["MAXLINELENGTH"] = 8192
+    env["ARCOM"] = '${TEMPFILE("%s","$ARCOMSTR")}' % env["ARCOM"]
+
 env.Append(CPPPATH=["src/"])
 
 sources = [

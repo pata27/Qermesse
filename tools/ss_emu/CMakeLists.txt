@@ -13,6 +13,17 @@ cmake_minimum_required(VERSION 3.16)
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   project(ss_emu LANGUAGES CXX)
   set(SS_EMU_STANDALONE TRUE)
+  # LE STANDARD SE POSE ICI AUSSI. Construit depuis la racine, il vient du
+  # `CMakeLists` parent ; construit SEUL, il n'y avait personne pour le poser,
+  # et chaque compilateur retombait sur son defaut. GCC est assez recent pour
+  # que C++17 passe quand meme, ce qui a laisse le defaut invisible sur la
+  # machine de developpement — mais MSVC compile en C++14 par defaut et
+  # AppleClang de meme : `std::string_view` et `std::clamp` y disparaissaient,
+  # avec leurs `#include` pourtant bien presents. Le mode SEUL est celui que le
+  # README documente ; il doit compiler partout, pas seulement ici.
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
   # `add_test` reste sans effet si personne n'a appele `enable_testing()` au
   # niveau racine : construit seul, `ctest` repondait « No tests were found ».
   # Depuis la racine du projet, c'est le CMakeLists parent qui l'appelle.

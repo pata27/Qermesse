@@ -41,3 +41,10 @@ enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 [rendering]
 
 renderer/rendering_method="forward_plus"
+
+; EXPORT macOS. Godot refuse d'exporter en universal ou arm64 sans ce format :
+; « Cannot export for universal or arm64 if ETC2 ASTC texture format is
+; disabled ». Le projet n'embarque aucune texture — tout est synthetise — mais
+; la verification est faite sur le REGLAGE, pas sur le contenu, et l'export
+; macOS echouait donc sur un projet qui n'a rien a compresser.
+textures/vram_compression/import_etc2_astc=true
