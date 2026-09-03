@@ -593,3 +593,46 @@ func test_l_hymne_du_podium_boucle_et_resout_en_majeur() -> void:
 		float(_frames(anthem)) / SoundForge.MIX_RATE, MusicForge.LOOP_S,
 		"plus longue que la musique de course"
 	)
+
+
+func test_la_salle_ne_hurle_pas_pour_du_bruit_de_mesure() -> void:
+	# Une course de vingt secondes produisait DIX clameurs — une toutes les
+	# deux secondes et demie, du depart a l'arrivee. Une salle qui hurle sans
+	# discontinuer ne hurle plus.
+	#
+	# Deux causes, toutes deux du bruit pris pour un fait de course. Les trames
+	# arrivent a 20 Hz : sur cinq centiemes de seconde, un demi-km/h de gigue
+	# du lissage donne dix km/h par seconde, le seuil exact de la clameur. Et
+	# deux coureurs cote a cote echangent leurs places a chaque trame, ce qui
+	# passait pour un depassement.
+	var rig := _rig()
+	var controller: AppController = rig[0]
+	var audio: RaceAudio = rig[1]
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.DISTANCE
+	config.distance_m = 500.0
+	config.active_riders = [0, 1]
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+
+	var state := RaceState.new(config)
+	var physics := Physics.new(config.roller_mm)
+	# Coude a coude a allure constante, trente trames a 20 Hz : les deux
+	# s'echangent la tete sans arret, personne ne prend le moindre metre.
+	for step: int in range(30):
+		var metres := 10.0 + float(step) * 0.6
+		var other := metres + (0.15 if step % 2 == 0 else -0.15)
+		state.apply_sample(
+			[physics.metres_to_ticks(metres), physics.metres_to_ticks(other), 0, 0],
+			1000 + step * 50
+		)
+		controller.progress_updated.emit(state)
+	assert_eq(int(audio.cue_counts.get("souffle", 0)), 0, "cote a cote n'est pas un depassement")
+	assert_lte(int(audio.cue_counts.get("foule", 0)), 1, "et la salle reste calme")
+
+	# UN VRAI depassement, lui, s'entend : le second prend dix metres.
+	state.apply_sample(
+		[physics.metres_to_ticks(30.0), physics.metres_to_ticks(40.0), 0, 0], 4000
+	)
+	controller.progress_updated.emit(state)
+	assert_eq(int(audio.cue_counts.get("souffle", 0)), 1, "dix metres, c'est un depassement")

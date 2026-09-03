@@ -37,6 +37,13 @@ const CROWD_COOLDOWN_S := 2.5
 ## Repos entre deux souffles de depassement. Plus court que celui de la foule :
 ## un depassement est un fait de course, il se dit a chaque fois ou presque.
 const WHOOSH_COOLDOWN_S := 0.8
+## Avance minimale, en metres, pour qu'un changement de tete compte comme un
+## depassement. Sous ce seuil, deux coureurs cote a cote echangent leurs places
+## a chaque trame et la salle hurlerait sans discontinuer.
+const OVERTAKE_MARGIN_M := 0.6
+## Fenetre sur laquelle l'acceleration est mesuree. Voir `_on_progress` : sous
+## une demi-seconde, on mesure la gigue du lissage et non le coureur.
+const ACCEL_WINDOW_S := 0.5
 ## Attenuation du lit sonore pendant une annonce, en decibels, et le temps qu'il
 ## met a remonter. Sans elle, la cloche se noie dans le fond qu'elle interrompt.
 const DUCK_DB := 11.0
@@ -337,19 +344,26 @@ func _on_progress(state: RaceState) -> void:
 	else:
 		_intensity = clampf(speed / FULL_SPEED_KPH, 0.0, 1.0)
 
+	# L'ACCELERATION SE MESURE SUR UNE DEMI-SECONDE, pas d'une trame a l'autre.
+	#
+	# Les trames arrivent a 20 Hz : sur cinq centiemes de seconde, un demi-km/h
+	# de gigue du lissage donne dix km/h par seconde — le seuil exact de la
+	# clameur. La salle reagissait donc au BRUIT DE MESURE, une fois toutes les
+	# deux secondes et demie du depart a l'arrivee, et une salle qui hurle sans
+	# discontinuer ne hurle plus.
 	var elapsed := float(state.elapsed_ms) / 1000.0
-	if elapsed > 0.5:
-		var accel := (speed - _last_speed_kph) / maxf(elapsed - _last_elapsed_s, 0.001)
-		if accel > CROWD_ACCEL_KPH_S:
+	var window := elapsed - _last_elapsed_s
+	if elapsed > 0.5 and window >= ACCEL_WINDOW_S:
+		if (speed - _last_speed_kph) / window > CROWD_ACCEL_KPH_S:
 			_cheer()
-	_last_speed_kph = speed
-	_last_elapsed_s = elapsed
+		_last_speed_kph = speed
+		_last_elapsed_s = elapsed
 
 	# Dépassement : l'ordre au classement a changé. C'est le moment où une salle
 	# réagit vraiment, bien plus qu'à une accélération.
 	order.sort_custom(func(a: int, b: int) -> bool:
 		return state.distance_m[a] > state.distance_m[b])
-	if not _last_order.is_empty() and order != _last_order:
+	if not _last_order.is_empty() and order != _last_order and _real_overtake(state, order):
 		# DEUX SONS POUR DEUX INFORMATIONS. La clameur dit que la salle a
 		# reagi ; le souffle dit ce qui s'est passe sur la piste. L'un sans
 		# l'autre laisse le public deviner lequel des deux vient d'arriver.
@@ -434,6 +448,23 @@ func _on_race_finished(_result: RaceResult) -> void:
 	# ou le podium s'affiche.
 	_anthem.play()
 	_cue("podium")
+
+
+## Le changement d'ordre est-il un VRAI depassement ?
+##
+## Deux coureurs a dix centimetres l'un de l'autre echangent leurs places a
+## chaque trame : au profil « egaux », la course produisait ainsi une clameur
+## toutes les deux secondes et demie, du depart a l'arrivee. Une salle qui
+## hurle en continu ne hurle plus — et l'ecoute a ete sans appel.
+##
+## Un depassement se constate quand le nouveau premier a PRIS DU CHAMP sur
+## celui qu'il vient de passer. En deca, c'est du bruit de mesure, pas un fait
+## de course.
+static func _real_overtake(state: RaceState, order: Array[int]) -> bool:
+	if order.size() < 2:
+		return false
+	var gap: float = state.distance_m[order[0]] - state.distance_m[order[1]]
+	return gap >= OVERTAKE_MARGIN_M
 
 
 ## Clameur. `insistent` ignore le repos : un franchissement mérite toujours sa
