@@ -40,6 +40,11 @@
 | Arborescence | GUT headless | la **règle 5** du §1, tenue par la machine : aucun `.uid` sans sa ressource — Godot les crée à l'import et ne les efface jamais —, aucun fichier de `art/` que plus rien ne nomme, par son nom ou par son uid. `addons/` est hors périmètre : code tiers vendorisé |
 | Manuel matériel | checklist `docs/RECETTE.md` | avant chaque release |
 
+**Repère de durée**, pour qu'un ralentissement se remarque : la suite GUT tourne en **57 s** sur
+une machine de développement, dont **15 s** pour les deux tests sur pseudo-terminal — sans
+l'émulateur construit, elle tombe à 41 s et signale trois `Risky/Pending`. Ce quart du temps
+achète la couche la plus risquée ; tout écart notable au-delà mérite qu'on regarde ce qui attend.
+
 Le rejeu est le filet de sécurité le plus rentable du projet : chaque course réelle enregistrée en
 JSON devient un cas de test permanent. Après le premier événement, on dispose d'une batterie de cas
 réels que personne n'aurait su écrire à la main.

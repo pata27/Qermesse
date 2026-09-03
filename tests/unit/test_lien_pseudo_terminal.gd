@@ -59,9 +59,13 @@ func _start_emulator(profile: String) -> String:
 ##
 ## PAS de `FileAccess.file_exists` : le lien pointe vers `/dev/pts/N`, un
 ## fichier de peripherique que Godot ne voit pas comme un fichier ordinaire. Le
-## seul signal fiable est l'etat du lien lui-meme, teste plus bas.
+## seul signal fiable est l'etat du lien lui-meme, teste plus bas — d'ou une
+## attente COURTE ici, juste de quoi laisser le processus s'installer. Les 120
+## images de la premiere version etaient deux secondes payees deux fois a chaque
+## execution de la suite, pour rien : le pilote rescanne a 1 Hz et retrouve le
+## port de lui-meme (docs/01 §6.4).
 func _let_emulator_settle() -> void:
-	for i: int in range(120):
+	for i: int in range(20):
 		await wait_physics_frames(1)
 
 

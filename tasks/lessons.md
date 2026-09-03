@@ -1209,3 +1209,19 @@ et si elle est vraiment facile, l'outiller pour qu'elle se refasse seule.
 près. Elles restent en 0..3, et les deux outils le disent maintenant dans leur en-tête. Une
 convention se respecte, mais elle a le droit d'avoir des frontières — à condition qu'elles soient
 écrites.
+
+## Une attente fixe est une dette qu'on paie à chaque exécution
+
+Les tests sur pseudo-terminal attendaient 120 images avant d'ouvrir le port, deux fois par
+exécution — deux secondes chacune, pour rien. Le pilote rescanne à 1 Hz et retrouve le port de
+lui-même (`docs/01` §6.4) : l'attente n'apportait aucune garantie que le test n'obtenait déjà par
+son propre `_await_state`. Ramenée à 20 images, la suite passe de 63,5 s à 56,8 s — onze pour cent,
+sans perdre une assertion, et vérifié stable sur trois exécutions consécutives.
+
+**Leçon** : une attente fixe dans un test se paie à chaque exécution, pour toujours. Quand le test
+sait déjà attendre une CONDITION, l'attente fixe qui la précède est presque toujours du gras. La
+supprimer fait même mieux que gagner du temps : le chemin de rescan du pilote se trouve exercé.
+
+**Chiffre consigné** : la suite tourne en 57 s, dont 15 pour les deux tests sur pseudo-terminal, et
+41 s sans l'émulateur construit. `docs/06` §2 le note comme repère — un ralentissement futur se
+remarquera au lieu de s'installer.
