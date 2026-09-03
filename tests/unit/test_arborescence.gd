@@ -326,3 +326,27 @@ func _has_any_file(path: String) -> bool:
 		if not sub.begins_with(".") and _has_any_file(path.path_join(sub)):
 			return true
 	return false
+
+
+## La sortie de la suite reste lisible.
+##
+## `wait_frames` est un alias deprecie de `wait_physics_frames` : chaque appel
+## imprimait un avertissement, soit 829 lignes par execution. Ce bruit noie les
+## messages qui comptent — il a fallu grepper autour toute une nuit — et c'est
+## exactement le defaut deja corrige sur `ss_monitor` et `ss_probe`, ou une
+## ligne d'etat repeinte trop souvent enterrait le diagnostic.
+func test_la_suite_n_appelle_aucune_fonction_depreciee() -> void:
+	var offenders: Array[String] = []
+	var files := PackedStringArray()
+	_walk("res://tests", files)
+	for path: String in files:
+		if path.get_extension() != "gd":
+			continue
+		var file := FileAccess.open(path, FileAccess.READ)
+		if file == null:
+			continue
+		var text := _without_comments(file.get_as_text())
+		# `wait_frames` sans prefixe : `wait_physics_frames` contient la chaine.
+		if RegEx.create_from_string("(?<![_a-z])wait_frames\\(").search(text) != null:
+			offenders.append(path.get_file())
+	assert_eq(offenders, [] as Array[String], "des appels a `wait_frames`, deprecie")

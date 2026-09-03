@@ -1073,3 +1073,22 @@ verts, et le code de sortie reste 0, ce qui est juste : sous Windows le saut est
 **Corollaire pour la recette** : la ligne `Risky/Pending` entre dans les vérifications d'avant
 événement, et elle doit valoir zéro. Un test sauté n'est pas un test vert — c'est une couche qui
 n'a pas été éprouvée, et le plus souvent la plus risquée.
+
+## Huit cent vingt-neuf avertissements par exécution
+
+`wait_frames` est un alias déprécié de `wait_physics_frames` : chaque appel imprimait sa ligne
+d'avertissement, 829 par exécution de la suite. J'ai passé la nuit à filtrer autour pour lire les
+échecs. C'est exactement le défaut déjà corrigé sur `ss_monitor` et `ss_probe` — une sortie trop
+bavarde enterre le diagnostic — mais dans la suite de tests, là où je le voyais tous les jours sans
+le traiter.
+
+**Leçon** : le bruit qu'on contourne machinalement est celui qu'on ne voit plus. Quand on
+s'aperçoit qu'on grep systématiquement autour d'une sortie, c'est la sortie qu'il faut corriger,
+pas le grep.
+
+**Le renommage était sans risque** : l'alias déprécié appelle littéralement la fonction qui le
+remplace. Vérifié malgré tout par deux exécutions complètes, et une garde empêche le retour.
+
+**Un chiffre à connaître** : la suite passe de 41 à 63 secondes selon que l'émulateur est construit
+ou non. Ces vingt-deux secondes sont le prix des deux tests sur pseudo-terminal — la couche la plus
+risquée. C'est cher et c'est justifié ; il fallait le mesurer pour pouvoir le dire.

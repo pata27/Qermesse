@@ -62,12 +62,12 @@ func _start_emulator(profile: String) -> String:
 ## seul signal fiable est l'etat du lien lui-meme, teste plus bas.
 func _let_emulator_settle() -> void:
 	for i: int in range(120):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 
 
 func _await_state(wanted: int, frames: int = 600) -> bool:
 	for i: int in range(frames):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if _link.get_link_state() == wanted:
 			return true
 	return false
@@ -111,7 +111,7 @@ func test_le_module_natif_ouvre_un_vrai_port_et_arme_une_course() -> void:
 	assert_true(_link.send_command("g"), "depart")
 
 	for i: int in range(1800):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if kinds.has(Protocol.Frame.PROGRESS) and int(_link.get_stats().get("frames_total", 0)) > 20:
 			break
 	assert_true(kinds.has(Protocol.Frame.LENGTH_ACK), "le boitier accuse la longueur")
@@ -159,7 +159,7 @@ func test_le_lien_coupe_est_vu_quand_le_boitier_disparait_en_course() -> void:
 	_link.send_command("g")
 	_link.set_race_active(true)
 	for i: int in range(1800):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if progress.size() > 5:
 			break
 	assert_gt(progress.size(), 5, "la course coule avant qu'on debranche")
@@ -168,7 +168,7 @@ func test_le_lien_coupe_est_vu_quand_le_boitier_disparait_en_course() -> void:
 	_pid = -1
 	var seen := false
 	for i: int in range(1800):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		var state := _link.get_link_state()
 		if state == Protocol.State.LINK_LOST or state == Protocol.State.DISCONNECTED:
 			seen = true

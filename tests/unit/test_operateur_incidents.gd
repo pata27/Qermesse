@@ -17,10 +17,10 @@ func test_lien_perdu_puis_revenu_sous_trois_secondes_la_course_reprend() -> void
 	_controller.settings.distance_m = 100.0
 	assert_true(_controller.start_race())
 	assert_true(await _await_running(), "la course doit partir")
-	await wait_frames(10)
+	await wait_physics_frames(10)
 
 	_controller.simulate_link_loss()
-	await wait_frames(2)
+	await wait_physics_frames(2)
 	assert_eq(_controller.link_state(), Protocol.State.LINK_LOST)
 	assert_has(notices, "LIEN PERDU", "bandeau d'alerte")
 	assert_eq(_controller.engine.state(), RaceEngine.State.RUNNING, "gel, pas abandon")
@@ -28,7 +28,7 @@ func test_lien_perdu_puis_revenu_sous_trois_secondes_la_course_reprend() -> void
 	await wait_seconds(0.5)
 	_controller.simulate_link_return()
 	for i: int in range(600):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if not finished.is_empty():
 			break
 	assert_false(finished.is_empty(), "la course reprend et se termine")
@@ -46,7 +46,7 @@ func test_lien_perdu_au_dela_de_trois_secondes_la_course_est_abandonnee() -> voi
 	_controller.settings.distance_m = 100.0
 	assert_true(_controller.start_race())
 	assert_true(await _await_running(), "la course doit partir")
-	await wait_frames(10)
+	await wait_physics_frames(10)
 
 	_controller.simulate_link_loss()
 	await wait_seconds(2.5)
@@ -68,12 +68,12 @@ func test_un_tick_fantome_est_loggue_et_compte_au_panneau_materiel() -> void:
 	_controller.settings.distance_m = 100.0
 	assert_true(_controller.start_race())
 	assert_true(await _await_running(), "la course doit partir")
-	await wait_frames(10)
+	await wait_physics_frames(10)
 	assert_eq(_controller.rejected_ticks(), 0)
 
 	for i: int in range(12):
 		_controller.simulate_phantom_tick(1)
-	await wait_frames(5)
+	await wait_physics_frames(5)
 	assert_gt(_controller.rejected_ticks(), 0, "la rafale est rejetee")
 	assert_string_contains(_controller.last_rejection(), "piste 2")
 	assert_has(_csv_events(), "TICK_REJECTED", "loggue")
@@ -129,7 +129,7 @@ func test_un_journal_impossible_a_ecrire_est_signale_en_fin_de_course() -> void:
 	controller.notice.connect(func(text: String) -> void: notices.append(text))
 	controller.set_simulation_speed(10.0)
 	for i: int in range(120):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if controller.link_state() == Protocol.State.IDENTIFIED:
 			break
 	controller.settings.distance_m = 100.0
@@ -137,7 +137,7 @@ func test_un_journal_impossible_a_ecrire_est_signale_en_fin_de_course() -> void:
 	var finished: Array[RaceResult] = []
 	controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
 	for i: int in range(900):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if not finished.is_empty():
 			break
 	assert_false(finished.is_empty(), "la course se termine et se classe")
@@ -185,7 +185,7 @@ func test_des_trames_perdues_sont_signalees_pendant_la_course() -> void:
 	_controller.simulate_dropped_frames(3)
 	var warned := ""
 	for i: int in range(120):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		for text: String in notices:
 			if text.begins_with("TRAMES PERDUES"):
 				warned = text
@@ -197,7 +197,7 @@ func test_des_trames_perdues_sont_signalees_pendant_la_course() -> void:
 	# Une seule alerte par course : le compteur ne redescend jamais.
 	var before := notices.size()
 	_controller.simulate_dropped_frames(2)
-	await wait_frames(10)
+	await wait_physics_frames(10)
 	assert_eq(notices.size(), before, "on ne repete pas a chaque image")
 	_controller.stop_race()
 
@@ -231,7 +231,7 @@ func test_une_piste_cochee_qui_ne_bouge_pas_est_signalee() -> void:
 
 	var warned := ""
 	for i: int in range(900):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		for text: String in notices:
 			if text.begins_with("PISTE 3"):
 				warned = text
@@ -251,7 +251,7 @@ func test_fermer_le_logiciel_pendant_une_course_arrete_le_boitier() -> void:
 	_controller.settings.distance_m = 500.0
 	assert_true(_controller.start_race())
 	assert_true(await _await_running(), "la course doit partir")
-	await wait_frames(20)
+	await wait_physics_frames(20)
 
 	var commands: Array[String] = []
 	_controller.engine.command_requested.connect(func(c: String) -> void: commands.append(c))
@@ -279,9 +279,9 @@ func test_une_course_interrompue_garde_sa_trace_rejouable() -> void:
 	_controller.settings.distance_m = 500.0
 	assert_true(_controller.start_race())
 	assert_true(await _await_running(), "la course doit partir")
-	await wait_frames(20)
+	await wait_physics_frames(20)
 	_controller.stop_race()
-	await wait_frames(2)
+	await wait_physics_frames(2)
 
 	var files := DirAccess.get_files_at(_races)
 	assert_eq(files.size(), 1, "la course interrompue laisse sa trace")
@@ -299,9 +299,9 @@ func test_l_historique_n_invente_pas_de_vainqueur_a_une_course_arretee() -> void
 	_controller.settings.distance_m = 500.0
 	assert_true(_controller.start_race())
 	assert_true(await _await_running())
-	await wait_frames(20)
+	await wait_physics_frames(20)
 	_controller.stop_race()
-	await wait_frames(2)
+	await wait_physics_frames(2)
 
 	var results := _panel.results_panel()
 	assert_eq(results.history_count(), 1, "elle entre dans les courses du jour")
@@ -314,7 +314,7 @@ func test_stop_interrompt_la_course_et_le_csv_le_dit() -> void:
 	var race_panel := _panel.race_panel()
 	race_panel.refresh()
 	race_panel.start_button().pressed.emit()
-	await wait_frames(30)
+	await wait_physics_frames(30)
 
 	race_panel.stop_button().pressed.emit()
 	assert_eq(_controller.engine.state(), RaceEngine.State.IDLE)
@@ -337,7 +337,7 @@ func test_basculer_materiel_puis_simulateur_ramene_un_lien_vivant() -> void:
 	var toggle := _panel.hardware_panel().backend_toggle()
 
 	toggle.button_pressed = false
-	await wait_frames(5)
+	await wait_physics_frames(5)
 	toggle.button_pressed = true
 
 	assert_true(await _await_identified(), "le lien simulateur repart")
@@ -348,7 +348,7 @@ func test_basculer_materiel_puis_simulateur_ramene_un_lien_vivant() -> void:
 ## Attend qu'une ligne d'evenement apparaisse dans le CSV, et la rend.
 func _await_csv_line(event: String, frames: int = 900) -> PackedStringArray:
 	for i: int in range(frames):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		for row: PackedStringArray in _read_csv_rows():
 			if row.size() > 1 and row[1] == event:
 				return row
@@ -369,7 +369,7 @@ func test_un_faux_depart_est_ecrit_au_csv_et_la_course_part_quand_meme() -> void
 	# PENDANT LE DECOMPTE, pas avant : le firmware ne signale un faux depart
 	# qu'entre `CD:3` et `CD:0`. Injecte trop tot, il ne se passait rien.
 	for i: int in range(300):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if _controller.engine.state() == RaceEngine.State.COUNTDOWN:
 			break
 	assert_eq(_controller.engine.state(), RaceEngine.State.COUNTDOWN, "le decompte tourne")
@@ -416,7 +416,7 @@ func test_une_trame_illisible_se_dit_a_l_operateur_sans_arreter_la_course() -> v
 	var notices: Array[String] = []
 	_controller.notice.connect(func(text: String) -> void: notices.append(text))
 	_controller.simulate_corrupt_frame()
-	await wait_frames(10)
+	await wait_physics_frames(10)
 
 	var said := false
 	for text: String in notices:
@@ -471,9 +471,9 @@ func test_le_boitier_qui_comprend_une_autre_longueur_le_dit_a_l_operateur() -> v
 	# Le boitier accuse une longueur qui n'est pas celle demandee.
 	_controller.settings.distance_m = 500.0
 	assert_true(_controller.start_race())
-	await wait_frames(3)
+	await wait_physics_frames(3)
 	_controller.simulate_length_ack(999)
-	await wait_frames(3)
+	await wait_physics_frames(3)
 
 	var said := false
 	for text: String in notices:
@@ -563,7 +563,7 @@ func test_la_trace_est_le_flux_recu_trame_pour_trame() -> void:
 	var finished: Array[RaceResult] = []
 	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
 	for i: int in range(2500):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if not finished.is_empty():
 			break
 	assert_false(finished.is_empty(), "la course se termine")

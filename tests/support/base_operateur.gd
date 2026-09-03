@@ -50,7 +50,7 @@ func _wipe() -> void:
 
 func _await_identified() -> bool:
 	for i: int in range(120):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if _controller.link_state() == Protocol.State.IDENTIFIED:
 			return true
 	return false
@@ -84,7 +84,7 @@ func _read_csv_rows() -> Array[PackedStringArray]:
 
 func _await_running() -> bool:
 	for i: int in range(300):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if _controller.engine.state() == RaceEngine.State.RUNNING:
 			return true
 	return false

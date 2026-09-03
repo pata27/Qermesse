@@ -48,7 +48,7 @@ func test_j3_une_course_complete_menee_uniquement_aux_boutons() -> void:
 	var finished: Array[RaceResult] = []
 	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
 	for i: int in range(1200):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if not finished.is_empty():
 			break
 
@@ -107,7 +107,7 @@ func test_j3_le_json_de_course_est_rejouable() -> void:
 	var finished: Array[RaceResult] = []
 	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
 	for i: int in range(2400):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if not finished.is_empty():
 			break
 	assert_false(finished.is_empty())
@@ -218,7 +218,7 @@ func test_les_preferences_sont_ecrites_a_chaque_fin_de_course() -> void:
 	add_child_autofree(controller)
 	controller.set_simulation_speed(10.0)
 	for i: int in range(120):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if controller.link_state() == Protocol.State.IDENTIFIED:
 			break
 	controller.roster.rider(0).name = "Zoe"
@@ -228,7 +228,7 @@ func test_les_preferences_sont_ecrites_a_chaque_fin_de_course() -> void:
 	var finished: Array[RaceResult] = []
 	controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
 	for i: int in range(900):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if not finished.is_empty():
 			break
 	assert_false(finished.is_empty())
@@ -251,7 +251,7 @@ func test_le_test_capteurs_fait_vraiment_bouger_les_pistes() -> void:
 	# Le decompte firmware dure ~4 s ; le simulateur est a x10.
 	var moved := false
 	for i: int in range(300):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if hardware.sensor_text(0).contains("ticks") and not hardware.sensor_text(0).contains(" 0 ticks"):
 			moved = true
 			break
@@ -261,7 +261,7 @@ func test_le_test_capteurs_fait_vraiment_bouger_les_pistes() -> void:
 
 	hardware.sensor_button().button_pressed = false
 	assert_false(_controller.sensor_test_active())
-	await wait_frames(5)
+	await wait_physics_frames(5)
 	assert_string_contains(hardware.sensor_text(0), "—", "affichage remis a zero")
 	assert_eq(
 		_controller.link_state(), Protocol.State.IDENTIFIED,
@@ -286,12 +286,12 @@ func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interro
 	var finished: Array[RaceResult] = []
 	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
 	for i: int in range(900):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if not finished.is_empty():
 			break
 	assert_eq(finished.size(), 1, "premiere course terminee")
 
-	await wait_frames(2)
+	await wait_physics_frames(2)
 	race_panel.refresh()
 	assert_false(
 		race_panel.start_button().disabled,
@@ -299,17 +299,17 @@ func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interro
 	)
 	race_panel.start_button().pressed.emit()
 	for i: int in range(900):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if finished.size() >= 2:
 			break
 	assert_eq(finished.size(), 2, "deuxieme course terminee")
 	assert_true(aborted.is_empty(), "rien n'a ete interrompu")
 
 	# Et « Relancer » apres une arrivee n'interrompt rien non plus.
-	await wait_frames(2)
+	await wait_physics_frames(2)
 	race_panel.restart_button().pressed.emit()
 	for i: int in range(900):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if finished.size() >= 3:
 			break
 	assert_eq(finished.size(), 3, "troisieme course, relancee")
@@ -378,7 +378,7 @@ func test_stop_ne_reste_pas_actif_apres_une_arrivee() -> void:
 	var finished: Array[RaceResult] = []
 	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
 	for i: int in range(900):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if not finished.is_empty():
 			break
 	assert_false(finished.is_empty(), "la course se termine")
@@ -619,7 +619,7 @@ func test_apres_une_arrivee_le_panneau_dit_que_le_resultat_attend_l_acquittement
 	var finished: Array[RaceResult] = []
 	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
 	for i: int in range(900):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if not finished.is_empty():
 			break
 	assert_false(finished.is_empty(), "la course se termine")
@@ -642,7 +642,7 @@ func test_l_interface_ne_colle_pas_aux_bords_de_la_fenetre() -> void:
 	# Godot refuse alors qu'on impose une taille.
 	_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	_panel.size = Vector2(1320, 900)
-	await wait_frames(2)
+	await wait_physics_frames(2)
 	var roster := _panel.roster_panel()
 	assert_almost_eq(
 		roster.global_position.x - _panel.global_position.x, float(OperatorPanel.MARGIN), 2.0,
@@ -673,7 +673,7 @@ func test_la_ligne_par_piste_dit_l_etat_de_chaque_coureur() -> void:
 	var finished: Array[RaceResult] = []
 	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
 	for i: int in range(900):
-		await wait_frames(1)
+		await wait_physics_frames(1)
 		if not finished.is_empty():
 			break
 	assert_false(finished.is_empty(), "la course se termine")
