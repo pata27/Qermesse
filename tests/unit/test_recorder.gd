@@ -217,7 +217,7 @@ func test_la_note_d_une_ligne_race_finish_decrit_le_rider_pas_la_course() -> voi
 		if row[1] == "RACE_FINISH":
 			notes[int(row[3])] = row[10]
 	assert_eq(notes[0], "dernier en course", "le survivant porte le motif de fin")
-	assert_string_contains(str(notes[1]), "elimine", "l'elimine dit ce qui LUI est arrive")
+	assert_string_contains(str(notes[1]), "éliminé", "l'éliminé dit ce qui LUI est arrivé")
 
 
 func test_une_course_complete_ecrit_une_ligne_race_finish_par_rider() -> void:

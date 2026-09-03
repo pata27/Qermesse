@@ -209,7 +209,7 @@ func test_une_pointe_suspecte_remonte_a_l_operateur() -> void:
 	assert_eq(notices.size(), 1)
 	assert_string_contains(notices[0], "PISTE 2")
 	assert_string_contains(notices[0], "104 km/h")
-	assert_string_contains(notices[0], "conservee", "on ne jette pas la mesure")
+	assert_string_contains(notices[0], "conservée", "on ne jette pas la mesure")
 
 
 func test_une_piste_cochee_qui_ne_bouge_pas_est_signalee() -> void:

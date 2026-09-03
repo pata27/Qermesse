@@ -63,7 +63,7 @@ func test_j3_une_course_complete_menee_uniquement_aux_boutons() -> void:
 	assert_gt(result.distance_m[result.winner()], 99.0)
 
 	# --- l'interface a suivi ------------------------------------------------
-	assert_string_contains(race_panel.notice_text(), "Termine")
+	assert_string_contains(race_panel.notice_text(), "Terminé")
 	assert_string_contains(results_panel.table_text(), "Alice")
 	assert_string_contains(results_panel.table_text(), "Bob")
 	assert_eq(results_panel.history_count(), 1, "la course entre dans l'historique du jour")
@@ -357,7 +357,7 @@ func test_la_ligne_de_calibration_ne_parle_que_de_ce_qui_compte() -> void:
 	_select_option(mode_panel.mode_selector(), RaceConfig.Mode.PURSUIT)
 	mode_panel.gap_field().value = 50.0
 	hardware.refresh()
-	assert_string_contains(hardware.ticks_text(), "ecart 50 m =", "c'est l'ecart qui compte")
+	assert_string_contains(hardware.ticks_text(), "écart 50 m =", "c'est l'écart qui compte")
 
 
 func test_stop_ne_reste_pas_actif_apres_une_arrivee() -> void:
@@ -591,7 +591,7 @@ func test_le_tableau_marque_l_instant_d_elimination_au_lieu_de_zero() -> void:
 	assert_string_contains(text, "15.54 s", "le survivant a son temps d'arrivee")
 	assert_string_contains(text, "14.01 s x", "l'elimine a son instant, marque")
 	assert_false(text.contains("0.00 s"), "jamais 0,00 s pour un elimine")
-	assert_string_contains(text, "x = elimine", "la marque est expliquee")
+	assert_string_contains(text, "x = éliminé", "la marque est expliquée")
 
 
 func test_le_panneau_course_affiche_le_libelle_et_non_l_enum() -> void:

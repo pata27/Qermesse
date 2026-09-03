@@ -103,7 +103,7 @@ func refresh() -> void:
 	var running := _controller.race_in_progress()
 	_stop.disabled = not running
 	_restart.disabled = not running and not can_start
-	_state_label.text = "Etat : %s" % RaceEngine.state_label(_controller.engine.state())
+	_state_label.text = "État : %s" % RaceEngine.state_label(_controller.engine.state())
 	_refresh_lanes()
 
 
@@ -151,9 +151,9 @@ func _refresh_lanes() -> void:
 			continue
 		var suffix := ""
 		if state.eliminated[lane]:
-			suffix = "  ELIMINE"
+			suffix = "  ÉLIMINÉ"
 		elif state.finished_ms[lane] > 0:
-			suffix = "  ARRIVE %.2f s" % (state.finished_ms[lane] / 1000.0)
+			suffix = "  ARRIVÉ %.2f s" % (state.finished_ms[lane] / 1000.0)
 		_lanes[lane].text = (
 			"P%d %-14s %7.1f m  %5.1f km/h%s"
 			% [
@@ -181,7 +181,7 @@ func _on_restart() -> void:
 
 
 func _on_countdown(value: int) -> void:
-	_clock_label.text = "DEPART DANS %d" % value if value > 0 else "PARTEZ"
+	_clock_label.text = "DÉPART DANS %d" % value if value > 0 else "PARTEZ"
 
 
 func _on_progress(state: RaceState) -> void:
@@ -222,18 +222,18 @@ func _clear_notices() -> void:
 
 
 func _on_false_start(rider: int, _policy: int) -> void:
-	_push_notice("FAUX DEPART piste %d" % (rider + 1))
+	_push_notice("FAUX DÉPART piste %d" % (rider + 1))
 
 
 func _on_rider_eliminated(rider: int, rank: int, gap_m: float) -> void:
-	_push_notice("Piste %d eliminee (rang %d, ecart %.1f m)" % [rider + 1, rank, gap_m])
+	_push_notice("Piste %d éliminée (rang %d, écart %.1f m)" % [rider + 1, rank, gap_m])
 
 
 func _on_race_finished(result: RaceResult) -> void:
 	var winner := result.winner()
 	_clock_label.text = "%.2f s" % (result.elapsed_ms / 1000.0)
 	_push_notice(
-		"Termine — vainqueur piste %d (%s)%s"
+		"Terminé — vainqueur piste %d (%s)%s"
 		% [
 			winner + 1,
 			# LES NOMS DU DEPART, portes par le resultat. Le roster courant est

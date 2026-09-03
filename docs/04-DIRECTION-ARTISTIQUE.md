@@ -47,6 +47,12 @@ affichait « éliminé » à trois lignes de « tous arrives ». En capitales de
 mur, devant un public, une lettre manquante est la faute la plus visible qui soit. Les majuscules
 accentuées comprises : `É`, `À`, `È`.
 
+La règle vaut aussi pour **la fenêtre opérateur**, ses messages d'erreur et le CSV — même dérive,
+même correction. Deux exceptions, et elles sont motivées : les outils en ligne de commande
+(`ss_monitor`, `ss_emu`, `ss_replay`) écrivent dans un terminal et restent en ASCII, et le mot
+`ignore` de la liste des ports garde son orthographe parce qu'il doit être **identique** dans
+`docs/RECETTE.md`, dans `ss_monitor` et à l'écran.
+
 ## 4. Scène 3D
 
 **Composition.** Vue 3/4 arrière légèrement surélevée, deux à quatre couloirs parallèles sur une

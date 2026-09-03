@@ -78,18 +78,18 @@ func state_name() -> String:
 static func state_label(state: State) -> String:
 	match state:
 		State.IDLE:
-			return "au repos — pret a lancer"
+			return "au repos — prêt à lancer"
 		State.ARMING:
-			return "armement — le boitier doit repondre"
+			return "armement — le boîtier doit répondre"
 		State.COUNTDOWN:
-			return "decompte"
+			return "décompte"
 		State.RUNNING:
 			return "course en cours"
 		State.FINISHED:
-			return "arrivee — classement fige"
+			return "arrivée — classement figé"
 		State.RESULTS:
-			return "resultat affiche — a acquitter"
-	return "etat inconnu"
+			return "résultat affiché — à acquitter"
+	return "état inconnu"
 
 
 func race_state() -> RaceState:
@@ -114,7 +114,7 @@ func last_error() -> String:
 func arm(config: RaceConfig, now_ms: int) -> bool:
 	_last_error = ""
 	if _state != State.IDLE:
-		_last_error = "impossible d'armer depuis l'etat « %s »" % state_label(_state)
+		_last_error = "impossible d'armer depuis l'état « %s »" % state_label(_state)
 		return false
 	var problems := config.validate()
 	if not problems.is_empty():
@@ -141,7 +141,7 @@ func arm(config: RaceConfig, now_ms: int) -> bool:
 ## jamais la course : c'est `elapsedMs` du firmware qui fait foi (docs/01 §3).
 func tick(now_ms: int) -> void:
 	if _state == State.ARMING and now_ms - _armed_at_ms > ARMING_TIMEOUT_MS:
-		_fail_arming("aucun CD: recu apres %d ms" % ARMING_TIMEOUT_MS)
+		_fail_arming("aucun CD: reçu après %d ms" % ARMING_TIMEOUT_MS)
 
 
 ## Trame `CD:<n>` du firmware.

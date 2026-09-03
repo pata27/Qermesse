@@ -205,11 +205,11 @@ func can_start_race() -> bool:
 ## desactive sans raison visible est un appel au support en pleine soiree.
 func start_blocked_reason() -> String:
 	if not _link.can_start_race():
-		return "lien %s — le boitier doit avoir repondu V: (docs/01 §4)" % (
+		return "lien %s — le boîtier doit avoir répondu V: (docs/01 §4)" % (
 			Protocol.state_name(_link.get_link_state())
 		)
 	if not _engine_at_rest():
-		return "une course est deja en cours (%s)" % RaceEngine.state_label(engine.state())
+		return "une course est déjà en cours (%s)" % RaceEngine.state_label(engine.state())
 	var problems := current_config().validate()
 	if not problems.is_empty():
 		return ", ".join(problems)
@@ -238,7 +238,7 @@ func current_config() -> RaceConfig:
 func start_race() -> bool:
 	var reason := start_blocked_reason()
 	if not reason.is_empty():
-		notice.emit("depart impossible : %s" % reason)
+		notice.emit("départ impossible : %s" % reason)
 		return false
 	# Un test capteurs en cours est une course a blanc cote boitier : la
 	# terminer d'abord, sinon `g` tomberait sur un firmware deja parti.
@@ -252,7 +252,7 @@ func start_race() -> bool:
 	var config := current_config()
 	recorder.begin_race(config, roster.to_recorder_map())
 	if not engine.arm(config, Time.get_ticks_msec()):
-		notice.emit("armement refuse : %s" % engine.last_error())
+		notice.emit("armement refusé : %s" % engine.last_error())
 		return false
 	_link.set_race_active(true)
 	return true
@@ -300,12 +300,12 @@ func begin_sensor_test() -> void:
 		_sensor_baseline[i] = 0
 	for command: String in ["x", "t60", "g"]:
 		if not _link.send_command(command):
-			notice.emit("test capteurs : commande refusee par le lien : %s" % command)
+			notice.emit("test capteurs : commande refusée par le lien : %s" % command)
 			_sensor_test_active = false
 			return
 	notice.emit(
-		"test capteurs : apres le decompte du boitier, tournez chaque rouleau,"
-		+ " une piste a la fois"
+		"test capteurs : après le décompte du boîtier, tournez chaque rouleau,"
+		+ " une piste à la fois"
 	)
 
 
@@ -393,7 +393,7 @@ func simulate_dropped_frames(count: int) -> void:
 
 func _on_command_requested(command: String) -> void:
 	if not _link.send_command(command):
-		notice.emit("commande refusee par le lien : %s" % command)
+		notice.emit("commande refusée par le lien : %s" % command)
 
 
 func _on_link_state(state: int) -> void:
@@ -451,9 +451,9 @@ func _warn_silent_lanes(state: RaceState) -> void:
 			continue
 		_silent_lanes_warned.append(rider)
 		notice.emit(
-			"PISTE %d : aucun tick depuis le depart — coureur absent"
+			"PISTE %d : aucun tick depuis le départ — coureur absent"
 			% (rider + 1)
-			+ " ou capteur debranche ? La course attend cette piste."
+			+ " ou capteur débranché ? La course attend cette piste."
 		)
 
 
@@ -511,7 +511,7 @@ func _on_tick_rejected(rider: int, description: String) -> void:
 	_rejected_ticks += 1
 	_last_rejection = description
 	recorder.record_tick_rejected(rider, description)
-	notice.emit("tick rejete : %s" % description)
+	notice.emit("tick rejeté : %s" % description)
 
 
 ## `DEPANNAGE` : des trames perdues sont LE SEUL CAS qui fausse reellement une
@@ -538,9 +538,9 @@ func _watch_dropped_frames() -> void:
 ## deux fois par tour.
 func _on_speed_implausible(rider: int, kph: float) -> void:
 	notice.emit(
-		"PISTE %d : pointe a %.0f km/h — capteur qui rebondit"
+		"PISTE %d : pointe à %.0f km/h — capteur qui rebondit"
 		% [rider + 1, kph]
-		+ " ou aimant qui passe deux fois par tour ? La mesure est conservee."
+		+ " ou aimant qui passe deux fois par tour ? La mesure est conservée."
 	)
 
 

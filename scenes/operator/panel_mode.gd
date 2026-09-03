@@ -45,25 +45,25 @@ func _build() -> void:
 	add_child(grid)
 
 	_distance = _spin(grid, "distance", "Distance (m)", 50.0, 5000.0, 10.0)
-	_duration = _spin(grid, "duration", "Duree (s)", 10.0, 3600.0, 5.0)
-	_gap = _spin(grid, "gap", "Ecart decisif (m)", 10.0, 500.0, 5.0)
+	_duration = _spin(grid, "duration", "Durée (s)", 10.0, 3600.0, 5.0)
+	_gap = _spin(grid, "gap", "Écart décisif (m)", 10.0, 500.0, 5.0)
 	# docs/02 §3 : les deux plafonds qui empechent une poursuite infinie. Ce
 	# sont les seuls a le faire — ils se reglent ici, pas dans un fichier.
-	_time_cap = _spin(grid, "time_cap", "Plafond de duree (s)", 10.0, 3600.0, 10.0)
+	_time_cap = _spin(grid, "time_cap", "Plafond de durée (s)", 10.0, 3600.0, 10.0)
 	_distance_cap = _spin(grid, "distance_cap", "Plafond de distance (m)", 100.0, 100000.0, 100.0)
 
 	var policy_label := Label.new()
-	policy_label.text = "Faux depart"
+	policy_label.text = "Faux départ"
 	grid.add_child(policy_label)
 	_policy = OptionButton.new()
 	_policy.add_item("Ignorer", RaceConfig.FalseStartPolicy.IGNORE)
 	_policy.add_item("Avertissement", RaceConfig.FalseStartPolicy.WARN)
 	_policy.add_item("Relance", RaceConfig.FalseStartPolicy.RESTART)
-	_policy.add_item("Penalite", RaceConfig.FalseStartPolicy.PENALTY)
+	_policy.add_item("Pénalité", RaceConfig.FalseStartPolicy.PENALTY)
 	_policy.item_selected.connect(_on_policy_selected)
 	grid.add_child(_policy)
 
-	_penalty = _spin(grid, "penalty", "Penalite (m)", 0.0, 500.0, 1.0)
+	_penalty = _spin(grid, "penalty", "Pénalité (m)", 0.0, 500.0, 1.0)
 
 
 func refresh() -> void:

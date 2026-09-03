@@ -43,9 +43,9 @@ func validate() -> Array[String]:
 		if rider < 0 or rider >= Protocol.MAX_RIDERS:
 			problems.append("piste %d hors bornes 0..3" % rider)
 	if active_riders.size() != _unique(active_riders).size():
-		problems.append("une piste est declaree deux fois")
+		problems.append("une piste est déclarée deux fois")
 	if roller_mm <= 0.0:
-		problems.append("diametre de rouleau invalide : %.1f mm" % roller_mm)
+		problems.append("diamètre de rouleau invalide : %.1f mm" % roller_mm)
 
 	match mode:
 		Mode.DISTANCE:
@@ -58,10 +58,10 @@ func validate() -> Array[String]:
 				problems.append("%.0f m font %d ticks, hors bornes firmware" % [distance_m, ticks])
 		Mode.TIME:
 			if duration_s < 10.0 or duration_s > 3600.0:
-				problems.append("duree %.0f s hors bornes 10..3600" % duration_s)
+				problems.append("durée %.0f s hors bornes 10..3600" % duration_s)
 		Mode.PURSUIT:
 			if gap_m < 10.0 or gap_m > 500.0:
-				problems.append("ecart %.0f m hors bornes 10..500" % gap_m)
+				problems.append("écart %.0f m hors bornes 10..500" % gap_m)
 			if active_riders.size() < 2:
 				problems.append("la poursuite exige au moins deux riders")
 	return problems

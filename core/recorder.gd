@@ -128,7 +128,7 @@ func record_rider_eliminated(rider: int, rank: int, gap_m: float) -> void:
 			"event": "RIDER_ELIMINATED",
 			"rider": rider,
 			"rang": rank,
-			"note": "ecart %.1f m" % gap_m,
+			"note": "écart %.1f m" % gap_m,
 		}
 	)
 
@@ -176,7 +176,7 @@ func finish_race(result: RaceResult) -> String:
 				# mot « interrompue » : seul un ARRET n'a pas de vainqueur
 				# (docs/02 §3).
 				"note": (
-					"elimine a %.2f s" % (result.eliminated_ms[rider] / 1000.0)
+					"éliminé à %.2f s" % (result.eliminated_ms[rider] / 1000.0)
 					if result.eliminated[rider] and result.eliminated_ms[rider] > 0
 					else "elimine" if result.eliminated[rider]
 					else "INTERROMPUE : %s" % result.interruption_note
@@ -220,7 +220,7 @@ func _append_csv(row: Dictionary) -> void:
 	)
 	if file == null:
 		_problems.append(
-			"ecriture CSV impossible : %s (%d)" % [_csv_path, FileAccess.get_open_error()]
+			"écriture CSV impossible : %s (%d)" % [_csv_path, FileAccess.get_open_error()]
 		)
 		return
 	if is_new:
@@ -360,7 +360,7 @@ func _write_json(result: RaceResult) -> String:
 	var path := _races_dir.path_join("%s.json" % _uuid)
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	if file == null:
-		_problems.append("ecriture JSON impossible : %s" % path)
+		_problems.append("écriture JSON impossible : %s" % path)
 		return ""
 
 	var payload := {

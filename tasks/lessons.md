@@ -632,3 +632,15 @@ document de direction artistique et la même preuve par capture.
 **Portée assumée** : le sweep s'arrête à l'écran spectacle et à ce qui l'alimente. La fenêtre
 opérateur garde ses « Materiel » et « Resultats » — même dérive, autre surface, vue par une seule
 personne, et un sweep plus large mérite son propre passage.
+
+## Le reste du sweep, fait plutôt que promis
+
+Le passage précédent s'était arrêté à l'écran spectacle en annonçant la fenêtre opérateur pour
+plus tard. Celui-ci la termine : panneaux, messages d'erreur du moteur et du contrôleur, motifs de
+validation, erreurs de fichiers, notes du CSV, et jusqu'à la chaîne C++ qui explique pourquoi un
+port n'est pas retenu — `String::utf8` était déjà là, il n'y manquait que les accents.
+
+**Leçon** : un sweep annoncé en deux temps doit avoir son second temps, sinon il laisse le projet
+dans un état pire que les deux extrêmes — à moitié corrigé, sans règle lisible. La frontière, elle,
+se décide et s'écrit : écran accentué, terminal ASCII, et un mot laissé tel quel parce qu'il doit
+rester identique dans trois endroits.

@@ -132,7 +132,7 @@ func end_reason_name() -> String:
 			return "plafond de durée"
 		RaceRule.EndReason.DISTANCE_CAP:
 			return "plafond de distance"
-	return "indetermine"
+	return "indéterminé"
 
 
 ## Relit un JSON de course (`recorder._write_json`) tel quel, SANS rejouer :

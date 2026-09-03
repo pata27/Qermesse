@@ -134,7 +134,7 @@ TypedArray<Dictionary> SerialLink::list_ports() const {
         // Le panneau materiel doit pouvoir dire POURQUOI un port est retenu,
         // ou pourquoi il ne l'est pas : c'est la moitie du depannage terrain.
         d["candidate"] = false;
-        d["reason"] = String::utf8("aucun critere, ce port ne sera pas essaye");
+        d["reason"] = String::utf8("aucun critère, ce port ne sera pas essayé");
         for (const sslink::Candidate& c : ranked) {
             if (c.info.path == p.path) {
                 d["candidate"] = true;

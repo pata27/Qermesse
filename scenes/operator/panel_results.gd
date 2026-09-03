@@ -22,14 +22,14 @@ func setup(controller: AppController) -> void:
 
 func _build() -> void:
 	var title := Label.new()
-	title.text = "Resultats"
+	title.text = "Résultats"
 	title.add_theme_font_size_override("font_size", 20)
 	add_child(title)
 
 	_table = RichTextLabel.new()
 	_table.bbcode_enabled = false
 	_table.custom_minimum_size = Vector2(520, 140)
-	_table.text = "Aucune course terminee."
+	_table.text = "Aucune course terminée."
 	add_child(_table)
 
 	var history_title := Label.new()
@@ -42,7 +42,7 @@ func _build() -> void:
 	add_child(_history)
 
 	_export_button = Button.new()
-	_export_button.text = "Ouvrir le dossier des resultats"
+	_export_button.text = "Ouvrir le dossier des résultats"
 	_export_button.pressed.connect(_on_export)
 	add_child(_export_button)
 
@@ -94,7 +94,7 @@ func show_result(result: RaceResult) -> void:
 		if result.finished_ms[rider] == 0 and result.eliminated[rider]:
 			timing = (
 				"%6.2f s x" % (result.eliminated_ms[rider] / 1000.0)
-				if result.eliminated_ms[rider] > 0 else " elimine "
+				if result.eliminated_ms[rider] > 0 else " éliminé "
 			)
 		elif result.finished_ms[rider] == 0:
 			# Survivant d'un plafond ou course interrompue : le temps couru,
@@ -115,12 +115,12 @@ func show_result(result: RaceResult) -> void:
 			]
 		)
 	if result.mode == "poursuite":
-		lines.append("x = elimine a cet instant ; distance et moyenne arretees la")
+		lines.append("x = éliminé à cet instant ; distance et moyenne arrêtées là")
 	if result.interrupted:
-		lines.append("* = a couru jusqu'a la fin de la course, sans franchir de ligne")
+		lines.append("* = a couru jusqu'à la fin de la course, sans franchir de ligne")
 	for rider: int in result.ranking:
 		if result.is_dead_heat(rider):
-			lines.append("= photo-finish : meme trame de passage, ranges par numero de piste")
+			lines.append("= photo-finish : même trame de passage, rangés par numéro de piste")
 			break
 	_table.text = "\n".join(lines)
 	# Le chemin du CSV est affiche en clair : un operateur doit pouvoir le
@@ -179,6 +179,6 @@ func _on_export() -> void:
 	# les courses que se trouve le fichier a envoyer au developpeur.
 	var races := _controller.recorder.races_dir()
 	if races.is_empty():
-		_csv_label.text = "Aucun resultat ecrit pour l'instant."
+		_csv_label.text = "Aucun résultat écrit pour l'instant."
 		return
 	OS.shell_open(races.get_base_dir())

@@ -12,7 +12,7 @@ signal backend_changed()
 ## Aide a la mesure — docs/05 lot 3.
 const CALIBRATION_HELP := (
 	"Mesurer la distance de l'aimant au centre du rouleau, puis doubler. "
-	+ "Un tick = un tour de rouleau = une circonference. "
+	+ "Un tick = un tour de rouleau = une circonférence. "
 	+ "Aucun rapport de transmission n'intervient."
 )
 
@@ -41,7 +41,7 @@ func setup(controller: AppController) -> void:
 
 func _build() -> void:
 	var title := Label.new()
-	title.text = "Materiel"
+	title.text = "Matériel"
 	title.add_theme_font_size_override("font_size", 20)
 	add_child(title)
 
@@ -59,7 +59,7 @@ func _build() -> void:
 	var port_row := HBoxContainer.new()
 	add_child(port_row)
 	_refresh_button = Button.new()
-	_refresh_button.text = "Rafraichir les ports"
+	_refresh_button.text = "Rafraîchir les ports"
 	_refresh_button.pressed.connect(refresh_ports)
 	port_row.add_child(_refresh_button)
 
@@ -71,7 +71,7 @@ func _build() -> void:
 	var roller_row := HBoxContainer.new()
 	add_child(roller_row)
 	var roller_label := Label.new()
-	roller_label.text = "Diametre du rouleau (mm)"
+	roller_label.text = "Diamètre du rouleau (mm)"
 	roller_row.add_child(roller_label)
 	_roller = SpinBox.new()
 	_roller.min_value = 20.0
@@ -90,7 +90,7 @@ func _build() -> void:
 	var development_row := HBoxContainer.new()
 	add_child(development_row)
 	var development_label := Label.new()
-	development_label.text = "Developpement (m/tour de manivelle)"
+	development_label.text = "Développement (m/tour de manivelle)"
 	development_row.add_child(development_label)
 	_development = SpinBox.new()
 	_development.min_value = 1.0
@@ -98,8 +98,8 @@ func _build() -> void:
 	_development.step = 0.1
 	_development.value = _controller.settings.development_m
 	_development.tooltip_text = (
-		"Sert UNIQUEMENT a afficher la cadence. Le capteur compte des tours de "
-		+ "rouleau : il ne connait pas le braquet."
+		"Sert UNIQUEMENT à afficher la cadence. Le capteur compte des tours de "
+		+ "rouleau : il ne connaît pas le braquet."
 	)
 	_development.value_changed.connect(_on_development_changed)
 	development_row.add_child(_development)
@@ -149,7 +149,7 @@ func refresh() -> void:
 		"Firmware : %s" % version
 		if not version.is_empty()
 		# docs/01 §4 : un port ouvert n'est pas une preuve. On le dit.
-		else "Firmware : inconnu — aucun V: recu, le depart reste interdit"
+		else "Firmware : inconnu — aucun V: reçu, le départ reste interdit"
 	)
 	_backend_toggle.set_pressed_no_signal(_controller.is_simulated())
 	_refresh_ticks_label()
@@ -171,7 +171,7 @@ func refresh_ports() -> void:
 			% [mark, entry.get("port", "?"), ids, entry.get("reason", "")]
 		)
 	if _ports.is_empty():
-		_port_list.add_item("aucun port detecte")
+		_port_list.add_item("aucun port détecté")
 
 
 func ticks_text() -> String:
@@ -218,11 +218,11 @@ func _refresh_ticks_label() -> void:
 					settings.distance_m, physics.metres_to_ticks(settings.distance_m)
 				]
 		RaceConfig.Mode.PURSUIT:
-			second = ", ecart %.0f m = %d ticks" % [
+			second = ", écart %.0f m = %d ticks" % [
 				settings.gap_m, physics.metres_to_ticks(settings.gap_m)
 			]
 	_ticks_label.text = (
-		"Circonference %.1f mm — 100 m = %d ticks%s"
+		"Circonférence %.1f mm — 100 m = %d ticks%s"
 		% [physics.circumference_mm, physics.metres_to_ticks(100.0), second]
 	)
 
@@ -245,7 +245,7 @@ func _refresh_stats() -> void:
 	# docs/06 : un capteur qui rebondit se voit ici, avant de fausser une course.
 	if _controller.rejected_ticks() > 0:
 		_stats_label.text += (
-			"\nTicks rejetes : %d (dernier : %s)"
+			"\nTicks rejetés : %d (dernier : %s)"
 			% [_controller.rejected_ticks(), _controller.last_rejection()]
 		)
 

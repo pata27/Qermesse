@@ -277,7 +277,7 @@ func list_ports() -> Array:
 			"pid": -1,
 			"known_device": false,
 			"candidate": true,
-			"reason": "simulateur integre",
+			"reason": "simulateur intégré",
 		}
 	]
 

@@ -23,7 +23,7 @@ static func write(path: String, data: Dictionary) -> bool:
 	var temp := path + ".tmp"
 	var file := FileAccess.open(temp, FileAccess.WRITE)
 	if file == null:
-		last_error = "ecriture impossible dans %s" % temp
+		last_error = "écriture impossible dans %s" % temp
 		return false
 	file.store_string(JSON.stringify(data, "  "))
 	file.close()
@@ -56,11 +56,11 @@ static func read(path: String) -> Dictionary:
 	var json := JSON.new()
 	if json.parse(text) != OK:
 		last_error = (
-			"JSON invalide ligne %d (%s), valeurs par defaut utilisees : %s"
+			"JSON invalide ligne %d (%s), valeurs par défaut utilisées : %s"
 			% [json.get_error_line(), json.get_error_message(), path]
 		)
 		return {}
 	if not (json.data is Dictionary):
-		last_error = "JSON invalide, un objet etait attendu : %s" % path
+		last_error = "JSON invalide, un objet était attendu : %s" % path
 		return {}
 	return json.data
