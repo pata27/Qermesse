@@ -5,6 +5,7 @@
 ##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --courses 2
 ##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --noms Alice,Bob
 ##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --faux-depart 1
+##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --perte-lien 4
 ##
 ## Codes de sortie : 0 fait, 1 depart refuse, 2 scene impossible a charger,
 ## 3 delai maximal depasse (`--delai N`, 300 s par defaut), 4 fond trop clair
@@ -55,6 +56,8 @@ var _luminance_failed := false
 var _budget_failed := false
 ## Piste sur laquelle injecter un faux depart, ou -1. Voir `--faux-depart`.
 var _false_start_lane := -1
+## Instant de course, en secondes, ou couper le lien simule. Negatif : jamais.
+var _link_loss_at_s := -1.0
 var _quality := -1
 var _speed := 1.0
 ## Dossier de donnees des outils de preuve — JAMAIS celui de l'operateur.
@@ -173,6 +176,13 @@ func _parse_args() -> void:
 			"--profil":
 				i += 1
 				_profile = args[i] if i < args.size() else _profile
+			"--perte-lien":
+				# Coupe le lien SIMULE a cet instant de course, en secondes, et
+				# capture le bandeau. `docs/RECETTE.md` §6 — « le test qui
+				# compte » — exige une capture de ce bandeau, et rien ne
+				# permettait de la produire sans debrancher un vrai cable.
+				i += 1
+				_link_loss_at_s = float(args[i]) if i < args.size() else -1.0
 			"--faux-depart":
 				# Injecte un faux depart sur cette piste PENDANT le decompte —
 				# le firmware ne le signale qu'a ce moment (docs/01 §2). Sert a
@@ -438,6 +448,17 @@ func _capture_stills() -> void:
 		var running := _controller.engine.state() == RaceEngine.State.RUNNING
 		has_run = has_run or running
 		racing = running or not has_run
+		# COUPURE DU LIEN A CHAUD, puis capture du bandeau. Le PC accorde trois
+		# secondes de grace (docs/01 §6.2) : on coupe, on laisse le bandeau
+		# monter, on photographie, et on rebranche pour que la course reprenne —
+		# c'est exactement le scenario que `docs/RECETTE.md` §6 fait constater.
+		if running and _link_loss_at_s >= 0.0 and race_s >= _link_loss_at_s:
+			_link_loss_at_s = -1.0
+			_controller.simulate_link_loss()
+			for _wait: int in range(30):
+				await _step()
+			await _shoot("lien-perdu")
+			_controller.simulate_link_return()
 		# Le premier franchissement alors que la course continue : c'est le cas
 		# ou un coureur arrive bien avant les autres, et il faut le regarder.
 		if running and state != null and not done.has("premier"):

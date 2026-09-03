@@ -1161,3 +1161,18 @@ aucun ne remplace l'autre.
 **Ce que la capture montre en plus du bandeau** : les cartes à zéro avec l'objectif annoncé, le
 décompte encore à 3. Trois correctifs de cette nuit visibles sur une seule image — c'est ce qui
 rend un jeu de preuves utile plutôt que décoratif.
+
+## Une capture peut prouver trois cases à la fois
+
+`docs/RECETTE.md` §6 demande trois constats sur la perte de lien : le bandeau apparaît, l'affichage
+se fige sur la dernière valeur connue, et la course REPREND après la reconnexion. Un seul passage
+de l'outil les donne tous les trois — bandeau rouge, chrono arrêté à 4,00 s avec les cartes sur
+leurs dernières valeurs, et le podium qui porte `ARRIVÉE` plutôt qu'`INTERROMPUE`.
+
+**Leçon** : en construisant une preuve, regarder ce qu'elle établit en plus de ce qu'on visait. Ici
+je cherchais le bandeau ; l'image contenait déjà le gel de l'affichage, et la suite du même passage
+contenait la reprise. Trois cases pour une commande.
+
+**Ce que la capture ne prouve toujours pas**, et le document le dit : couper un pseudo-terminal
+n'exerce pas le chemin `EIO` d'un vrai pilote USB. La ligne reste à cocher à la main, câble en
+main. Une preuve reproductible ne dispense pas de nommer ce qu'elle laisse dehors.

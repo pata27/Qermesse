@@ -177,6 +177,17 @@ Puis, sur une nouvelle course, débrancher et attendre **plus de cinq secondes**
 > C'est le point que l'émulateur ne peut pas prouver : il ferme un pseudo-terminal, ce qui n'exerce
 > pas le chemin `EIO` du pilote USB réel (`docs/07` §2).
 
+Le **bandeau** et le **gel de l'affichage**, eux, se produisent à la demande, sans matériel — c'est
+la capture à joindre pour ce point :
+
+```sh
+godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --perte-lien 4
+```
+
+Elle écrit `r3d-N-lien-perdu.png` : bandeau rouge, chrono figé à 4,00 s, cartes arrêtées sur leur
+dernière valeur connue. Le même passage rebranche ensuite le lien : le podium de la course porte
+`ARRIVÉE` et non `INTERROMPUE`, ce qui montre qu'elle a bien repris.
+
 ---
 
 ## 7. Faux départ
