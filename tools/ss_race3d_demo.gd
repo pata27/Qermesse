@@ -6,8 +6,11 @@
 ##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --noms Alice,Bob
 ##
 ## Codes de sortie : 0 fait, 1 depart refuse, 2 scene impossible a charger,
-## 3 delai maximal depasse (`--delai N`, 300 s par defaut). L'outil ne pend
-## jamais : une course qui ne se termine pas est un bug a signaler, pas a subir.
+## 3 delai maximal depasse (`--delai N`, 300 s par defaut), 4 fond trop clair
+## (`docs/04` §4), 5 budget de rendu non tenu (idem). L'outil ne pend jamais :
+## une course qui ne se termine pas est un bug a signaler, pas a subir. Et il ne
+## sort jamais a zero en annoncant le contraire : une exigence chiffree qu'on
+## imprime sans la faire echouer n'est qu'une observation.
 ##
 ## **Deux passes, et c'est délibéré.** Lire l'image du viewport pour la filmer
 ## impose une lecture retour GPU par image, ce qui détruit précisément la
@@ -16,9 +19,26 @@
 ## aucune valeur de preuve.
 extends SceneTree
 
-## Plafond de luminance du fond — docs/04 §4, « léger se mesure ». Sans brume
-## le fond vaut 33 ; l'ancien volumétrique le portait à 75.
+## Plafond de luminance du fond — docs/04 §4, « léger se mesure ».
+##
+## LE VERDICT NE VAUT QUE SUR LA SCENE DE REFERENCE, et c'est une correction de
+## ma propre garde. Le plafond avait ete cale sur une course de 250 m, ou la
+## bande observee ne voit guere que le ciel : 35,9. Sur 100 m la camera cadre
+## plus pres, la bande attrape les gradins eclaires, et la MEME scene saine
+## monte a 48, puis 55 selon le niveau. La garde accusait donc un rendu
+## irreprochable — le plus sur moyen de la faire ignorer.
+##
+## Deplacer la bande ne sauve rien : plus haut, les memes scenes donnent 46 a 65
+## contre 81 pour le defaut recherche. C'est le cadrage qui domine, pas la
+## brume. Une luminance absolue n'est comparable qu'a cadrage identique.
+##
+## Le verdict est donc rendu sur la CONFIGURATION DE CALIBRAGE et sur elle
+## seule ; ailleurs, le chiffre est imprime sans conclusion. Il attrape ce pour
+## quoi il existe : l'albedo blanche portait ce meme cadrage a 62.
 const BACKGROUND_LUMINANCE_MAX := 45.0
+## Course sur laquelle le plafond a ete mesure — deux coureurs, 250 m, `egaux`.
+const LUMINANCE_REFERENCE_M := 250.0
+const LUMINANCE_REFERENCE_RIDERS := 2
 const MEASURE_WARMUP_S := 3.0
 const MEASURE_WINDOW_S := 30.0
 
@@ -30,6 +50,8 @@ var _riders := 4
 ## Une capture trop claire ne fait pas échouer la capture en cours — on veut
 ## toutes les images — mais elle fait sortir en erreur à la fin.
 var _luminance_failed := false
+## Le budget de rendu de `docs/04` §4 n'a pas ete tenu — sortie en erreur.
+var _budget_failed := false
 var _quality := -1
 var _speed := 1.0
 ## Dossier de donnees des outils de preuve — JAMAIS celui de l'operateur.
@@ -288,6 +310,10 @@ func _run() -> void:
 		printerr("fond trop clair : la brume efface les gradins (docs/04 §4)")
 		quit(4)
 		return
+	if _budget_failed:
+		printerr("budget de rendu NON TENU sur cette machine (docs/04 §4)")
+		quit(5)
+		return
 	quit(0)
 
 
@@ -336,6 +362,13 @@ func _measure() -> void:
 	print("=== budget de rendu — docs/04 §4 ===")
 	print("cible          : 60 fps stables en 1080p sur GPU integre")
 	print(_scene.perf.report())
+	# UN BUDGET NON TENU FAIT SORTIR EN ERREUR. L'outil imprimait « budget NON
+	# TENU » et sortait a zero : une mesure lancee depuis un script annoncait
+	# donc un succes en disant l'inverse, exactement le defaut deja corrige sur
+	# le controle de luminance. Le budget de `docs/04` §4 est une exigence, pas
+	# une observation.
+	if not _scene.perf.budget_met():
+		_budget_failed = true
 	print("etat course    : %s, %.1f m" % [
 		_controller.engine.state_name(),
 		_controller.engine.race_state().distance_m[0] if _controller.engine.race_state() else 0.0,
@@ -445,6 +478,18 @@ func _check_background_luminance(image: Image) -> void:
 			total += 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
 			count += 1
 	var luminance := 255.0 * total / float(maxi(count, 1))
+	var calibrated := (
+		_riders == LUMINANCE_REFERENCE_RIDERS
+		and is_equal_approx(_distance_m, LUMINANCE_REFERENCE_M)
+	)
+	if not calibrated:
+		print(
+			"fond : luminance %.1f — pas de verdict, le plafond est mesure sur"
+			% luminance
+			+ " %d coureurs a %.0f m (docs/04 §4)"
+			% [LUMINANCE_REFERENCE_RIDERS, LUMINANCE_REFERENCE_M]
+		)
+		return
 	var verdict := "CONFORME" if luminance <= BACKGROUND_LUMINANCE_MAX else "TROP CLAIR"
 	print(
 		"fond : luminance %.1f / %d — %s (docs/04 §4)"

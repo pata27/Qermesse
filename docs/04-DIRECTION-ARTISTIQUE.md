@@ -79,14 +79,20 @@ en virage, maillot coloré par instance. Un seul modèle, quatre matériaux : le
 **Environnement.** Tribunes low-poly, foule en *billboards* animés instanciés, réaction à
 l'accélération et au franchissement de ligne. Volumétrique léger, bloom, vignettage.
 
-**« Léger » se mesure.** Le volumétrique ne doit pas éclaircir le fond de plus d'un quart : la
-luminance moyenne du haut de l'image, gradins compris, reste sous **45 sur 255** — elle vaut 33
-sans brume. Au-delà, la salle vire au lait gris, les gradins lointains disparaissent et les néons
+**« Léger » se mesure**, mais **à cadrage identique**. La luminance moyenne du haut de l'image,
+gradins compris, reste sous **45 sur 255** sur la course de référence — deux coureurs, 250 m, profil
+`egaux` — où elle vaut 33 sans brume. Le chiffre n'est comparable que là : sur une course plus
+courte la caméra cadre plus près, la bande observée attrape les gradins éclairés, et la même scène
+saine monte à 48. C'est le cadrage qui domine, pas la brume. Hors de cette configuration,
+`ss_race3d_demo` imprime la mesure sans rendre de verdict. Au-delà, la salle vire au lait gris, les gradins lointains disparaissent et les néons
 perdent le contraste qui les fait exister (`§1`) ; le niveau de qualité le plus coûteux donne alors
 l'image la moins conforme. Le levier n'est pas la densité mais **l'albédo** de la brume : blanche,
 elle renvoie les projecteurs de salle dans tout le volume.
 
 **Budget de performance.** 60 fps stables en 1080p sur un GPU intégré Intel Iris Xe ou équivalent.
+`ss_race3d_demo --mesure` le **fait échouer** quand il n'est pas tenu — code 5, et le rapport dit
+de combien. Un chiffre imprimé sans conséquence n'est qu'une observation ; la CI n'ayant pas de
+GPU, c'est le seul endroit où cette exigence peut mordre.
 C'est la machine réelle d'un événement, pas une station de jeu. Toute fonctionnalité visuelle qui
 fait passer sous 60 fps est coupée ou dégradée. Trois niveaux de qualité (`bas / moyen / élevé`),
 détection automatique au premier lancement, réglage manuel possible. **Un niveau choisi à la main

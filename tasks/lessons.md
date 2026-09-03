@@ -1038,3 +1038,22 @@ outillée — l'insistance dans le document peut même compenser inconsciemment 
 s'étonnait que le lien reste IDENTIFIED. Le watchdog n'est armé que pendant une course : hors
 course, un port silencieux est normal, le boîtier n'émet des `R:` qu'en course. Le lien avait
 raison. La version juste arme une vraie course, attend que les trames coulent, puis débranche.
+
+## Ma propre garde accusait un rendu irréprochable
+
+Le contrôle de luminance que j'avais ajouté était calé sur une seule mesure : une course de 250 m,
+où la bande observée ne voit guère que le ciel — 35,9. Sur 100 m, la caméra cadre plus près, la
+bande attrape les gradins éclairés, et la MÊME scène saine monte à 48, puis 55. La garde annonçait
+« TROP CLAIR » sur un rendu parfait.
+
+Déplacer la bande ne sauve rien : plus haut, les mêmes scènes donnent 46 à 65 contre 81 pour le
+défaut recherché. C'est le cadrage qui domine, pas la brume.
+
+**Leçon** : une grandeur absolue mesurée sur une image n'est comparable qu'à cadrage identique. Un
+seuil photométrique doit donc nommer la scène sur laquelle il a été calibré, et se taire ailleurs —
+imprimer la mesure sans conclure. Une garde qui accuse à tort finit ignorée, et alors elle ne
+protège plus de rien.
+
+**Vérifié dans les trois sens** : sur la scène de référence elle conclut et passe ; hors calibrage
+elle imprime sans conclure ; et avec l'albédo blanche remise, elle attrape toujours son défaut à 62
+contre 45.
