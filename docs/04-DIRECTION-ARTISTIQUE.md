@@ -154,8 +154,34 @@ fixe le plafond.
 
 ## 6. Audio
 
+### Le lit sonore — ce qu'on entend quand il ne se passe rien
+
+Une course dure vingt secondes et il ne s'y passe presque aucun ÉVÉNEMENT. Ce qui tient la
+bande-son, c'est donc le fond, pas les cues. Il en faut trois, qui suivent tous l'intensité de la
+course :
+
+* **Le grondement des rouleaux** — le son propre du goldsprint, et le seul que le public entend
+  vraiment dans la salle. Bruit filtré autour de 320 Hz avec une seconde résonance vers 780,
+  modulé lentement pour le roulement ; sa hauteur et son niveau suivent la vitesse.
+* **La rumeur de la salle** — une foule qui attend n'est pas silencieuse. Continue, elle enfle
+  avec la course, et laisse la place aux clameurs ponctuelles.
+* **La nappe grave** — la tension musicale. Elle porte des partiels **au-dessus de 200 Hz**, pas
+  seulement à 55 : voir la règle des haut-parleurs plus bas.
+* **Le souffle de vent**, indexé sur la vitesse, en appoint — il ne porte plus la scène à lui seul.
+
+**RÈGLE DES HAUT-PARLEURS. Tout son continu porte la majorité de son énergie au-dessus de
+200 Hz.** La première nappe empilait 55, 82,5, 110 et 165 Hz : mesurée, elle plaçait 90 % de son
+énergie sous 200 Hz, c'est-à-dire sous ce qu'un haut-parleur d'ordinateur portable ou une petite
+enceinte peut restituer. Elle était donc inaudible sur les machines qui font tourner ce logiciel,
+et il ne restait que le vent — « il ne se passe rien ». Un son qu'on ne peut pas entendre n'est pas
+un son discret, c'est un son absent. La suite de tests le vérifie sur chaque flux continu.
+
+### Les événements
+
 * Nappe de fond dont l'intensité suit la vitesse du leader et, en poursuite, l'écart normalisé.
-* Bips de décompte, klaxon de départ, **cloche de la fin imminente** — une fois, jamais deux.
+* Bips de décompte, klaxon de départ, **cloche de la fin imminente** — une volée, jamais deux.
+  C'est une **cloche de vélodrome** : sur piste, la fin se dit à la cloche, en volée de plusieurs
+  frappes, et non d'un coup unique qu'on prendrait pour un bip. Le battant s'entend.
   Un goldsprint n'a pas de tour et une course en temps n'a pas de mètres : la cloche sonne aux
   **50 derniers mètres** en mode distance et aux **10 dernières secondes** en mode temps, **sans
   jamais dépasser le dernier quart de l'épreuve**. Ce plafond n'est pas une précaution théorique :
@@ -164,6 +190,13 @@ fixe le plafond.
   plus rien. En poursuite elle se tait — la fin y arrive quand l'écart se referme, ce que rien ne
   permet d'annoncer à l'avance.
 * Réactions de foule sur les dépassements, les accélérations et le franchissement.
+* **Souffle de dépassement** sur le changement d'ordre : la clameur dit que la salle a réagi, le
+  souffle dit ce qui s'est passé sur la piste. Deux informations, deux sons.
+* **Glas d'élimination** en poursuite — grave, lent, sans appel. Une élimination est le contraire
+  d'une clameur : c'est quelqu'un qui sort.
+* **Le lit s'efface sous les annonces.** Cloche, klaxon et glas font plonger rouleaux, rumeur et
+  nappe le temps de passer, puis tout remonte. Sans cela l'annonce se noie dans le fond qu'elle
+  est censée interrompre.
 * Souffle de vent indexé sur la vitesse.
 **Ce qui a sonné se constate, il ne s'écoute pas.** Chaque son déclenché est noté (`last_cue`,
 `cue_counts`) : c'est la seule façon de prouver la bande-son dans une suite qui tourne sans carte

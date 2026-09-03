@@ -300,3 +300,178 @@ func test_le_volume_se_regle_meme_son_coupe() -> void:
 	)
 	assert_true(audio.is_muted(), "et le son reste coupe")
 	audio.set_volume_db(0.0)
+
+
+## Energie d'un flux sous et au-dessus d'une coupure, par filtre a un pole.
+## Grossier — on cherche un ordre de grandeur, pas une analyse de laboratoire.
+func _audible_share(stream: AudioStreamWAV, cutoff: float = 200.0) -> float:
+	var frames := _frames(stream)
+	var alpha := 1.0 - exp(-TAU * cutoff / SoundForge.MIX_RATE)
+	var low := 0.0
+	var energy_low := 0.0
+	var energy_high := 0.0
+	for i: int in range(frames):
+		var sample := float(stream.data.decode_s16(i * 2)) / 32768.0
+		low += alpha * (sample - low)
+		energy_low += low * low
+		energy_high += (sample - low) * (sample - low)
+	return energy_high / maxf(energy_low + energy_high, 1e-9)
+
+
+func test_tout_son_continu_existe_sur_un_haut_parleur_d_ordinateur() -> void:
+	# docs/04 §6, REGLE DES HAUT-PARLEURS. La premiere nappe empilait 55, 82,5,
+	# 110 et 165 Hz : mesuree, elle placait 90 % de son energie sous 200 Hz,
+	# c'est-a-dire sous ce qu'un haut-parleur d'ordinateur portable restitue.
+	# Elle n'existait pas sur les machines qui font tourner ce logiciel, et il
+	# ne restait que le vent — « il ne se passe rien ». Un son qu'on ne peut
+	# pas entendre n'est pas un son discret, c'est un son absent.
+	#
+	# Le lit sonore est le seul a jouer en continu : c'est lui qui doit tenir
+	# les vingt secondes ou il n'arrive rien, donc c'est sur lui que la regle
+	# compte.
+	for entry: Array in [
+		["nappe", SoundForge.drone()],
+		["vent", SoundForge.wind()],
+		["rouleaux", SoundForge.rollers()],
+		["rumeur", SoundForge.crowd_bed()],
+	]:
+		var share := _audible_share(entry[1] as AudioStreamWAV)
+		assert_gt(
+			share, 0.5,
+			"« %s » : %.0f %% de son energie au-dessus de 200 Hz" % [entry[0], share * 100.0]
+		)
+
+
+## Attend des images de RENDU. Le remix vertical et l'effacement du lit vivent
+## dans `_process` : `wait_physics_frames` n'en declenche aucun, et les niveaux
+## restaient a leur valeur de construction — le test lisait alors le montage,
+## pas le mixage.
+func _idle_frames(count: int) -> void:
+	for i: int in range(count):
+		await get_tree().process_frame
+
+
+## Compte les FRAPPES d'un flux : les montées franches du niveau, espacées
+## d'au moins 150 ms pour ne compter qu'une fois chaque coup.
+func _onsets(stream: AudioStreamWAV) -> int:
+	var window := SoundForge.MIX_RATE / 200  # 5 ms
+	var levels: Array[float] = []
+	var i := 0
+	while i + window < _frames(stream):
+		var peak := 0.0
+		for k: int in range(i, i + window):
+			peak = maxf(peak, absf(float(stream.data.decode_s16(k * 2)) / 32768.0))
+		levels.append(peak)
+		i += window
+	var ceiling := 0.0
+	for level: float in levels:
+		ceiling = maxf(ceiling, level)
+	# La toute premiere fenetre EST une attaque : un flux qui commence par du
+	# son commence par une frappe. L'oublier faisait compter zero coup au glas,
+	# qui n'en a qu'un — et le test aurait accuse un son parfaitement juste.
+	var onsets := 1 if not levels.is_empty() and levels[0] > ceiling * 0.2 else 0
+	var rest := 30
+	for k: int in range(1, levels.size()):
+		rest = maxi(0, rest - 1)
+		# Une frappe : le niveau bondit de moitie et depasse un cinquieme du
+		# maximum du flux. Le repos evite de compter la meme deux fois.
+		if rest == 0 and levels[k] > levels[k - 1] * 1.5 and levels[k] > ceiling * 0.2:
+			onsets += 1
+			rest = 30
+	return onsets
+
+
+func test_la_cloche_est_une_volee_et_non_un_coup() -> void:
+	# docs/04 §6 : sur piste, la fin se dit a la cloche AGITEE. Un coup unique
+	# se prend pour un bip — c'est le reproche fait a la premiere version.
+	var peal := SoundForge.bell()
+	assert_gte(_onsets(peal), 3, "la cloche sonne en volee")
+	assert_gt(_frames(peal), SoundForge.MIX_RATE * 2, "et elle dure, comme une vraie")
+	# Le glas, lui, est UN coup : c'est ce qui le distingue a l'oreille.
+	assert_eq(_onsets(SoundForge.knell()), 1, "le glas ne sonne qu'une fois")
+
+
+func test_la_clameur_d_arrivee_est_autre_chose_qu_une_reaction() -> void:
+	# « une foule qui hurle a l'arrivee » : le moment de la soiree. La petite
+	# clameur des faits de course ne peut pas le porter — elle dure une seconde
+	# et demie et retombe aussitot.
+	var roar := SoundForge.roar()
+	var cheer := SoundForge.crowd()
+	assert_gt(_frames(roar), _frames(cheer) * 2, "elle dure bien plus longtemps")
+	# Et elle TIENT : au tiers de sa duree elle est encore a plein regime, la
+	# ou la petite clameur est deja passee. C'est ce plateau qui fait la
+	# difference entre une salle qui reagit et une salle qui explose.
+	var third := _frames(roar) / 3
+	var late := 0.0
+	for k: int in range(third, third + SoundForge.MIX_RATE / 10):
+		late = maxf(late, absf(float(roar.data.decode_s16(k * 2)) / 32768.0))
+	assert_gt(late, 0.5, "au tiers de sa duree, la salle hurle encore")
+
+
+func test_les_trois_couches_de_musique_restent_en_phase() -> void:
+	# Remix vertical : elles tournent ENSEMBLE et seul leur volume change. La
+	# moindre difference de longueur les ferait glisser l'une sur l'autre en
+	# quelques secondes — deux mesures plus tard la batterie ne tomberait plus
+	# sur la basse.
+	var layers := [MusicForge.pulse(), MusicForge.drive(), MusicForge.lead()]
+	for layer: AudioStreamWAV in layers:
+		assert_eq(layer.loop_mode, AudioStreamWAV.LOOP_FORWARD, "chaque couche boucle")
+		assert_eq(_frames(layer), _frames(layers[0]), "et toutes ont la meme longueur")
+		assert_eq(layer.loop_end, _frames(layer), "la boucle couvre tout le flux")
+	assert_almost_eq(
+		float(_frames(layers[0])) / SoundForge.MIX_RATE, MusicForge.LOOP_S, 0.001,
+		"deux mesures a 150 a la noire"
+	)
+	# La pulsation a un coup par temps : c'est elle qui donne le tempo.
+	assert_gte(_onsets(layers[0]), MusicForge.BEATS, "un coup de grosse caisse par temps")
+
+
+func test_la_musique_monte_avec_la_course_et_passe_au_complet_a_la_cloche() -> void:
+	var rig := _rig()
+	var controller: AppController = rig[0]
+	var audio: RaceAudio = rig[1]
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.DISTANCE
+	config.distance_m = 400.0
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	assert_eq(audio.last_cue, "musique", "la musique part avec la course")
+
+	var state := RaceState.new(config)
+	var physics := Physics.new(config.roller_mm)
+	# Debut de course, allure faible : la pulsation seule.
+	state.apply_sample([physics.metres_to_ticks(4.0), 0, 0, 0], 4000)
+	controller.progress_updated.emit(state)
+	await _idle_frames(3)
+	var quiet: Dictionary = audio.music_levels()
+	assert_lt(float(quiet["lead"]), -50.0, "le theme se tait tant qu'il ne se passe rien")
+
+	# Derniers metres, mais A FAIBLE ALLURE : c'est la CLOCHE qui doit faire
+	# entrer le theme, pas la vitesse. Un leader rapide aurait ouvert la couche
+	# de lui-meme, et le test aurait affirme prouver un mecanisme qu'il ne
+	# touchait pas — verifie en le retirant.
+	var ticks := physics.metres_to_ticks(370.0)
+	state.apply_sample([ticks, 0, 0, 0], 300000)
+	controller.progress_updated.emit(state)
+	await _idle_frames(3)
+	assert_eq(int(audio.cue_counts.get("cloche", 0)), 1, "la cloche a sonne")
+	var full: Dictionary = audio.music_levels()
+	assert_gt(float(full["lead"]), -30.0, "le theme entre pour la fin")
+	assert_gt(float(full["drive"]), float(quiet["drive"]), "et la batterie avec lui")
+
+
+func test_une_annonce_efface_le_lit_puis_il_remonte() -> void:
+	# Sans cela, la cloche se noie dans le fond qu'elle est censee interrompre.
+	var rig := _rig()
+	var controller: AppController = rig[0]
+	var audio: RaceAudio = rig[1]
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	assert_eq(audio.duck_db(), 0.0, "rien n'efface le lit tant qu'on n'annonce rien")
+
+	controller.rider_eliminated.emit(0, 2, 50.0)
+	assert_eq(int(audio.cue_counts.get("glas", 0)), 1, "l'elimination a son glas")
+	assert_almost_eq(audio.duck_db(), RaceAudio.DUCK_DB, 0.01, "le lit plonge sous lui")
+
+	await _idle_frames(240)
+	assert_eq(audio.duck_db(), 0.0, "puis il revient tout seul")
