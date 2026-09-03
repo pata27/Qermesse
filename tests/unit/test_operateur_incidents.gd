@@ -493,3 +493,44 @@ func test_un_accuse_de_longueur_conforme_ne_dit_rien() -> void:
 	assert_true(await _await_running(), "la course part")
 	for text: String in notices:
 		assert_false(text.to_lower().contains("longueur"), "rien a signaler : %s" % text)
+
+
+func test_aucune_trame_ne_tombe_dans_le_silence() -> void:
+	# LE DEFAUT DE CLASSE. Le `match` du controleur traitait six des onze sortes
+	# de trames ; les cinq autres tombaient dans son silence, sans qu'aucune
+	# ligne ne dise si c'etait un choix. L'accuse de longueur y dormait, et avec
+	# lui la seule chose que le boitier dise de ce qu'il a compris.
+	#
+	# Chaque sorte doit etre NOMMEE — traitee ou explicitement ignoree, avec sa
+	# raison a cote. Une trame qu'on ignore volontairement et une trame qu'on a
+	# oubliee se ressemblent trop pour qu'on laisse le silence trancher.
+	var file := FileAccess.open("res://scenes/app_controller.gd", FileAccess.READ)
+	assert_not_null(file, "le controleur est lisible")
+	var source := file.get_as_text()
+	var dispatch := source.substr(source.find("func _on_frame"))
+
+	var missing: Array[String] = []
+	for name: String in Protocol.Frame.keys():
+		if not dispatch.contains("Protocol.Frame.%s" % name):
+			missing.append(name)
+	assert_eq(missing, [] as Array[String], "des sortes de trames que le controleur ne nomme pas")
+
+
+func test_les_trames_kiosque_sont_comptees_et_dites_au_panneau_materiel() -> void:
+	# docs/06 §4 : « parsees et loggees, comportement active seulement si
+	# observe ». `ss_monitor` les journalisait ; l'application les jetait — or
+	# c'est en soiree qu'un tel boitier se revelerait, et le monitor ne tourne
+	# pas ce soir-la.
+	assert_true(await _await_identified())
+	assert_eq(_controller.kiosk_frames(), 0, "un boitier ordinaire n'en emet aucune")
+	_panel.hardware_panel().refresh()
+	assert_false(
+		_panel.hardware_panel().stats_text().contains("kiosque"),
+		"et le panneau n'en parle pas"
+	)
+
+	_controller._on_frame(Protocol.Frame.KIOSK_START, {})
+	_controller._on_frame(Protocol.Frame.KIOSK_STOP, {})
+	assert_eq(_controller.kiosk_frames(), 2, "comptees")
+	_panel.hardware_panel().refresh()
+	assert_string_contains(_panel.hardware_panel().stats_text(), "kiosque")

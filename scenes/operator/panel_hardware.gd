@@ -242,6 +242,14 @@ func _refresh_stats() -> void:
 			stats.get("watchdog_trips", 0),
 		]
 	)
+	# docs/06 §4 : un shield kiosque emet des `G`/`S` que le logiciel ignore. On
+	# ne les commente que s'il y en a — sur un boitier ordinaire, il n'y en a
+	# aucune, et une ligne « kiosque : 0 » serait du bruit permanent.
+	if _controller.kiosk_frames() > 0:
+		_stats_label.text += (
+			"\nTrames kiosque : %d — boitier a shield, comportement non active"
+			% _controller.kiosk_frames()
+		)
 	# docs/06 : un capteur qui rebondit se voit ici, avant de fausser une course.
 	if _controller.rejected_ticks() > 0:
 		_stats_label.text += (

@@ -753,3 +753,20 @@ contrediront l'écran, et c'est le logiciel qu'on accusera.
 **Encore un test faux avant un code faux** : le message dit « LONGUEUR », mon test cherchait
 « longueur », et `String.contains` respecte la casse. Le mécanisme marchait déjà quand je le croyais
 cassé — vérifié par une sonde de vingt lignes avant de toucher au code.
+
+## Le silence d'un `match` ne distingue pas l'oubli du choix
+
+Le contrôleur traitait six des onze sortes de trames. Les cinq autres tombaient dans le silence de
+son `match`, sans qu'une ligne dise si c'était délibéré. L'accusé de longueur y dormait — un oubli.
+`V:` et `M:` y dorment aussi — deux choix, l'une consommée par la couche lien, l'autre jamais
+émise par la v3. Rien ne permettait de les distinguer.
+
+**Leçon** : dans un aiguillage sur une énumération, nommer TOUS les cas, y compris ceux qu'on
+ignore, avec la raison à côté. Le coût est de trois lignes ; le bénéfice est qu'un cas ajouté plus
+tard ne peut plus disparaître sans bruit. Un test le tient : chaque valeur de l'énumération doit
+apparaître dans la source de l'aiguillage.
+
+**Compter plutôt que commenter** : les trames kiosque sont comptées et affichées au panneau
+Matériel dès qu'il y en a, pas annoncées une par une. Une notice par trame noierait le journal si
+le shield en émet en continu — et sur un boîtier ordinaire, une ligne « kiosque : 0 » serait du
+bruit permanent.

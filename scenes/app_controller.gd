@@ -67,6 +67,8 @@ var _dropped_warned := false
 var _link: Link = null
 var _link_lost_since_ms: int = -1
 var _rejected_ticks: int = 0
+## Trames `G`/`S` d'un shield kiosque, comptees pour la session — docs/06 §4.
+var _kiosk_frames: int = 0
 var _last_rejection: String = ""
 var _last_link_state: int = Protocol.State.DISCONNECTED
 var _history: Array[RaceResult] = []
@@ -462,6 +464,21 @@ func _on_frame(kind: int, payload: Dictionary) -> void:
 			_check_length_ack(int(payload.get("ticks", -1)))
 		Protocol.Frame.ERROR, Protocol.Frame.UNKNOWN:
 			notice.emit("trame anormale : %s" % payload.get("text", ""))
+		Protocol.Frame.KIOSK_START, Protocol.Frame.KIOSK_STOP:
+			# `docs/06` §4 : « trames G/S reellement emises par un shield kiosque
+			# — parsees et loggees, comportement active seulement si observe ».
+			# `ss_monitor` les journalise deja ; l'application, elle, les jetait.
+			# Or c'est en soiree qu'un tel boitier se revelerait, et le monitor
+			# ne tourne pas ce soir-la. Comptees, pas commentees : une notice par
+			# trame noierait le journal si le shield en emet en continu.
+			_kiosk_frames += 1
+		Protocol.Frame.VERSION, Protocol.Frame.MOCK_ACK:
+			# IGNOREES, ET C'EST DELIBERE. `V:` est consommee par la couche lien,
+			# qui en fait l'etat IDENTIFIED (docs/01 §4) ; `M:` accuse la commande
+			# `m`, que la v3 n'emet jamais (docs/01 §2). Les nommer ici plutot que
+			# de les laisser tomber dans le silence du `match` : le test
+			# `test_aucune_trame_ne_tombe_dans_le_silence` l'exige.
+			pass
 
 
 ## Confronte l'accusé `L:` du boîtier à la longueur qu'on lui a demandée.
@@ -595,6 +612,12 @@ func _on_speed_implausible(rider: int, kph: float) -> void:
 
 func rejected_ticks() -> int:
 	return _rejected_ticks
+
+
+## Trames kiosque vues depuis le lancement. Zero sur un boitier ordinaire ; tout
+## autre chiffre est une information qu'on veut avoir, et qu'on n'avait pas.
+func kiosk_frames() -> int:
+	return _kiosk_frames
 
 
 func last_rejection() -> String:
