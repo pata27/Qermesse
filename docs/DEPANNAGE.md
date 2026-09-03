@@ -211,10 +211,26 @@ et franchissement, souffle de vent.
 
 ## Le vidéoprojecteur n'est pas détecté
 
-*(La fenêtre spectacle arrive au lot 5 — cette section sera complétée à ce moment-là.)*
+Panneau **Fenêtre spectacle**. Sa dernière ligne indique combien d'écrans le système annonce —
+`2 écrans détectés.` Le logiciel ne détecte rien lui-même : il liste ce que le système lui donne.
 
-En attendant : le mode mono-fenêtre est le comportement par défaut, l'opérateur et l'affichage
-partagent le même écran.
+**S'il n'annonce qu'un écran**, il le dit en toutes lettres — *« Un seul écran détecté : la fenêtre
+spectacle s'ouvrira en fenêtré par-dessus. Branchez le projecteur puis rouvrez-la pour l'y
+envoyer. »* Le problème est alors en amont du logiciel :
+
+1. Brancher le projecteur **avant** de lancer le logiciel, et le mettre sous tension.
+2. Vérifier côté système que le second écran est bien actif — et en mode **étendu**, pas en
+   duplication. En duplication, il n'y a qu'un écran pour le système, et la liste le reflète.
+3. Rouvrir le panneau : la liste est reconstruite à chaque affichage.
+
+**S'il annonce deux écrans mais que la fenêtre s'ouvre au mauvais endroit**, choisir l'écran dans la
+liste — `automatique` prend le second s'il existe. Sous Wayland, c'est le compositeur qui tranche :
+voir la fiche dédiée plus bas.
+
+**Si rien n'y fait, le spectacle passe quand même.** Fermer la fenêtre spectacle et **dupliquer
+l'écran au niveau du système** : le public voit alors le panneau opérateur, ce qui n'est pas beau
+mais reste lisible — chronos, distances, vitesses y sont. La course, elle, est indifférente à
+l'affichage : fermer la fenêtre spectacle n'arrête rien.
 
 ---
 
