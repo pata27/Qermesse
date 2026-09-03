@@ -25,6 +25,10 @@ RE_R = re.compile(rb"^R:(\d+),(\d+),(\d+),(\d+),(\d+)$")
 RE_FINISH = re.compile(rb"^([0-3])F:(\d+)$")
 ROLLER_MM = 114.3
 CIRC_MM = ROLLER_MM * 3.141592653589793
+# Rafraichissement de la ligne d'etat, en secondes. La boucle tourne a 50 Hz ;
+# repeindre a cette cadence fait scintiller un terminal et gonfle la sortie
+# redirigee. Meme valeur que `ss_monitor.REFRESH_S`.
+REFRESH_S = 0.1
 
 
 def open_port(path):
@@ -148,6 +152,7 @@ def main():
     events = []
     reconnect_at = None
 
+    last_paint = 0.0
     while time.monotonic() - start < args.duration:
         now = time.monotonic()
         lines = []
@@ -224,13 +229,20 @@ def main():
             print(events.pop(0))
         # La ligne d'etat vit sur stderr : sinon elle ecrase les evenements de
         # stdout, qui sont la trace exploitable.
-        dist = [t * CIRC_MM / 1000.0 for t in ticks]
-        sys.stderr.write(
-            f"\r  {elapsed_ms / 1000:6.2f}s "
-            + "  ".join(f"P{i}:{ticks[i]:4d}t {dist[i]:6.1f}m" for i in range(2))
-            + ("   [LIEN COUPE]" if link_lost else "              ")
-        )
-        sys.stderr.flush()
+        #
+        # REPEINTE A 10 Hz, pas a chaque tour de boucle. La boucle tourne a
+        # 50 Hz : la ligne scintillait sur un terminal, et une sonde de vingt
+        # secondes redirigee dans un fichier produisait cinquante-sept
+        # kilo-octets. Meme correctif que `ss_monitor`.
+        if now - last_paint >= REFRESH_S:
+            last_paint = now
+            dist = [t * CIRC_MM / 1000.0 for t in ticks]
+            sys.stderr.write(
+                f"\r  {elapsed_ms / 1000:6.2f}s "
+                + "  ".join(f"P{i}:{ticks[i]:4d}t {dist[i]:6.1f}m" for i in range(2))
+                + ("   [LIEN COUPE]" if link_lost else "              ")
+            )
+            sys.stderr.flush()
         time.sleep(0.02)
 
     sys.stderr.write("\n")

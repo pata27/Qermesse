@@ -1005,3 +1005,20 @@ sa création.
 
 **Mis sous garde** : la CI construit désormais l'émulateur seul et lance ses tests, exactement
 comme le README le dit. Un chemin documenté que rien ne garde finit toujours par ne plus marcher.
+
+## Le même défaut dans trois outils : ce n'est plus un défaut, c'est une habitude
+
+`ss_monitor` repeignait sa ligne d'état à chaque image, `ss_probe.py` à chaque tour de boucle,
+50 Hz — 57,6 Ko pour une sonde de vingt secondes. Deux outils écrits à des moments différents, dans
+deux langages, avec la même faute : afficher une ligne vivante sans la limiter.
+
+**Leçon** : quand un défaut réapparaît dans un troisième endroit, ce n'est plus une inattention, et
+le corriger au cas par cas ne suffira pas. Le nommer — ici « une ligne d'état se repeint à 10 Hz,
+jamais à la cadence de la boucle » — et vérifier les autres outils du même genre AVANT qu'ils ne
+tombent dedans.
+
+**Le vrai résultat de ce tour n'est pas le correctif** : c'est d'avoir lancé la répétition J1
+complète, jamais exercée. L'émulateur sur un vrai pseudo-terminal, la sonde Python indépendante,
+puis le moniteur Godot à travers le module natif. Les deux témoins, écrits séparément et dans deux
+langages, annoncent les arrivées aux mêmes millisecondes : 7596 et 9897. C'est la preuve que la
+chaîne série tient de bout en bout, sans matériel branché.
