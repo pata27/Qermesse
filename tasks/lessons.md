@@ -853,3 +853,19 @@ rendu. La question à se poser : « qu'est-ce que cela change au classement ? »
 coureurs, deuxième course, célébration, tout correct. J'ai arrêté de parcourir et j'ai choisi une
 règle précise à éprouver de bout en bout, en mesurant son effet chiffré plutôt qu'en regardant si
 « ça a l'air bon ».
+
+## Un correctif juste ouvre parfois le cas dégénéré qu'il cachait
+
+En rendant la pénalité de faux départ réellement coûteuse, j'ai éprouvé la même règle en poursuite.
+Résultat : une pénalité de 10 m avec un écart décisif de 10 m élimine le fautif à la première
+trame. Course finie en onze millisecondes, vainqueur à 0,0 m et 0,0 km/h — et surtout, une moyenne
+de **−3272 km/h** pour le pénalisé, chiffre qui partait au podium public et au CSV.
+
+**Leçon** : après avoir donné du mordant à une règle, chercher la combinaison où ce mordant devient
+absurde. Ici deux défauts distincts sont sortis du même essai — une configuration injouable qu'il
+faut refuser à l'armement, et un calcul de moyenne qui prenait une POSITION pour une distance
+parcourue.
+
+**Et le second valait mieux que le premier** : la moyenne négative n'a rien à voir avec la
+poursuite. Un rider pénalisé en mode distance, éliminé ou arrêté avant d'avoir remonté son
+handicap, aurait produit le même chiffre. Le cas dégénéré n'était que le révélateur.

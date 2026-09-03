@@ -159,6 +159,15 @@ Le handicap se paie **en ticks** : le fautif doit couvrir `D + P` mètres pour f
 n'est pas seulement dessiné en arrière — une pénalité qui ne coûterait rien à l'arrivée n'en serait
 pas une. Sa distance au tableau reste celle de l'épreuve ; c'est son temps qui porte le prix.
 
+En **poursuite**, une pénalité supérieure ou égale à l'écart décisif est **refusée à l'armement** :
+le fautif partirait déjà à la distance d'élimination, la course se terminerait à la première trame
+— onze millisecondes, vainqueur à 0,0 m et 0,0 km/h. Ce n'est pas une course, et l'opérateur doit
+l'apprendre avant, pas devant le public.
+
+La **vitesse moyenne** se calcule sur la distance réellement roulée, handicap déduit : la position
+d'un pénalisé est négative tant qu'il n'a pas remonté son retard, et une moyenne calculée dessus
+donnait `−3272 km/h` au podium et au CSV.
+
 Le défaut est `AVERTISSEMENT` : en événementiel, relancer une course pour un rider qui a bougé
 énerve le public. `RELANCE` existe pour les usages compétitifs.
 

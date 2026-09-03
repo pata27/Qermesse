@@ -72,6 +72,20 @@ func validate() -> Array[String]:
 				problems.append("écart %.0f m hors bornes 10..500" % gap_m)
 			if active_riders.size() < 2:
 				problems.append("la poursuite exige au moins deux riders")
+			# UNE PENALITE QUI VAUT L'ECART TERMINE LA COURSE AVANT LE DEPART.
+			# Le fautif part `P` metres en arriere ; si `P` atteint l'ecart
+			# decisif, il est elimine a la premiere trame — course finie en onze
+			# millisecondes, vainqueur a 0,0 m et 0,0 km/h. L'operateur doit
+			# l'apprendre a l'armement, pas devant le public.
+			if (
+				false_start_policy == FalseStartPolicy.PENALTY
+				and false_start_penalty_m >= gap_m
+			):
+				problems.append(
+					"pénalité de %.0f m pour un écart décisif de %.0f m : un faux départ"
+					% [false_start_penalty_m, gap_m]
+					+ " éliminerait le fautif avant qu'il ait pédalé"
+				)
 	return problems
 
 

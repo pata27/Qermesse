@@ -836,3 +836,47 @@ func _crossed(verdict: RaceRule.Verdict) -> Array[int]:
 	for entry: Dictionary in verdict.newly_finished:
 		lanes.append(int(entry["rider"]))
 	return lanes
+
+
+func test_une_moyenne_n_est_jamais_negative() -> void:
+	# Un rider penalise part en ARRIERE : sa distance est negative tant qu'il
+	# n'a pas remonte son handicap. Elimine a cet instant, sa moyenne valait
+	# -3272 km/h — un chiffre qui partait au podium public ET au CSV. La moyenne
+	# se calcule sur ce qu'il a REELLEMENT roule, jamais sur une position.
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.PURSUIT
+	config.gap_m = 50.0
+	config.active_riders = [0, 1] as Array[int]
+	var state := RaceState.new(config)
+	state.handicap_m[1] = -10.0
+	state.apply_sample([20, 0, 0, 0], 1000)
+	state.eliminated[1] = true
+	state.eliminated_ms[1] = 1000
+
+	var result := RaceResult.from_state(state, RulePursuit.new(), RaceRule.EndReason.NONE)
+	assert_lt(state.distance_m[1], 0.0, "sa position est bien en arriere de la ligne")
+	assert_gte(result.avg_kph[1], 0.0, "mais sa moyenne ne peut pas etre negative")
+
+
+func test_une_poursuite_dont_la_penalite_vaut_l_ecart_est_refusee() -> void:
+	# Une penalite superieure ou egale a l'ecart decisif elimine le fautif AVANT
+	# qu'il ait pedale : la course se termine en onze millisecondes, avec un
+	# vainqueur a 0,0 m et 0,0 km/h. Ce n'est pas une course. L'operateur doit
+	# l'apprendre a l'armement, pas apres.
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.PURSUIT
+	config.active_riders = [0, 1] as Array[int]
+	config.gap_m = 10.0
+	config.false_start_policy = RaceConfig.FalseStartPolicy.PENALTY
+	config.false_start_penalty_m = 10.0
+	var problems := config.validate()
+	assert_false(problems.is_empty(), "la configuration est refusee")
+	var said := false
+	for problem: String in problems:
+		if problem.to_lower().contains("penalite") or problem.to_lower().contains("pénalité"):
+			said = true
+	assert_true(said, "et le motif nomme la penalite : %s" % ", ".join(problems))
+
+	# Une penalite plus faible que l'ecart reste jouable.
+	config.false_start_penalty_m = 5.0
+	assert_true(config.is_valid(), "cinq metres de penalite pour dix d'ecart : jouable")

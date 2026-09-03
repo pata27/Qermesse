@@ -199,6 +199,12 @@ static func from_state(state: RaceState, rule: RaceRule, reason: RaceRule.EndRea
 			ms = state.finished_ms[rider]
 		elif state.eliminated_ms[rider] > 0:
 			ms = state.eliminated_ms[rider]
+		# LA DISTANCE REELLEMENT ROULEE, pas la position. Un rider penalise part
+		# en arriere : sa position est negative tant qu'il n'a pas remonte son
+		# handicap, et sa moyenne valait alors -3272 km/h — un chiffre qui
+		# partait au podium public et au CSV. Le handicap est un decalage de
+		# depart, pas une distance parcourue.
+		var rolled := state.distance_m[rider] - state.handicap_m[rider]
 		if ms > 0:
-			result.avg_kph[rider] = state.distance_m[rider] / (float(ms) / 1000.0) * 3.6
+			result.avg_kph[rider] = maxf(rolled, 0.0) / (float(ms) / 1000.0) * 3.6
 	return result
