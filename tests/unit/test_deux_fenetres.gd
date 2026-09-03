@@ -68,3 +68,89 @@ func test_le_plein_ecran_suit_le_reglage_et_non_l_ouverture() -> void:
 	assert_false(_main.spectacle_fullscreen(), "sans fenetre, c'est le reglage qui repond")
 	_main.set_spectacle_fullscreen(true)
 	assert_true(_main.controller.settings.spectacle_fullscreen, "memorise sans fenetre ouverte")
+
+
+func test_le_selecteur_de_qualite_annonce_l_automatique_et_le_niveau_detecte() -> void:
+	# Le reglage par defaut est l'automatique (-1). Le selecteur affichait
+	# « bas » — la premiere entree, faute de mieux : il mentait sur le reglage
+	# en cours, et sur ce qui tournait.
+	_main.controller.settings.render_quality = -1
+	var panel: PanelSpectacle = _main.operator.spectacle_panel()
+	panel.refresh()
+	var selector := panel.quality_selector()
+	assert_eq(
+		selector.get_selected_id(), PanelSpectacle.AUTOMATIC_ITEM,
+		"l'automatique est selectionne"
+	)
+	assert_string_contains(selector.get_item_text(selector.selected), "automatique")
+	assert_string_contains(
+		selector.get_item_text(selector.selected),
+		str(RenderQuality.PROFILES[RenderQuality.detect()]["name"]),
+		"et dit quel niveau il a detecte"
+	)
+
+
+func test_on_peut_revenir_a_l_automatique_apres_un_choix_manuel() -> void:
+	# Sans cette entree, essayer « eleve » un soir coutait DEFINITIVEMENT la
+	# degradation qui protege les 60 fps : plus aucun chemin de retour hors
+	# edition du JSON.
+	_main.controller.settings.render_quality = RenderQuality.Level.HIGH
+	_main.open_spectacle()
+	var panel: PanelSpectacle = _main.operator.spectacle_panel()
+	panel.refresh()
+	assert_false(_main.spectacle.scene.auto_degrade(), "un choix manuel la desarme")
+
+	var selector := panel.quality_selector()
+	var automatic := -1
+	for item: int in range(selector.item_count):
+		if selector.get_item_id(item) == PanelSpectacle.AUTOMATIC_ITEM:
+			automatic = item
+			break
+	assert_gt(automatic, -1, "l'entree automatique existe")
+	selector.select(automatic)
+	selector.item_selected.emit(automatic)
+
+	assert_eq(_main.controller.settings.render_quality, -1, "le reglage revient a l'automatique")
+	assert_true(_main.spectacle.scene.auto_degrade(), "et la degradation est rearmee")
+	assert_eq(
+		_main.spectacle.scene.quality.level, RenderQuality.detect(),
+		"la scene reprend le niveau detecte"
+	)
+
+
+func test_la_qualite_se_regle_meme_ecran_public_ferme() -> void:
+	# C'est un reglage persiste, pris la veille — comme le plein ecran, que
+	# `Main.set_spectacle_fullscreen` memorise deja fenetre fermee.
+	var panel: PanelSpectacle = _main.operator.spectacle_panel()
+	panel.refresh()
+	var selector := panel.quality_selector()
+	assert_false(selector.disabled, "reglable sans fenetre ouverte")
+	for item: int in range(selector.item_count):
+		if selector.get_item_id(item) == RenderQuality.Level.MEDIUM:
+			selector.select(item)
+			selector.item_selected.emit(item)
+			break
+	assert_eq(_main.controller.settings.render_quality, RenderQuality.Level.MEDIUM)
+	_main.open_spectacle()
+	assert_eq(
+		_main.spectacle.scene.quality.level, RenderQuality.Level.MEDIUM,
+		"et la fenetre ouverte ensuite le respecte"
+	)
+
+
+func test_choisir_l_ecran_automatique_ecrit_bien_l_automatique() -> void:
+	# `add_item(texte, -1)` ne stocke pas -1 : Godot y met l'index de l'entree.
+	# « automatique » portait donc l'id 0, et le choisir ecrivait « ecran 1 ».
+	# Le mode que le code recommande — il survit a un rebranchement — etait
+	# inatteignable a la souris.
+	_main.controller.settings.show_window_screen = 0
+	var panel: PanelSpectacle = _main.operator.spectacle_panel()
+	panel.refresh()
+	var screens: OptionButton = panel.screen_selector()
+	assert_eq(screens.get_item_text(0).substr(0, 11), "automatique", "premiere entree")
+	screens.select(0)
+	screens.item_selected.emit(0)
+	assert_eq(
+		_main.controller.settings.show_window_screen, -1,
+		"automatique, et non l'ecran numero 1"
+	)

@@ -10,6 +10,19 @@
 class_name PanelSpectacle
 extends VBoxContainer
 
+## Identifiant de l'entree « automatique », dans les DEUX selecteurs.
+##
+## Et surtout pas -1, qui est pourtant la valeur du reglage. `add_item(texte,
+## -1)` ne stocke pas -1 : Godot y met l'INDEX de l'entree. « automatique »
+## recevait donc l'id 0 — c'est-a-dire « ecran 1 » et « qualite basse ». Le
+## selecteur d'ecran en souffrait deja : choisir « automatique » ecrivait
+## `show_window_screen = 0`, et le mode automatique, que le code recommande
+## parce qu'il survit a un rebranchement, etait inatteignable a la souris.
+##
+## Les entrees portent donc un identifiant propre, traduit en -1 au moment
+## d'ecrire le reglage.
+const AUTOMATIC_ITEM := 1000
+
 var _root: Node
 var _controller: AppController
 var _toggle: Button
@@ -65,8 +78,6 @@ func _build() -> void:
 	quality_row.add_child(quality_label)
 	_quality = OptionButton.new()
 	_quality.custom_minimum_size = Vector2(260, 0)
-	for level: int in [RenderQuality.Level.LOW, RenderQuality.Level.MEDIUM, RenderQuality.Level.HIGH]:
-		_quality.add_item(str(RenderQuality.PROFILES[level]["name"]), level)
 	_quality.item_selected.connect(_on_quality_selected)
 	quality_row.add_child(_quality)
 
@@ -110,28 +121,19 @@ func refresh() -> void:
 	_screens.clear()
 	# « Automatique » n'est pas un raccourci : c'est le comportement à
 	# recommander, parce qu'il survit à un changement de branchement.
-	_screens.add_item("automatique (le second si présent)", -1)
+	_screens.add_item("automatique (le second si présent)", AUTOMATIC_ITEM)
 	for index: int in range(count):
 		var size := DisplayServer.screen_get_size(index)
 		var main := " — écran de l'opérateur" if index == DisplayServer.window_get_current_screen() \
 			else ""
 		_screens.add_item("écran %d — %d × %d%s" % [index + 1, size.x, size.y, main], index)
 	for item: int in range(_screens.item_count):
-		if _screens.get_item_id(item) == wanted:
+		if _screens.get_item_id(item) == _item_of(wanted):
 			_screens.select(item)
 			break
 
-	# Le sélecteur de qualité doit montrer le niveau RÉELLEMENT appliqué, qui
-	# est détecté automatiquement au montage et peut avoir été dégradé en cours
-	# de course. Laisser la première entrée sélectionnée annonçait « bas » sur
-	# une scène qui tournait en « moyen ».
 	var window: Node = _root.get("spectacle")
-	if window != null and window.scene != null:
-		for item: int in range(_quality.item_count):
-			if _quality.get_item_id(item) == int(window.scene.quality.level):
-				_quality.select(item)
-				break
-	_quality.disabled = window == null or window.scene == null
+	_refresh_quality(window)
 
 	var audio: Node = _root.get("audio")
 	if audio != null:
@@ -170,6 +172,54 @@ func refresh() -> void:
 		)
 
 
+## Le sélecteur de qualité — docs/04 §4.
+##
+## L'AUTOMATIQUE EST UNE ENTRÉE, comme pour l'écran. Sans elle, essayer
+## « élevé » un soir coûtait définitivement la dégradation qui protège les
+## 60 fps : le réglage se persiste, et plus rien dans l'interface ne pouvait le
+## ramener à -1. Elle annonce en plus le niveau détecté, faute de quoi
+## « automatique » ne dirait pas ce qui tourne.
+##
+## Le sélecteur montre le niveau RÉELLEMENT appliqué quand la fenêtre est
+## ouverte — il a pu être dégradé en cours de course. Fermée, c'est le réglage
+## persisté qui fait foi : on règle la veille, comme le plein écran.
+func _refresh_quality(window: Node) -> void:
+	var live: Node = null if window == null else window.get("scene")
+	var detected := RenderQuality.detect()
+	var running := int(live.quality.level) if live != null else detected
+	_quality.clear()
+	_quality.add_item(
+		"automatique (%s)" % str(RenderQuality.PROFILES[running]["name"]), AUTOMATIC_ITEM
+	)
+	for level: int in [RenderQuality.Level.LOW, RenderQuality.Level.MEDIUM, RenderQuality.Level.HIGH]:
+		_quality.add_item(str(RenderQuality.PROFILES[level]["name"]), level)
+	var wanted := _controller.settings.render_quality
+	if live != null and not bool(live.call("auto_degrade")):
+		wanted = int(live.quality.level)
+	for item: int in range(_quality.item_count):
+		if _quality.get_item_id(item) == _item_of(wanted):
+			_quality.select(item)
+			break
+
+
+## Traductions entre le réglage (-1 = automatique) et l'identifiant d'entrée.
+static func _item_of(setting: int) -> int:
+	return AUTOMATIC_ITEM if setting < 0 else setting
+
+
+static func _setting_of(item_id: int) -> int:
+	return -1 if item_id == AUTOMATIC_ITEM else item_id
+
+
+## Les deux sélecteurs — pour les tests.
+func quality_selector() -> OptionButton:
+	return _quality
+
+
+func screen_selector() -> OptionButton:
+	return _screens
+
+
 func _on_mute_pressed() -> void:
 	var audio: Node = _root.get("audio")
 	if audio != null:
@@ -191,7 +241,7 @@ func _on_toggle() -> void:
 
 
 func _on_screen_selected(index: int) -> void:
-	_root.call("set_spectacle_screen", _screens.get_item_id(index))
+	_root.call("set_spectacle_screen", _setting_of(_screens.get_item_id(index)))
 
 
 func _on_fullscreen_toggled(pressed: bool) -> void:
@@ -199,14 +249,21 @@ func _on_fullscreen_toggled(pressed: bool) -> void:
 
 
 func _on_quality_selected(index: int) -> void:
-	var level := _quality.get_item_id(index)
+	var level := _setting_of(_quality.get_item_id(index))
+	# Retenu pour les soirees suivantes, comme la coupure du son et son volume.
+	# Écrit MÊME fenêtre fermée : c'est un réglage, pas l'état d'une fenêtre.
+	_controller.settings.render_quality = level
 	var window: Node = _root.get("spectacle")
 	if window != null and window.scene != null:
+		var automatic := level < 0
 		# Le choix manuel désarme la dégradation automatique : sinon le niveau
 		# choisi serait défait dès la première seconde sous le budget, sans que
-		# l'opérateur comprenne pourquoi.
-		window.scene.set_auto_degrade(false)
-		window.scene.quality.level = level as RenderQuality.Level
+		# l'opérateur comprenne pourquoi. Le retour à l'automatique la réarme,
+		# et reprend le niveau détecté — sans quoi « automatique » garderait le
+		# niveau imposé la veille.
+		window.scene.set_auto_degrade(automatic)
+		window.scene.quality.level = (
+			RenderQuality.detect() if automatic else level as RenderQuality.Level
+		)
 		window.scene.apply_quality()
-	# Retenu pour les soirees suivantes, comme la coupure du son et son volume.
-	_controller.settings.render_quality = level
+	_refresh_quality(window)

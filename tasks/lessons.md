@@ -557,3 +557,20 @@ est la même.
 **Comment le retrouver** : capturer l'interface et la LIRE comme un utilisateur qui n'a pas écrit
 le code. Un mot en majuscules anglaises au milieu d'un panneau français se voit en une seconde,
 alors qu'il ne fait échouer aucun test.
+
+## `OptionButton.add_item(texte, -1)` ne range pas -1
+
+Godot interprète un identifiant `-1` comme « prends l'index de l'entrée ». L'entrée
+« automatique », posée en tête avec l'id `-1` — la valeur même du réglage —, recevait donc l'id 0,
+c'est-à-dire « écran 1 » et « qualité basse ». Le sélecteur d'écran vivait avec ce défaut :
+choisir « automatique » écrivait `show_window_screen = 0`. Le mode que le code recommande, parce
+qu'il survit à un rebranchement, était inatteignable à la souris — et rien ne le signalait, puisque
+l'entrée s'affichait bien et se sélectionnait bien.
+
+**Leçon** : une valeur sentinelle du domaine métier n'est pas forcément une valeur licite pour le
+widget qui la porte. Vérifier ce que l'API stocke réellement, par un essai de six lignes, plutôt
+que de supposer qu'elle range ce qu'on lui donne.
+
+**Comment il a été trouvé** : en implémentant la même entrée « automatique » pour la qualité. Mon
+test échouait sur l'id ; en cherchant pourquoi, le sélecteur d'écran, en place depuis longtemps,
+s'est révélé porteur du même défaut. Corriger un endroit oblige à regarder ses voisins.

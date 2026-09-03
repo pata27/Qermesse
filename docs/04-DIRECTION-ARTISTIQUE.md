@@ -80,6 +80,18 @@ détection automatique au premier lancement, réglage manuel possible. **Un nive
 est persisté et désarme la dégradation automatique** : sinon il serait défait dès la première
 seconde sous le budget, et la machine du projecteur retrouverait un niveau trop lourd à chaque
 soirée.
+
+**L'automatique est un choix, pas seulement un état de départ.** Le sélecteur l'offre comme
+première entrée, au même titre que l'écran, et il indique le niveau réellement détecté
+(`automatique (moyen)`). Sans ce retour en arrière, un opérateur qui essaie « élevé » un soir perd
+définitivement la dégradation qui protège les 60 fps, et ne peut la rétablir qu'en éditant un
+fichier JSON. Le sélecteur reste utilisable **fenêtre spectacle fermée** : c'est un réglage
+persisté, que l'ouverture suivante applique — on le règle la veille, sans projecteur branché.
+
+Attention au piège de l'`OptionButton` : `add_item(texte, -1)` ne mémorise pas `-1`, Godot y met
+l'index de l'entrée. Les entrées « automatique » des deux sélecteurs portent donc un identifiant
+propre, traduit en `-1` au moment d'écrire le réglage.
+
 La composition est pensée en 1080p, mais **la 3D ne se rend jamais plus fin que le projecteur** :
 sur un 720p elle se rend en 720p — 2,25× moins de pixels — et l'habillage reste composé en 1080p.
 Au-delà de 1080p, le rendu reste en 1080p, mis à l'échelle : c'est le budget, pas le projecteur, qui
