@@ -265,3 +265,69 @@ func test_la_course_interrompue_le_dit_au_public() -> void:
 	_controller.race_state_changed.emit(RaceEngine.State.RUNNING, RaceEngine.State.IDLE)
 	assert_string_contains(_hud.notice_text(), "COURSE INTERROMPUE")
 	assert_eq(_hud.notice_color(), RaceHud.ALERT)
+
+
+func test_en_ecran_scinde_chaque_carte_va_dans_le_volet_de_son_coureur() -> void:
+	# QUATRE VOLETS, QUATRE CARTES EN HAUT A GAUCHE. Le spectateur qui regarde
+	# le quatrieme volet lisait la vitesse de son coureur a l'autre bout de
+	# l'ecran, empilee sous celles des trois autres. Chaque carte se pose
+	# desormais dans le volet qui montre son coureur (docs/04 §5).
+	for lane: int in range(Protocol.MAX_RIDERS):
+		_controller.roster.set_active(lane, true)
+	_hud.rebuild_cards()
+	_hud.set_compact(true)
+	# Quatre volets sur un ecran de 1920 : 480 px chacun.
+	_hud.set_pane_layout(
+		{0: 0, 1: 1, 2: 2, 3: 3}, PackedFloat32Array([0.0, 480.0, 960.0, 1440.0, 1920.0])
+	)
+	for lane: int in range(Protocol.MAX_RIDERS):
+		assert_almost_eq(
+			_hud.card_position(lane).x,
+			480.0 * lane + (RaceHud.CARD_MARGIN_X if lane == 0 else RaceHud.CARD_MARGIN_X * 0.4),
+			1.0,
+			"la carte de la piste %d commence dans son volet" % (lane + 1)
+		)
+	assert_almost_eq(
+		_hud.card_position(3).y, _hud.card_position(0).y, 0.5,
+		"un seul coureur par volet : toutes les cartes sur la meme ligne"
+	)
+	# Et elle y TIENT : une carte qui deborderait sur le volet voisin dirait la
+	# vitesse du mauvais coureur.
+	for lane: int in range(Protocol.MAX_RIDERS):
+		var card_width := RaceHud.CARD_WIDTH * _hud.card_scale(lane)
+		assert_lt(
+			_hud.card_position(lane).x + card_width, 480.0 * (lane + 1),
+			"la carte de la piste %d tient dans son volet" % (lane + 1)
+		)
+
+
+func test_deux_coureurs_dans_un_meme_volet_empilent_leurs_cartes() -> void:
+	for lane: int in range(Protocol.MAX_RIDERS):
+		_controller.roster.set_active(lane, true)
+	_hud.rebuild_cards()
+	_hud.set_compact(true)
+	# Deux paquets de deux : le decoupage que produit le profil `deux-groupes`.
+	_hud.set_pane_layout({0: 0, 1: 0, 2: 1, 3: 1}, PackedFloat32Array([0.0, 960.0, 1920.0]))
+	assert_almost_eq(_hud.card_position(0).x, RaceHud.CARD_MARGIN_X, 1.0, "piste 1 a gauche")
+	assert_almost_eq(_hud.card_position(1).x, RaceHud.CARD_MARGIN_X, 1.0, "piste 2 aussi")
+	assert_gt(_hud.card_position(1).y, _hud.card_position(0).y, "et sous elle")
+	assert_almost_eq(
+		_hud.card_position(2).x, 960.0 + RaceHud.CARD_MARGIN_X * 0.4, 1.0,
+		"piste 3 dans le second volet"
+	)
+	assert_almost_eq(
+		_hud.card_position(2).y, _hud.card_position(0).y, 0.5,
+		"en haut de son volet, pas a la troisieme ligne"
+	)
+
+
+func test_sans_ecran_scinde_les_cartes_restent_en_colonne() -> void:
+	for lane: int in range(Protocol.MAX_RIDERS):
+		_controller.roster.set_active(lane, true)
+	_hud.rebuild_cards()
+	for lane: int in range(Protocol.MAX_RIDERS):
+		assert_almost_eq(
+			_hud.card_position(lane).x, RaceHud.CARD_MARGIN_X, 1.0,
+			"plein cadre : la colonne de gauche, comme avant"
+		)
+	assert_gt(_hud.card_position(3).y, _hud.card_position(0).y, "empilees")

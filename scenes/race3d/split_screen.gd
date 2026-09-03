@@ -327,6 +327,27 @@ func cuts() -> Array[bool]:
 	return _cuts
 
 
+## Bord GAUCHE de chaque groupe, en fraction de largeur, À LA HAUTEUR `v`
+## (0 en haut, 1 en bas). Un groupe de plus qu'il n'y a de lames.
+##
+## Trois raisons de calculer ça ici et pas chez l'appelant. La lame ENTRE par la
+## droite : sa place visible est `mix(1.35, line_pos, ...)`, pas `line_pos`, et
+## un habillage posé sur la position de repos arriverait avant elle. Elle est
+## INCLINÉE : le bord d'un volet n'est pas au même endroit en haut et en bas de
+## l'écran, d'où `v`. Et l'adoucissement est le même cube que celui du shader —
+## les deux doivent s'accorder, donc ils vivent côte à côte.
+func group_edges(v: float) -> PackedFloat32Array:
+	var edges := PackedFloat32Array([0.0])
+	for index: int in range(_live_panes):
+		var pane := _panes[index]
+		var eased: float = pane.amount * pane.amount * (3.0 - 2.0 * pane.amount)
+		var slant: float = 0.14 + sin(eased * PI) * 0.06
+		# `axis = UV.x + (UV.y - 0.5) * slant` : le bord se lit à `axis == line`,
+		# donc en `UV.x = line - (v - 0.5) * slant`.
+		edges.append(lerpf(1.35, pane.line, eased) - (v - 0.5) * slant)
+	return edges
+
+
 ## Taille en pixels de la vue d'un volet : sa tranche de largeur, toute la
 ## hauteur.
 func _slice_size(pane_index: int) -> Vector2i:

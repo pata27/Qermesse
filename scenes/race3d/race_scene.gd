@@ -685,6 +685,30 @@ func _reposition_riders(delta: float) -> void:
 	_relieve_for_panes(_split.group_count())
 	# L'habillage s'efface quand l'écran se scinde : voir `RaceHud.set_compact`.
 	_hud.set_compact(_split.group_count() > 1)
+	_place_cards_in_panes(order, bounds)
+
+
+## Envoie à l'habillage le volet de chaque piste et les bords des volets, pour
+## que la carte d'un coureur soit posée dans la vue qui le montre.
+##
+## Les bords sont pris À LA HAUTEUR DE LA PREMIÈRE CARTE, et cette hauteur-là
+## n'est pas un détail : la lame est inclinée, donc elle est plus à droite en
+## haut de l'écran qu'en bas. C'est en haut qu'elle contraint le plus, et c'est
+## là que la place la plus à droite est la bonne pour toute la pile.
+func _place_cards_in_panes(order: Array[int], bounds: Array[int]) -> void:
+	var pane_of: Dictionary = {}
+	for pane: int in range(bounds.size() - 1):
+		for rank: int in range(bounds[pane], bounds[pane + 1]):
+			pane_of[order[rank]] = pane
+	var width := float(get_viewport().get_visible_rect().size.x)
+	var height := maxf(float(get_viewport().get_visible_rect().size.y), 1.0)
+	var card_v := (_hud.band_height() + 28.0) / height
+	var edges := PackedFloat32Array()
+	for edge: float in _split.group_edges(card_v):
+		edges.append(edge * width)
+	# Le bord droit du dernier volet, c'est le bord de l'ecran.
+	edges.append(width)
+	_hud.set_pane_layout(pane_of, edges)
 
 
 ## Recensement des instances visuelles, par branche de la scène. Sert à savoir

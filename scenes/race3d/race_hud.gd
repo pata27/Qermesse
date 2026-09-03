@@ -30,6 +30,12 @@ const CARD_NAME_FONT := 34
 const CARD_WIDTH := 700.0
 ## Échelle des cartes quand l'écran est scindé, voir `_layout_cards`.
 const CARD_COMPACT_SCALE := 0.55
+## Marge a gauche du volet — la meme en plein cadre, ou le volet est l'ecran.
+const CARD_MARGIN_X := 36.0
+## Plancher de l'echelle des cartes. En dessous, le nom et la vitesse ne se
+## lisent plus a dix metres d'un videoprojecteur : mieux vaut mordre d'un
+## cheveu sur la lame que d'afficher un chiffre illisible.
+const CARD_MIN_SCALE := 0.42
 const ALERT := Color("#FF3B30")
 const INK := Color("#F2F5FA")
 ## Vert de départ, pour le « PARTEZ ! ». Le décompte doit changer de COULEUR au
@@ -89,6 +95,12 @@ var _countdown_label: Label
 var _countdown_pulse := 0.0
 var _countdown_hold_s := 0.0
 var _compact := false
+## Volet de chaque piste et bords gauches des volets EN PIXELS — poses par la
+## scene a chaque image tant que les lames bougent. En pixels et non en
+## fractions : la scene connait deja la taille de sa fenetre, et une geometrie
+## qui depend d'un viewport n'est pas verifiable sans ecran.
+var _pane_of: Dictionary = {}
+var _pane_edges := PackedFloat32Array([0.0])
 ## Vrai des le depart donne, et jusqu'a la course suivante : l'ecart de
 ## poursuite et sa barre n'ont de sens qu'une fois que ca roule.
 var _under_way := false
@@ -551,13 +563,93 @@ func _build_countdown() -> void:
 ## l'habillage. Réduites d'un peu plus de moitié, les cartes gardent toutes
 ## leurs informations et s'arrêtent avant la hauteur où roulent les coureurs.
 func _layout_cards() -> void:
-	var scale := CARD_COMPACT_SCALE if _compact else 1.0
-	var step := (CARD_HEIGHT + 12.0) * scale
-	for entry: Dictionary in _cards.values():
-		var root := entry["root"] as Control
-		var index := int(root.get_meta("index", 0))
+	# Rang de chaque carte DANS SON VOLET : deux coureurs d'un meme paquet
+	# s'empilent, et le volet voisin recommence en haut.
+	var filled: Dictionary = {}
+	for lane: int in _ordered_lanes():
+		var root := (_cards[lane] as Dictionary)["root"] as Control
+		var pane := int(_pane_of.get(lane, 0))
+		var row := int(filled.get(pane, 0))
+		filled[pane] = row + 1
+		var scale := _pane_scale(pane)
 		root.scale = Vector2(scale, scale)
-		root.position = Vector2(36, band_height() + 28 + index * step)
+		var left := 0.0
+		if pane < _pane_edges.size():
+			left = maxf(_pane_edges[pane], 0.0)
+		var step := (CARD_HEIGHT + 12.0) * scale
+		root.position = Vector2(left + _pane_margin(pane), band_height() + 28 + row * step)
+
+
+## Marge a gauche de la carte dans son volet. Plus etroite des le second volet :
+## la lame lumineuse y fait deja la separation, et chaque pixel compte.
+func _pane_margin(pane: int) -> float:
+	return CARD_MARGIN_X if pane == 0 else CARD_MARGIN_X * 0.4
+
+
+## Echelle des cartes d'un volet.
+##
+## LA CARTE TIENT DANS SON VOLET, ou elle n'y est pas.
+##
+## Quatre volets font 480 px chacun, mais la lame est INCLINEE : en haut de
+## l'image, la ou vivent les cartes, elle est decalee d'une centaine de pixels
+## vers la droite. Le dernier volet n'y mesure plus que 344 px, et une carte
+## compacte de 385 px sortait de l'ecran — le compteur de vitesse du dernier
+## coureur etait coupe par le bord. La carte se met donc a la largeur de son
+## volet quand celui-ci est trop etroit, sans jamais depasser l'echelle
+## compacte : un volet large ne grossit pas ses cartes.
+func _pane_scale(pane: int) -> float:
+	var base := CARD_COMPACT_SCALE if _compact else 1.0
+	if not _compact or pane + 1 >= _pane_edges.size():
+		return base
+	var room := _pane_edges[pane + 1] - _pane_edges[pane] - _pane_margin(pane) * 2.0
+	if room <= 0.0:
+		return base
+	return clampf(minf(base, room / CARD_WIDTH), CARD_MIN_SCALE, base)
+
+
+## Pistes dans l'ordre ou leurs cartes ont ete construites. L'ordre compte : il
+## fixe qui est en haut de son volet.
+func _ordered_lanes() -> Array[int]:
+	var lanes: Array[int] = []
+	for lane: Variant in _cards.keys():
+		lanes.append(int(lane))
+	lanes.sort_custom(func(a: int, b: int) -> bool:
+		var ia := int(((_cards[a] as Dictionary)["root"] as Control).get_meta("index", 0))
+		var ib := int(((_cards[b] as Dictionary)["root"] as Control).get_meta("index", 0))
+		if ia != ib:
+			return ia < ib
+		return a < b)
+	return lanes
+
+
+## Volet de chaque piste et bords des volets — docs/04 §5.
+##
+## LES CARTES SUIVENT LES LAMES. Empilees en haut a gauche, elles decrivaient
+## quatre coureurs dont un seul etait visible sous elles : le spectateur qui
+## regardait le quatrieme volet cherchait la vitesse de son coureur a l'autre
+## bout de l'ecran. `edges` porte le bord GAUCHE de chaque volet, EN PIXELS, a
+## la hauteur des cartes — lame en cours d'entree comprise —, PUIS le bord droit
+## du dernier volet. Il en faut donc un de plus que de volets : sans lui, on ne
+## saurait pas si la derniere carte tient.
+func set_pane_layout(pane_of: Dictionary, edges: PackedFloat32Array) -> void:
+	_pane_of = pane_of
+	_pane_edges = edges
+	_layout_cards()
+
+
+## Echelle appliquee a la carte d'une piste — pour les tests.
+func card_scale(lane: int) -> float:
+	if not _cards.has(lane):
+		return 0.0
+	return (((_cards[lane] as Dictionary)["root"]) as Control).scale.x
+
+
+## Position de la carte d'une piste — pour les tests, qui verifient qu'elle
+## tombe bien dans son volet.
+func card_position(lane: int) -> Vector2:
+	if not _cards.has(lane):
+		return Vector2.ZERO
+	return (((_cards[lane] as Dictionary)["root"]) as Control).position
 
 
 ## Active ou non le mode compact ; appelé par la scène selon le nombre de volets.

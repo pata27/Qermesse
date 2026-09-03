@@ -508,3 +508,18 @@ d'exploitation, qui bascule à 5 h.
 
 **Comment le retrouver** : lire les horaires réels de l'usage. Un goldsprint court de 20 h à 1 h.
 Toute frontière temporelle placée à minuit tombe donc au milieu de l'événement.
+
+## Une capture montre ce qu'aucun test ne demandait
+
+L'écran scindé fonctionnait, les cartes étaient compactées, les tests passaient. En regardant une
+capture à quatre volets, l'évidence : les quatre cartes étaient empilées dans le premier volet.
+Aucun test ne pouvait le dire — ils lisent du texte, pas des positions, et la spec ne parlait que
+de la TAILLE des cartes en écran scindé, jamais de leur place.
+
+**Leçon** : produire l'image et la regarder reste la seule façon de trouver ce que personne n'a
+pensé à spécifier. Un rendu se relit avec les yeux ; le test vient après, pour le tenir.
+
+**Et le premier correctif se regarde aussi** : posées dans leur volet, les cartes tenaient — sauf
+la dernière, coupée par le bord de l'écran. La lame est inclinée, donc le dernier volet est plus
+étroit en haut qu'en bas, là où vivent les cartes. La géométrie qui décide de la place doit être
+celle qui est réellement dessinée, à la hauteur concernée — pas la position de repos de la lame.
