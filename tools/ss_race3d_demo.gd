@@ -5,6 +5,8 @@
 ##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --courses 2
 ##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --noms Alice,Bob
 ##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --faux-depart 1
+##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --faux-depart 1 \
+##       --politique relance
 ##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --perte-lien 4
 ##
 ## Codes de sortie : 0 fait, 1 depart refuse, 2 scene impossible a charger,
@@ -58,6 +60,8 @@ var _budget_failed := false
 var _false_start_lane := -1
 ## Instant de course, en secondes, ou couper le lien simule. Negatif : jamais.
 var _link_loss_at_s := -1.0
+## Politique de faux depart appliquee a la course — voir `--politique`.
+var _policy := RaceConfig.FalseStartPolicy.WARN
 var _quality := -1
 var _speed := 1.0
 ## Dossier de donnees des outils de preuve — JAMAIS celui de l'operateur.
@@ -183,6 +187,13 @@ func _parse_args() -> void:
 				# permettait de la produire sans debrancher un vrai cable.
 				i += 1
 				_link_loss_at_s = float(args[i]) if i < args.size() else -1.0
+			"--politique":
+				# Politique de faux depart, pour produire les trois bandeaux
+				# publics que `docs/02` §4 decrit : avertissement, penalite,
+				# relance. Seul le premier avait jamais ete capture.
+				i += 1
+				if i < args.size():
+					_policy = RaceConfig.policy_from_name(args[i], _policy)
 			"--faux-depart":
 				# Injecte un faux depart sur cette piste PENDANT le decompte —
 				# le firmware ne le signale qu'a ce moment (docs/01 §2). Sert a
@@ -285,6 +296,7 @@ func _run() -> void:
 		"distance":
 			_controller.settings.mode = RaceConfig.Mode.DISTANCE
 			_controller.settings.distance_m = _distance_m if _distance_m > 0.0 else 500.0
+	_controller.settings.false_start_policy = _policy
 
 	_scene = RaceScene.new()
 	root.add_child(_scene)
@@ -407,6 +419,15 @@ func _capture_stills() -> void:
 	# `has_run` est indispensable : avant le départ l'état vaut ARMING, et sortir
 	# sur « pas EN_COURSE » quittait la boucle à la première image.
 	# Le décompte se capture AVANT le départ : c'est un état à part entière.
+	# UNE COURSE ANNULEE N'EST PAS UNE COURSE QUI PEND. Avec la politique
+	# RELANCE, un faux depart arrete la course : l'outil attendait alors une
+	# arrivee qui ne viendrait jamais et sortait au bout de cinq minutes en
+	# code 3, « delai depasse ». Il sait desormais que la course a ete
+	# interrompue, le dit, et s'arrete la — apres avoir pris ses captures, qui
+	# sont precisement ce qu'on lui demandait.
+	var aborted: Array[String] = []
+	_controller.race_aborted.connect(func(note: String) -> void: aborted.append(note))
+
 	var shown_countdown := false
 	while not shown_countdown:
 		await _step()
@@ -447,7 +468,7 @@ func _capture_stills() -> void:
 		var race_s: float = 0.0 if state == null else float(state.elapsed_ms) / 1000.0
 		var running := _controller.engine.state() == RaceEngine.State.RUNNING
 		has_run = has_run or running
-		racing = running or not has_run
+		racing = (running or not has_run) and aborted.is_empty()
 		# COUPURE DU LIEN A CHAUD, puis capture du bandeau. Le PC accorde trois
 		# secondes de grace (docs/01 §6.2) : on coupe, on laisse le bandeau
 		# monter, on photographie, et on rebranche pour que la course reprenne —
@@ -473,6 +494,17 @@ func _capture_stills() -> void:
 				continue
 			done.append(label)
 			await _shoot(label)
+
+	# PAS D'APRÈS-LIGNE SANS LIGNE. Une course annulée pendant le décompte —
+	# politique RELANCE — n'a ni arrivée, ni podium : les quatre captures
+	# d'après-ligne montraient alors une scène vide sous des noms qui promettent
+	# un résultat. Une preuve trompeuse est pire qu'une preuve absente.
+	if not has_run:
+		print("course annulée avant le départ : %s" % (
+			aborted[0] if not aborted.is_empty() else "motif inconnu"
+		))
+		print("pas de captures d'après-ligne — il n'y a pas eu de course.")
+		return
 
 	# CAPTURES D'APRÈS-LIGNE, déclenchées par la fin de course et non par le
 	# chrono : sur une course courte, la ligne tombe avant le premier repère

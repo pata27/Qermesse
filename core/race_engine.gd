@@ -193,7 +193,13 @@ func on_false_start(rider: int) -> void:
 
 	match _config.false_start_policy:
 		RaceConfig.FalseStartPolicy.RESTART:
-			abort("faux départ piste %d" % rider)
+			# NUMERO DE PISTE HUMAIN, 1..4, comme partout a l'ecran. L'indice
+			# brut partait dans le motif d'interruption — donc au bandeau
+			# public, a la note du CSV, au tableau de l'operateur et a
+			# l'historique du jour : un faux depart sur la piste 2 accusait
+			# publiquement « piste 1 ». `tick_filter.gd` porte la meme regle,
+			# commentee, depuis toujours.
+			abort("faux départ piste %d" % (rider + 1))
 		RaceConfig.FalseStartPolicy.PENALTY:
 			# Handicap : le rider fautif demarre `P` metres en arriere.
 			_race_state.handicap_m[rider] = -_config.false_start_penalty_m

@@ -1176,3 +1176,20 @@ contenait la reprise. Trois cases pour une commande.
 **Ce que la capture ne prouve toujours pas**, et le document le dit : couper un pseudo-terminal
 n'exerce pas le chemin `EIO` d'un vrai pilote USB. La ligne reste à cocher à la main, câble en
 main. Une preuve reproductible ne dispense pas de nommer ce qu'elle laisse dehors.
+
+## Un indice de piste échappé dans un texte public
+
+`abort("faux départ piste %d" % rider)` écrivait l'indice BRUT du coureur. Le motif part pourtant
+partout : bandeau public, note du CSV, tableau de l'opérateur, historique du jour. Un faux départ
+sur la piste 2 accusait donc publiquement « piste 1 » — un coureur blâmé à la place d'un autre,
+dans l'image projetée comme dans le fichier qui reste. `tick_filter.gd` porte la règle, commentée,
+depuis toujours : « numéro de piste HUMAIN, 1..4, comme partout à l'écran ».
+
+**Leçon** : la frontière entre indice machine et numéro humain se franchit à chaque chaîne
+destinée à un lecteur. Chercher les `% rider` sans `+ 1` est un grep de trente secondes.
+
+**Trouvé en voulant capturer une image** : je cherchais à produire le bandeau de la politique
+RELANCE, jamais vu. Le défaut était dans le texte de ce bandeau. Deux autres sont tombés au même
+endroit — l'outil attendait cinq minutes une course que la relance avait annulée, puis sortait en
+« délai dépassé » ; et il écrivait quatre captures d'après-ligne montrant une scène vide sous des
+noms qui promettent un résultat. Une preuve trompeuse est pire qu'une preuve absente.

@@ -880,3 +880,25 @@ func test_une_poursuite_dont_la_penalite_vaut_l_ecart_est_refusee() -> void:
 	# Une penalite plus faible que l'ecart reste jouable.
 	config.false_start_penalty_m = 5.0
 	assert_true(config.is_valid(), "cinq metres de penalite pour dix d'ecart : jouable")
+
+
+func test_le_motif_d_une_relance_nomme_la_piste_en_numero_humain() -> void:
+	# Avec la politique RELANCE, la course est arretee et son MOTIF part
+	# partout : bandeau public « COURSE INTERROMPUE — … », note du CSV, tableau
+	# de l'operateur, historique du jour. Il portait l'indice BRUT du coureur :
+	# un faux depart sur la piste 2 accusait publiquement « piste 1 ». Le filtre
+	# de ticks commente pourtant la regle a cote — « numero de piste HUMAIN,
+	# 1..4, comme partout a l'ecran ».
+	var config := RaceConfig.new()
+	config.active_riders = [0, 1] as Array[int]
+	config.false_start_policy = RaceConfig.FalseStartPolicy.RESTART
+	var engine := RaceEngine.new()
+	var notes: Array[String] = []
+	engine.race_aborted.connect(func(note: String) -> void: notes.append(note))
+	assert_true(engine.arm(config, 0), "armement")
+	engine.on_countdown(3)
+	engine.on_false_start(1)
+
+	assert_false(notes.is_empty(), "la course est arretee")
+	assert_string_contains(notes[0], "piste 2", "la piste est nommee comme a l'ecran")
+	assert_false(notes[0].contains("piste 1"), "et pas sous son indice")

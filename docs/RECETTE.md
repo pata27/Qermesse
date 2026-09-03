@@ -211,6 +211,9 @@ godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --faux-depart 1
 ```
 
 Elle écrit `r3d-N-faux-depart.png` : le bandeau rouge par-dessus le décompte, cartes à zéro.
+`--politique relance` donne l'autre bandeau public de la même section — `COURSE INTERROMPUE —
+faux départ piste N` — et la commande s'arrête là : une course annulée pendant le décompte n'a ni
+arrivée ni podium.
 
 Recommencer avec la politique **Relance** :
 
