@@ -606,3 +606,14 @@ par un passage instantané ; seule la seconde dit que l'état existe.
 **Comment il a été trouvé** : en cherchant, parmi les sept règles non négociables, celles que rien
 ne contrôle. La règle 4 était tenue pour le lien série (`test_link_sim.gd`) mais pas pour la FSM de
 course — celle qui arbitre les classements.
+
+## Un test qui n'a jamais été rouge ne prouve rien
+
+J'ai écrit le test de marge APRÈS avoir posé le `MarginContainer` : il est passé du premier coup,
+ce qui ne dit rien — il aurait pu mesurer la mauvaise chose et passer quand même. J'ai donc remis
+la marge à zéro le temps d'un lancement : le test échoue en annonçant `0.0 attendu 20.0`, puis
+repasse au vert une fois la constante rétablie.
+
+**Leçon** : quand l'ordre s'inverse par accident et que le code arrive avant le test, ne pas se
+contenter du vert. Neutraliser le correctif une fois suffit à savoir si le test regarde bien ce
+qu'on croit. C'est la même vérification dans les deux sens que pour les garde-fous d'assets.

@@ -11,6 +11,11 @@
 class_name OperatorPanel
 extends Control
 
+## Marge autour de l'interface. Sans elle, titres et champs touchaient le bord
+## de la fenetre — mesure sur capture : premier pixel encre en x = 0, y = 7.
+## Une fenetre d'outil collee au cadre se lit mal, et se lit comme inachevee.
+const MARGIN := 20
+
 var controller: AppController
 
 var _roster_panel: PanelRoster
@@ -49,6 +54,17 @@ func _build() -> void:
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
 
+	# La marge vit ENTRE le defilement et les colonnes, et non autour du
+	# defilement : posee dehors, elle laisserait la barre de defilement contre
+	# le bord et decalerait tout son contenu, y compris ce qui doit glisser
+	# sous elle.
+	var margins := MarginContainer.new()
+	for side: String in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+		margins.add_theme_constant_override(side, MARGIN)
+	margins.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	margins.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(margins)
+
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 24)
 	# Les colonnes OCCUPENT la fenêtre. Sans ces drapeaux, elles se réduisaient
@@ -56,7 +72,7 @@ func _build() -> void:
 	# d'un grand fond vide.
 	columns.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	columns.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.add_child(columns)
+	margins.add_child(columns)
 
 	var left := VBoxContainer.new()
 	left.add_theme_constant_override("separation", 16)

@@ -629,3 +629,24 @@ func test_apres_une_arrivee_le_panneau_dit_que_le_resultat_attend_l_acquittement
 	# Et le depart suivant acquitte : on repasse par IDLE avant d'armer.
 	assert_true(_controller.start_race())
 	assert_true(await _await_running(), "la seconde course part")
+
+
+func test_l_interface_ne_colle_pas_aux_bords_de_la_fenetre() -> void:
+	# Mesure sur une capture de la fenetre operateur : le premier pixel encre
+	# etait en x = 0, le premier en y = 7. Titres et champs touchaient le bord,
+	# ce qui fait « maquette » plutot qu'outil — et sur un ecran d'ordinateur
+	# portable, une fenetre collee au bord se lit mal.
+	# Ancres remises en haut a gauche : `_build` les pose en plein cadre, et
+	# Godot refuse alors qu'on impose une taille.
+	_panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	_panel.size = Vector2(1320, 900)
+	await wait_frames(2)
+	var roster := _panel.roster_panel()
+	assert_almost_eq(
+		roster.global_position.x - _panel.global_position.x, float(OperatorPanel.MARGIN), 2.0,
+		"la premiere colonne respire a gauche"
+	)
+	assert_almost_eq(
+		roster.global_position.y - _panel.global_position.y, float(OperatorPanel.MARGIN), 2.0,
+		"et en haut"
+	)
