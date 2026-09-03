@@ -103,6 +103,15 @@ func _initialize() -> void:
 	_run.call_deferred()
 
 
+## Arrete l'outil sur une valeur qu'il ne comprend pas, en proposant les
+## bonnes. Le silence produirait une preuve qui ne montre pas ce qu'elle dit.
+func _bad_argument(option: String, given: String, valid: Array) -> void:
+	printerr(
+		"ECHEC : %s inconnu « %s ». Disponibles : %s" % [option, given, ", ".join(valid)]
+	)
+	quit(1)
+
+
 func _parse_args() -> void:
 	var args := OS.get_cmdline_user_args()
 	var i := 0
@@ -119,7 +128,10 @@ func _parse_args() -> void:
 				_riders = int(args[i]) if i < args.size() else _riders
 			"--qualite":
 				i += 1
-				_quality = RenderQuality.level_from_name(args[i]) if i < args.size() else -1
+				if i < args.size():
+					_quality = RenderQuality.level_from_name(args[i])
+					if _quality < 0:
+						_bad_argument("qualite", args[i], RenderQuality.level_names())
 			"--capture":
 				_mode = "capture"
 				i += 1
@@ -172,6 +184,14 @@ func _parse_args() -> void:
 				# projecteur plus petit que 1080p (docs/04) : 0.667 pour du 720p.
 				i += 1
 				_render_factor = float(args[i]) if i < args.size() else _render_factor
+			_:
+				# UNE OPTION INCONNUE ARRETE L'OUTIL. Ignoree, une faute de
+				# frappe — `--rendus` pour `--rendu` — laissait la valeur par
+				# defaut et la mesure portait sur autre chose que ce que la
+				# commande annonçait.
+				printerr("ECHEC : option inconnue « %s »" % args[i])
+				quit(1)
+				return
 		i += 1
 
 
@@ -200,6 +220,9 @@ func _run() -> void:
 		quit(1)
 		return
 	_controller.set_simulation_speed(_speed)
+	if not ["distance", "temps", "poursuite"].has(_race_mode):
+		_bad_argument("mode-course", _race_mode, ["distance", "temps", "poursuite"])
+		return
 	match _race_mode:
 		"temps":
 			_controller.settings.mode = RaceConfig.Mode.TIME
@@ -211,7 +234,7 @@ func _run() -> void:
 			# jauge « décision dans » devient visible sur une capture courte.
 			if _duration_s > 0.0:
 				_controller.settings.pursuit_time_cap_s = maxf(10.0, _duration_s)
-		_:
+		"distance":
 			_controller.settings.mode = RaceConfig.Mode.DISTANCE
 			_controller.settings.distance_m = _distance_m if _distance_m > 0.0 else 500.0
 

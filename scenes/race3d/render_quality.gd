@@ -136,11 +136,21 @@ func level_name() -> String:
 	return str(profile()["name"])
 
 
-static func level_from_name(name: String) -> Level:
+## Rend -1 si le nom est inconnu, au lieu de retomber sur « moyen » en
+## silence : un outil de mesure qui accepte `--qualite eleve` mal orthographie
+## et chiffre autre chose produit une preuve fausse.
+static func level_from_name(name: String) -> int:
 	for candidate: Level in PROFILES:
 		if str(PROFILES[candidate]["name"]) == name:
-			return candidate
-	return Level.MEDIUM
+			return int(candidate)
+	return -1
+
+
+static func level_names() -> Array:
+	var names: Array = []
+	for candidate: Level in PROFILES:
+		names.append(str(PROFILES[candidate]["name"]))
+	return names
 
 
 ## Dégrade d'un cran. Appelé par le moniteur de performance quand le budget

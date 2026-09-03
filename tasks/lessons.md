@@ -472,3 +472,8 @@
   mais seulement en mode temps, où tous finissent au même instant, et seulement si l'ordre des
   couloirs différait de l'ordre d'arrivée. Mes captures utilisaient des profils où les deux
   coïncidaient. Chercher les tris sans `if égalité` vaut mieux qu'attendre la coïncidence.
+* **Un outil de preuve qui accepte une valeur qu'il ne comprend pas fabrique une preuve fausse.**
+  Quatre replis silencieux dans les démos : option inconnue ignorée, profil inconnu remplacé par
+  `egaux`, qualité inconnue par `moyen`, mode inconnu par `distance`. Une faute de frappe suffisait
+  à mesurer autre chose que ce que la commande annonçait — sans un mot, et sans moyen de le savoir
+  après coup. Dans un outil qui produit des preuves, tout repli implicite est un mensonge en attente.

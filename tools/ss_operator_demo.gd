@@ -68,6 +68,10 @@ func _parse_args() -> void:
 			"--vitesse":
 				i += 1
 				_speed = float(args[i]) if i < args.size() else _speed
+			_:
+				printerr("ECHEC : option inconnue « %s »" % args[i])
+				quit(1)
+				return
 		i += 1
 
 
