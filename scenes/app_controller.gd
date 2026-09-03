@@ -379,6 +379,15 @@ func simulate_link_return() -> void:
 	_link.inject_link_return()
 
 
+## Un rider qui pédale pendant le décompte — sur le boîtier SIMULÉ.
+##
+## Cette couture manquait, seule des cinq injections du simulateur. Résultat :
+## `FALSE_START` était le seul événement du CSV qu'aucun test n'atteignait, et
+## `docs/RECETTE.md` §7 le faisait cocher à la main, boîtier branché.
+func simulate_false_start(rider: int) -> void:
+	_link.inject_false_start(rider)
+
+
 ## Un tick sans mouvement — rebond de contact — sur le boîtier SIMULÉ.
 func simulate_phantom_tick(rider: int) -> void:
 	_link.inject_phantom_tick(rider)

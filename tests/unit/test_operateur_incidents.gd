@@ -343,3 +343,60 @@ func test_basculer_materiel_puis_simulateur_ramene_un_lien_vivant() -> void:
 	assert_true(await _await_identified(), "le lien simulateur repart")
 	assert_true(_controller.is_simulated())
 	assert_true(_controller.can_start_race(), "et START redevient possible")
+
+
+## Attend qu'une ligne d'evenement apparaisse dans le CSV, et la rend.
+func _await_csv_line(event: String, frames: int = 900) -> PackedStringArray:
+	for i: int in range(frames):
+		await wait_frames(1)
+		for row: PackedStringArray in _read_csv_rows():
+			if row.size() > 1 and row[1] == event:
+				return row
+	return PackedStringArray()
+
+
+func test_un_faux_depart_est_ecrit_au_csv_et_la_course_part_quand_meme() -> void:
+	# docs/02 §5 liste huit evenements de CSV. `FALSE_START` etait le seul
+	# qu'aucun test n'atteignait : la couture d'injection manquait, et
+	# `docs/RECETTE.md` §7 le faisait cocher a la main, boitier branche.
+	#
+	# docs/02 §4, AVERTISSEMENT — le defaut : « bandeau + son, la course
+	# continue ». Une ligne au journal, et le depart a lieu.
+	assert_true(await _await_identified())
+	_controller.settings.distance_m = 100.0
+	_controller.settings.false_start_policy = RaceConfig.FalseStartPolicy.WARN
+	assert_true(_controller.start_race())
+	# PENDANT LE DECOMPTE, pas avant : le firmware ne signale un faux depart
+	# qu'entre `CD:3` et `CD:0`. Injecte trop tot, il ne se passait rien.
+	for i: int in range(300):
+		await wait_frames(1)
+		if _controller.engine.state() == RaceEngine.State.COUNTDOWN:
+			break
+	assert_eq(_controller.engine.state(), RaceEngine.State.COUNTDOWN, "le decompte tourne")
+	_controller.simulate_false_start(1)
+
+	var line := await _await_csv_line("FALSE_START", 300)
+	assert_gt(line.size(), 3, "la ligne FALSE_START est ecrite")
+	if line.size() > 3:
+		assert_eq(line[3], "1", "et porte la piste fautive, en colonne rider")
+	assert_string_contains(_panel.race_panel().notice_text(), "FAUX DÉPART")
+	assert_true(await _await_running(), "avec AVERTISSEMENT, la course part quand meme")
+
+
+func test_une_elimination_est_ecrite_au_csv_avec_son_rang() -> void:
+	# `RIDER_ELIMINATED` etait l'autre evenement jamais verifie. C'est pourtant
+	# celui qui porte le classement d'une poursuite : sans lui, le CSV d'une
+	# soiree de poursuites ne dirait pas qui est sorti, ni quand.
+	assert_true(await _await_identified())
+	_controller.settings.mode = RaceConfig.Mode.PURSUIT
+	_controller.settings.gap_m = 10.0
+	assert_true(_controller.set_simulator_profile("domination"), "profil de domination")
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+
+	var line := await _await_csv_line("RIDER_ELIMINATED")
+	assert_gt(line.size(), 10, "la ligne RIDER_ELIMINATED est ecrite")
+	if line.size() > 10:
+		assert_false(line[3].is_empty(), "elle porte la piste")
+		assert_false(line[9].is_empty(), "et son rang")
+		assert_string_contains(line[10], "écart", "la note dit de combien")

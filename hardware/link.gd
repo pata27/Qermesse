@@ -160,6 +160,15 @@ func inject_link_return() -> void:
 		_impl.inject_link_return()
 
 
+## Le rider pedale pendant le decompte. Cette injection existait dans
+## `link_sim` mais ne traversait pas cette facade : le faux depart etait donc
+## injouable depuis l'application, et `FALSE_START` restait le seul evenement
+## du CSV qu'aucun test n'atteignait.
+func inject_false_start(rider: int) -> void:
+	if _impl.has_method("inject_false_start"):
+		_impl.inject_false_start(rider)
+
+
 func inject_phantom_tick(rider: int) -> void:
 	if _impl.has_method("inject_phantom_tick"):
 		_impl.inject_phantom_tick(rider)

@@ -182,6 +182,10 @@ le décompte**.
 - [ ] La course part quand même.
 - [ ] La ligne `FALSE_START` figure dans le CSV.
 
+Ces trois points sont désormais tenus par un test automatique au simulateur
+(`test_operateur_incidents.gd`). Les cocher ici reste utile : ce que le test ne peut pas prouver,
+c'est que **le boîtier réel** émette bien `FS:` quand un rouleau tourne pendant le décompte.
+
 Recommencer avec la politique **Relance** :
 
 - [ ] La course est annulée immédiatement et revient au repos.

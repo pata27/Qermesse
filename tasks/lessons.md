@@ -674,3 +674,19 @@ l'instrument qui est le plus souvent en cause.
 **Ce que l'épisode a quand même donné** : l'outil était sain, mais rien ne le gardait. La suite
 exerçait `core/replay.gd`, pas la ligne de commande que `DEPANNAGE` promet à l'opérateur. Un test
 en sous-processus et une étape de CI la tiennent désormais, verdicts et codes compris.
+
+## Un événement que rien n'atteint révèle un chaînon manquant, pas un test manquant
+
+`docs/02` §5 liste huit événements de CSV. Six étaient vérifiés, deux ne l'étaient par rien. En
+cherchant à écrire le test de `FALSE_START`, la cause est apparue : la couture n'existait pas dans
+`AppController`, et la façade `Link` ne relayait pas non plus `inject_false_start`, pourtant
+présente dans `link_sim`. Le faux départ était donc **injouable depuis l'application** — d'où
+l'absence de test, et d'où la case à cocher à la main dans `docs/RECETTE.md`.
+
+**Leçon** : quand un comportement documenté n'a aucun test, se demander d'abord s'il est
+seulement atteignable. L'absence de test est parfois le symptôme, pas la maladie.
+
+**Corollaire sur la recette** : une case cochée à la main l'est parce que la machine ne peut pas
+la tenir — ou parce que personne n'a essayé. Il faut savoir lequel des deux, et l'écrire à côté de
+la case. Ici le test couvre le simulateur ; ce qu'il ne prouve pas, c'est que le vrai boîtier
+émette `FS:`, et c'est ce qui reste à cocher.
