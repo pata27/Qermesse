@@ -177,14 +177,19 @@ Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 
 - [ ] **Session de test avec le matériel réel et de vrais cyclistes**
 - [ ] Corrections issues du terrain
-- [~] Export Windows `.exe` — preset écrit et **accepté par Godot**, export non encore produit
-      *(les modèles d'exportation, 1,3 Go, ne sont pas installés localement)*
-- [~] Export Linux — preset écrit et accepté. `.AppImage` non fait : l'export Godot produit un
-      binaire autonome, l'empaquetage AppImage reste à ajouter
-- [~] Export macOS `.app` dans un `.zip` — preset écrit. `.dmg`, signature et notarisation :
-      dépendent d'un compte développeur Apple *(décision `docs/06` §5, toujours ouverte)*
-- [~] Release automatique par la CI sur tag — `.github/workflows/release.yml` écrit, YAML validé,
-      **jamais exécuté** : il ne se déclenche que sur un tag `v*`
+- [x] Export Windows `.exe` — produit par la CI de release. Les modèles d'exportation (1,3 Go)
+      restent non installés localement : c'est la CI qui les télécharge, par OS
+- [x] Export Linux — binaire autonome `.x86_64` produit par la CI de release
+- [ ] Empaquetage `.AppImage` — l'export Godot donne un binaire autonome qui suffit à lancer le
+      logiciel ; l'AppImage reste à ajouter si une distribution le demande
+- [x] Export macOS `.app` dans un `.zip` — produit par la CI de release
+- [ ] `.dmg`, signature et notarisation macOS — dépendent d'un compte développeur Apple
+      *(décision `docs/06` §5, toujours ouverte)*. La procédure de contournement Gatekeeper est
+      dans le corps de la release et dans `DEPANNAGE.md`
+- [x] Release automatique par la CI sur tag — `.github/workflows/release.yml`, déclenché pour la
+      première fois sur `v0.9.0-beta`. Un tag portant un tiret est publié en **pré-version**,
+      comme le veut semver : J1 et J6 ne sont pas franchis, annoncer une version stable serait
+      une affirmation que rien ne soutient
 - [x] Manuel opérateur — `docs/MANUEL-OPERATEUR.md` *(court, panneau par panneau, écrit d'après ce
       que l'application fait ; les pannes renvoient à `DEPANNAGE.md`)*
 - [x] `docs/DEPANNAGE.md` — dépannage terrain, écrit pour l'opérateur

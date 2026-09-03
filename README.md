@@ -59,6 +59,15 @@ godot --headless --script tools/ss_monitor.gd -- --sim --distance 100 --duree 20
 
 Preuves dans `tasks/preuves/`.
 
+## Télécharger
+
+Binaires des trois plateformes sur la [page des releases](https://github.com/pata27/SilverSprint-v3/releases) —
+Linux `.x86_64`, Windows `.exe`, macOS `.zip`. Construits par la CI sur chaque système, sur tag.
+
+`0.9.0-beta` est une **pré-version** : tout tourne au simulateur, mais J1 (validation sur l'Arduino
+réel) et J6 (le critère de sortie) ne sont pas franchis. Sans boîtier, tout se découvre au
+simulateur — panneau **Matériel**, interrupteur **Simulateur**.
+
 ## Ce que fait le logiciel
 
 * **Deux fenêtres** : le panneau de pilotage sur l'écran de l'opérateur, la scène sur le

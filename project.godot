@@ -9,6 +9,11 @@ config_version=5
 
 config/name="SilverSprint v3"
 config/description="Logiciel de course de rouleaux (goldsprints)."
+; PRE-VERSION, et le numero le dit. Le critere de sortie de docs/05 est J6 — un
+; tiers qui installe sur machine vierge et fait courir deux personnes sans aide
+; — et il n'est pas franchi, pas plus que J1, la validation sur l'Arduino reel.
+; Tout le reste l'est. Un 1.0 se pose apres une vraie soiree, pas avant.
+config/version="0.9.0-beta"
 config/features=PackedStringArray("4.5", "Forward Plus")
 run/main_scene="res://scenes/main.tscn"
 

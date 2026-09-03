@@ -129,17 +129,44 @@ jobs:
           mkdir -p release
           find artefacts -type f -exec cp {} release/ \;
           ls -la release/
+      # PRE-VERSION SI LE TAG LE DIT. Convention semver : un tag qui porte un
+      # tiret — `v0.9.0-beta` — est une pre-version, et GitHub doit l'annoncer
+      # comme telle. Le critere de sortie de `docs/05` est J6, un tiers qui
+      # installe sur machine vierge ; tant qu'il n'est pas franchi, publier une
+      # version « stable » serait une affirmation que rien ne soutient.
       - uses: softprops/action-gh-release@v2
         with:
           files: release/*
           generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
           body: |
-            Binaires construits par la CI sur les trois systemes.
+            Binaires construits par la CI sur les trois systemes : Linux
+            (`.x86_64`), Windows (`.exe`), macOS (`.zip` contenant le `.app`).
 
-            **macOS** : l'application n'est ni signee ni notariee. Au premier
-            lancement, faire un clic droit puis « Ouvrir », ou lever la mise en
+            ### Ce qui est valide, et ce qui ne l'est pas
+
+            Le logiciel tourne de bout en bout **au simulateur** : trois modes,
+            deux fenetres, ecran scinde, son, enregistrement CSV et JSON
+            rejouable. La suite de tests couvre le coeur metier, le lien serie
+            contre un emulateur de firmware sur vrai pseudo-terminal, et
+            l'interface.
+
+            **Deux jalons ne sont pas franchis** et cette version est donc une
+            pre-version :
+
+            * **J1** — validation sur l'Arduino reel. Le lien est eprouve contre
+              `ss_emu`, jamais contre le boitier. Derouler `docs/RECETTE.md`
+              avant toute utilisation en evenement.
+            * **J6** — un tiers installe sur machine vierge et fait courir deux
+              personnes sans aide. C'est le critere de sortie de `docs/05`.
+
+            Sans boitier, tout se decouvre au simulateur : panneau **Materiel**,
+            interrupteur **Simulateur**.
+
+            ### macOS
+
+            L'application n'est ni signee ni notariee. Au premier lancement,
+            faire un clic droit puis « Ouvrir », ou lever la mise en
             quarantaine :
 
                 xattr -dr com.apple.quarantine SilverSprint-v3.app
-
-            Avant toute utilisation en evenement, derouler `docs/RECETTE.md`.
