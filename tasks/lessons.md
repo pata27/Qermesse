@@ -886,3 +886,19 @@ cinquante.
 
 **Mesuré plutôt que raisonné** : cloche à 76 % du parcours sur 50 m et sur 100 m, à 90 % sur 500 m.
 C'est ce tableau qui dit que le plafond fait ce qu'on veut, pas la relecture du code.
+
+## Un guide de dépannage se lit dans les deux sens
+
+Vérifier que chaque message promis par `DEPANNAGE.md` existe dans le code n'a rien donné : ils
+existent tous. Le sens inverse, lui, a donné onze trous — des alertes que le logiciel affiche et
+que le guide ne mentionne nulle part, dont « PISTE 2 : aucun tick depuis le départ », précisément
+celle qu'on cherche quand un coureur ne démarre pas.
+
+**Leçon** : la fidélité d'une documentation ne se mesure pas à ce qu'elle promet, mais à ce qu'elle
+COUVRE. Un opérateur ne lit pas le guide en entier : il y cherche le message qu'il a sous les yeux.
+Un message absent le laisse sans recours au pire moment.
+
+**Tenu par la machine** : un test extrait les `notice.emit` du contrôleur et exige que chaque début
+de message figure dans le guide. Il a aussi rattrapé un « boitier » sans accent que le balayage
+d'accents avait manqué — le guide écrivait « boîtier », le code non, et la comparaison littérale l'a
+vu.

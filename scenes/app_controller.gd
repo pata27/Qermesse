@@ -496,9 +496,9 @@ func _check_length_ack(ticks: int) -> void:
 	if ticks < 0 or _requested_length_ticks < 0 or ticks == _requested_length_ticks:
 		return
 	notice.emit(
-		"LONGUEUR : le boitier a compris %d ticks, %d demandes — ses LED d'arrivee"
+		"LONGUEUR : le boîtier a compris %d ticks, %d demandés — ses LED d'arrivée"
 		% [ticks, _requested_length_ticks]
-		+ " seront a la mauvaise distance. Le classement, lui, reste arbitre par le PC."
+		+ " seront à la mauvaise distance. Le classement, lui, reste arbitré par le PC."
 	)
 
 
@@ -594,7 +594,7 @@ func _watch_dropped_frames() -> void:
 		return
 	_dropped_warned = true
 	notice.emit(
-		"TRAMES PERDUES : la machine ne suit plus le flux du boitier."
+		"TRAMES PERDUES : la machine ne suit plus le flux du boîtier."
 		+ " Fermer les autres applications — c'est le seul cas qui fausse une mesure."
 	)
 

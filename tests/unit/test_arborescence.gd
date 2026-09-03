@@ -200,3 +200,33 @@ func test_aucune_fonction_n_est_declaree_pour_rien() -> void:
 			if uses <= 1:
 				dead.append("%s : %s" % [str(path).get_file(), name])
 	assert_eq(dead, [] as Array[String], "des fonctions que personne n'appelle")
+
+
+## Toute alerte montree a l'operateur est documentee — `docs/DEPANNAGE.md`.
+##
+## Ce guide est son seul recours un soir de course : il y cherche le message
+## qu'il a sous les yeux. Sept des douze alertes du controleur n'y figuraient
+## pas — dont « PISTE 2 : aucun tick depuis le depart », qui est precisement
+## celle qu'on veut trouver quand un coureur ne demarre pas.
+##
+## On compare les DEBUTS de message, avant le premier `%` : c'est ce que
+## l'operateur lit et ce qu'il peut chercher.
+func test_chaque_alerte_de_l_operateur_est_dans_le_depannage() -> void:
+	var source := FileAccess.open("res://scenes/app_controller.gd", FileAccess.READ)
+	assert_not_null(source, "le controleur est lisible")
+	var guide := FileAccess.open("res://docs/DEPANNAGE.md", FileAccess.READ)
+	assert_not_null(guide, "le guide de depannage est lisible")
+	var text := guide.get_as_text()
+
+	var undocumented: Array[String] = []
+	var pattern := RegEx.create_from_string('notice\\.emit\\(\\s*"([^"]+)"')
+	for found: RegExMatch in pattern.search_all(source.get_as_text()):
+		var message := found.get_string(1)
+		var head := message.split("%")[0].strip_edges()
+		# Un message purement variable — « lien : %s » — n'a pas de debut a
+		# chercher ; c'est l'etat du lien qui est documente, pas le prefixe.
+		if head.length() < 8:
+			continue
+		if not text.contains(head):
+			undocumented.append(head)
+	assert_eq(undocumented, [] as Array[String], "des alertes absentes de DEPANNAGE.md")

@@ -84,7 +84,7 @@ Le panneau matériel affiche `Trames …, inconnues …, perdues …`.
 
 - **`inconnues` monte** : le boîtier envoie des trames que le logiciel ne reconnaît pas. Le plus
   probable est un firmware différent. Relever la version affichée.
-- **`LONGUEUR : le boitier a compris N ticks, M demandes` apparaît** — le firmware n'a pas retenu
+- **`LONGUEUR : le boîtier a compris N ticks, M demandés` apparaît** — le firmware n'a pas retenu
   la distance envoyée. Le classement reste juste : c'est le PC qui arbitre. Ce qui sera faux, ce
   sont les **LED d'arrivée du boîtier**, qui s'allumeront à la mauvaise distance. Cause probable :
   un boîtier reflashé, ou une variante de firmware. Relever la version affichée dans le panneau
@@ -304,3 +304,32 @@ souris sur **un autre écran** que celui visé : une fenêtre qui s'ouvre au bon
 pointeur y était déjà ne prouve rien — c'est le placement par défaut. Les deux fenêtres tournent en
 XWayland (le projet ne force pas le pilote Wayland de Godot) ; les règles s'appliquent de la même
 façon.
+
+---
+
+## Tous les messages du panneau Course
+
+Le journal du panneau **Course** garde les cinq derniers messages, le plus récent en tête. Voici
+chacun de ceux que le logiciel peut y écrire, ce qu'il veut dire, et ce qu'il faut faire. Les
+symptômes qui demandent une explication longue ont leur section plus haut ; celle-ci est la table
+d'entrée quand on lit un message et qu'on ne sait pas par où commencer.
+
+| Message | Ce qu'il veut dire | Quoi faire |
+|---|---|---|
+| `départ impossible : …` | La configuration ou le lien interdit de lancer. Le motif suit. | Lire le motif : piste active, lien identifié, bornes de l'épreuve. |
+| `armement refusé : …` | Le moteur a refusé d'armer — configuration invalide, ou course déjà en cours. | Le motif suit. Après une arrivée, START relance simplement la suivante. |
+| `commande refusée par le lien : …` | Une commande série n'est pas partie. Bornes du firmware, ou lien coupé. | Vérifier l'état du lien dans **Matériel**. Si le lien est bon, la commande était hors bornes : c'est un bug, garder le CSV. |
+| `LIEN PERDU` | Le boîtier ne répond plus. Une course en cours a trois secondes de grâce. | Voir « Le bandeau LIEN PERDU apparaît en pleine course ». |
+| `trame anormale : …` | Le boîtier a envoyé une ligne que le protocole ne connaît pas. Elle est loggée, jamais avalée. | Une ligne isolée est sans conséquence. Répétée, c'est un firmware différent : relever la version dans **Matériel**. |
+| `LONGUEUR : le boîtier a compris N ticks, M demandés` | Le firmware n'a pas retenu la distance envoyée. | Voir la section dédiée plus haut. |
+| `TRAMES PERDUES : la machine ne suit plus le flux du boîtier.` | Le PC n'a pas lu la ligne assez vite. **Le seul cas qui fausse une mesure.** | Fermer les autres applications. Si cela persiste, baisser la qualité de rendu. |
+| `tick rejeté : …` | Un tick incohérent a été écarté par le filtre. | Voir « Le compteur de trames rejetées grimpe ». |
+| `PISTE N : aucun tick depuis le départ — coureur absent ou capteur débranché ?` | Dix secondes de course sans un seul tick sur une piste **cochée**. En mode distance, la course ne peut pas se terminer sans elle. | Décocher la piste et relancer, ou rebrancher le capteur. Voir « Une piste reste à zéro ». |
+| `PISTE N : pointe à X km/h — capteur qui rebondit ou aimant qui passe deux fois par tour ?` | Une pointe humainement invraisemblable. La mesure est **conservée**, pas corrigée. | Voir « Les vitesses affichées sont absurdes ». |
+| `ENREGISTREMENT : …` | Le classement est à l'écran mais n'a pas pu être écrit sur le disque. | Le plus urgent de la soirée : photographier l'écran de résultats, puis voir « Le CSV est introuvable ». |
+| `SAUVEGARDE DES REGLAGES : …` / `SAUVEGARDE DU ROSTER : …` | Les réglages ou les noms n'ont pas pu être écrits. La course, elle, est enregistrée. | Vérifier l'espace disque et les droits sur le dossier de configuration. Les noms seront à ressaisir au prochain lancement. |
+| `REGLAGES : …` / `ROSTER : …` au lancement | Un fichier de configuration est illisible ; les valeurs par défaut ont été prises. | Voir « Les noms des riders et les réglages ont disparu au lancement ». |
+| `Module natif absent : retour au simulateur.` | Le GDExtension n'est pas compilé : aucun port série n'est accessible. | `cd addons/serial_link && scons target=template_debug`. Voir « Le boîtier n'est pas détecté ». |
+| `test capteurs : impossible pendant une course` | Le test capteurs est une course à blanc ; il ne peut pas tourner par-dessus une vraie. | Attendre l'arrivée, ou STOP. |
+| `test capteurs : après le décompte du boîtier, tournez chaque rouleau, une piste à la fois` | Ce n'est pas une erreur : c'est la marche à suivre. Le firmware ne lit ses capteurs qu'en course. | Faire tourner un rouleau à la fois et lire quelle piste bouge. |
+| `test capteurs : commande refusée par le lien : …` | La course à blanc n'a pas pu être armée. | Même cause que `commande refusée par le lien`. |
