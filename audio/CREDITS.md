@@ -13,7 +13,7 @@ projet ni à ce qu'on en distribue.
 
 | Fichier | Source | Auteur | Licence | Modifications |
 |---|---|---|---|---|
-| `samples/cloche.ogg` | [20150323 SM Glocke 5](https://commons.wikimedia.org/wiki/File:20150323_SM_Glocke_5.ogg) — Wikimedia Commons | Wikimedia Commons | **CC0 1.0** (domaine public) | Extrait 28,0 → 32,4 s ; **accéléré ×2,33** — bande magnétique, hauteur et tempo ensemble — pour passer d'un bourdon d'église à une sonnerie de piste ; mono ; fondus ; normalisé à −1 dBFS ; Vorbis q5 |
+| `samples/cloche.ogg` | [20150323 SM Glocke 5](https://commons.wikimedia.org/wiki/File:20150323_SM_Glocke_5.ogg) — Wikimedia Commons | Wikimedia Commons | **CC0 1.0** (domaine public) | Extrait 28,0 → 32,4 s ; **accéléré ×3,38** — bande magnétique, hauteur et tempo ensemble — pour passer d'un bourdon d'église à une sonnerie de piste ; mono ; fondus ; normalisé à −1 dBFS ; Vorbis q5 |
 | `samples/clameur.ogg` | [Slow starting applause](https://commons.wikimedia.org/wiki/File:Slow_starting_applause.ogg) — Wikimedia Commons | stephan | **Domaine public** | Extrait 20,0 → 25,5 s, là où la salle est à plein régime ; mono ; fondus ; normalisé à −1 dBFS ; Vorbis q5 |
 | `samples/reaction.ogg` | [Slow starting applause](https://commons.wikimedia.org/wiki/File:Slow_starting_applause.ogg) — Wikimedia Commons | stephan | **Domaine public** | Extrait 26,5 → 27,8 s ; mono ; fondus ; normalisé à −1 dBFS ; Vorbis q5 |
 
