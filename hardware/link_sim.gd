@@ -461,6 +461,16 @@ func inject_false_start(rider: int) -> void:
 		_pending_false_start.append(rider)
 
 
+## Le boitier accuse une AUTRE longueur que celle demandee — docs/01 §2.
+##
+## Panne d'un boitier reflashe ou d'une variante de firmware, listee dans
+## `docs/06` §4 parmi les risques forts. Elle ne se simulait pas : l'accuse
+## `L:` etait toujours conforme, donc le chemin qui detecte l'ecart n'existait
+## pas non plus.
+func inject_length_ack(ticks: int) -> void:
+	_emit(Protocol.Frame.LENGTH_ACK, {"ticks": ticks})
+
+
 ## Rebond de contact : un tick de plus, sans mouvement (docs/01 §6.3).
 func inject_phantom_tick(rider: int) -> void:
 	if rider >= 0 and rider < Protocol.MAX_RIDERS:

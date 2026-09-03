@@ -738,3 +738,18 @@ avoir un lecteur ailleurs, et une dizaine de lignes de test le tiennent.
 échantillons à vingt sur quatre trames seulement. Les deux donnaient la même valeur, et c'était
 juste — la moyenne divise par le nombre d'échantillons DÉJÀ vus, donc tant que la fenêtre n'est pas
 pleine, sa taille ne change rien. Il fallait remplir, puis accélérer.
+
+## Ce que le boîtier répond mérite d'être lu
+
+Le firmware n'accuse réception que d'une seule commande : `l<ticks>`, par `L:<ticks>`. C'est la
+seule chose qu'il dise de ce qu'il a compris — et l'accusé était reçu, parsé, puis jeté. Le
+contrôleur traitait six trames sur onze ; celle-ci tombait dans le silence du `match`.
+
+**Leçon** : dans un dialogue avec du matériel, chaque réponse est une preuve gratuite. En ignorer
+une, c'est refuser de savoir. Et l'argument « le PC arbite de toute façon » se retourne : c'est
+justement parce que le classement reste juste que l'écart doit être DIT — sinon les LED du boîtier
+contrediront l'écran, et c'est le logiciel qu'on accusera.
+
+**Encore un test faux avant un code faux** : le message dit « LONGUEUR », mon test cherchait
+« longueur », et `String.contains` respecte la casse. Le mécanisme marchait déjà quand je le croyais
+cassé — vérifié par une sonde de vingt lignes avant de toucher au code.

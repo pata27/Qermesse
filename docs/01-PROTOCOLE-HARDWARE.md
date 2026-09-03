@@ -70,6 +70,12 @@ Toutes terminées par `\n`.
   ne gêne aucun usage réel. (Chiffre corrigé : la première rédaction annonçait 13927, faux d'un
   arrondi. Vérifié par le test `make_length_command : 100 m @ 114.3 mm donne l278`.)
 * `d`, `x`, `t`, `s` sont *fire-and-forget*. Ne jamais attendre d'ack sur ces commandes.
+* **`L:` est confronté à ce qui a été demandé.** `l<ticks>` est la seule commande dont le firmware
+  accuse réception : c'est la seule chose qu'il dise de ce qu'il a compris. Un écart est **signalé
+  à l'opérateur** — un boîtier reflashé qui borne ou tronque la longueur allumerait ses LED
+  d'arrivée à la mauvaise distance, devant le public. Le classement, lui, ne bouge pas : c'est le
+  PC qui arbitre (`§5.4`), et c'est précisément pour cela qu'il faut le dire, sinon l'écart entre
+  les LED du boîtier et l'écran passerait pour un bug du logiciel.
 * **Cadrage strict de `l` et `t`.** Dès que le firmware a lu `l` ou `t`, il bascule dans un mode où
   **tout octet reçu part dans le tampon numérique**, jusqu'au terminateur — espaces et commandes
   suivantes compris. `x t60 g` ne démarre donc aucune course : le `g` finit à l'intérieur du nombre,

@@ -455,3 +455,41 @@ func test_chaque_panne_du_simulateur_est_atteignable_depuis_l_application() -> v
 		)
 	link.free()
 	controller.free()
+
+
+func test_le_boitier_qui_comprend_une_autre_longueur_le_dit_a_l_operateur() -> void:
+	# `docs/01` §2 : le firmware accuse reception de `l<ticks>` par `L:<ticks>`.
+	# C'est sa SEULE facon de dire ce qu'il a compris — et personne ne le lisait.
+	# `docs/06` §4 liste pourtant « le firmware reel diverge de ss_basic.ino »
+	# parmi les risques forts. Un boitier reflashe qui borne ou tronque la
+	# longueur allumerait ses LED d'arrivee au mauvais endroit, devant le public,
+	# sans que rien ne l'annonce.
+	assert_true(await _await_identified())
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+
+	# Le boitier accuse une longueur qui n'est pas celle demandee.
+	_controller.settings.distance_m = 500.0
+	assert_true(_controller.start_race())
+	await wait_frames(3)
+	_controller.simulate_length_ack(999)
+	await wait_frames(3)
+
+	var said := false
+	for text: String in notices:
+		if text.to_lower().contains("longueur"):
+			said = true
+	assert_true(said, "l'ecart entre la longueur demandee et l'accusee se dit")
+
+
+func test_un_accuse_de_longueur_conforme_ne_dit_rien() -> void:
+	# Le cas nominal doit rester silencieux : une alerte qui se declenche a
+	# chaque course cesse d'etre lue.
+	assert_true(await _await_identified())
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+	_controller.settings.distance_m = 100.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course part")
+	for text: String in notices:
+		assert_false(text.to_lower().contains("longueur"), "rien a signaler : %s" % text)

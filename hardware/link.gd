@@ -174,6 +174,12 @@ func inject_phantom_tick(rider: int) -> void:
 		_impl.inject_phantom_tick(rider)
 
 
+## Un accuse de longueur different de celui demande — docs/01 §2.
+func inject_length_ack(ticks: int) -> void:
+	if _impl.has_method("inject_length_ack"):
+		_impl.inject_length_ack(ticks)
+
+
 ## Une trame illisible sur la ligne — docs/07 §6. Elle doit remonter en
 ## `UNKNOWN` et se dire a l'operateur, jamais etre avalee en silence.
 func inject_corrupt_frame() -> void:

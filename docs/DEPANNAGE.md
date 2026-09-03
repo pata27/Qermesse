@@ -84,6 +84,11 @@ Le panneau matériel affiche `Trames …, inconnues …, perdues …`.
 
 - **`inconnues` monte** : le boîtier envoie des trames que le logiciel ne reconnaît pas. Le plus
   probable est un firmware différent. Relever la version affichée.
+- **`LONGUEUR : le boitier a compris N ticks, M demandes` apparaît** — le firmware n'a pas retenu
+  la distance envoyée. Le classement reste juste : c'est le PC qui arbitre. Ce qui sera faux, ce
+  sont les **LED d'arrivée du boîtier**, qui s'allumeront à la mauvaise distance. Cause probable :
+  un boîtier reflashé, ou une variante de firmware. Relever la version affichée dans le panneau
+  Matériel et l'envoyer au développeur avec le JSON de la course.
 - **`Ticks rejetés : N (dernier : piste 2 …)` apparaît** — la ligne reste toute la soirée, avec le
   dernier motif, et chaque rejet est écrit au CSV (`TICK_REJECTED`) : un capteur rebondit ou un
   aimant est mal fixé. Le filtre écarte les valeurs impossibles, mais **il ne peut pas rattraper un tick fantôme

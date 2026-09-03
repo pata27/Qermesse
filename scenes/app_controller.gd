@@ -58,6 +58,9 @@ var recorder: Recorder = null
 ## illisible remet tout a zero SANS empecher le demarrage — mais pas en
 ## silence : le panneau course le dit. « Bruyamment », comme promis.
 var _startup_problems: Array[String] = []
+## Derniere longueur demandee au boitier, en ticks — pour la confronter a son
+## accuse `L:`. Negative tant qu'aucune course en distance n'a ete armee.
+var _requested_length_ticks := -1
 ## Pistes deja signalees comme muettes, pour ne le dire qu'une fois par course.
 var _silent_lanes_warned: Array[int] = []
 var _dropped_warned := false
@@ -393,6 +396,11 @@ func simulate_phantom_tick(rider: int) -> void:
 	_link.inject_phantom_tick(rider)
 
 
+## Un accusé de longueur différent de celui demandé — sur le boîtier SIMULÉ.
+func simulate_length_ack(ticks: int) -> void:
+	_link.inject_length_ack(ticks)
+
+
 ## Une trame illisible sur la ligne — sur le boîtier SIMULÉ.
 func simulate_corrupt_frame() -> void:
 	_link.inject_corrupt_frame()
@@ -406,6 +414,10 @@ func simulate_dropped_frames(count: int) -> void:
 # --- Reactions au lien et au moteur ------------------------------------------
 
 func _on_command_requested(command: String) -> void:
+	# LA LONGUEUR DEMANDEE EST RETENUE, pour être confrontée à l'accusé `L:`.
+	# C'est la seule chose que le boîtier nous dise de ce qu'il a compris.
+	if command.begins_with("l"):
+		_requested_length_ticks = int(command.substr(1))
 	if not _link.send_command(command):
 		notice.emit("commande refusée par le lien : %s" % command)
 
@@ -446,8 +458,31 @@ func _on_frame(kind: int, payload: Dictionary) -> void:
 			var elapsed_ms := int(payload.get("elapsed_ms", 0))
 			recorder.record_hardware_finish(rider, elapsed_ms)
 			engine.on_rider_finish(rider, elapsed_ms)
+		Protocol.Frame.LENGTH_ACK:
+			_check_length_ack(int(payload.get("ticks", -1)))
 		Protocol.Frame.ERROR, Protocol.Frame.UNKNOWN:
 			notice.emit("trame anormale : %s" % payload.get("text", ""))
+
+
+## Confronte l'accusé `L:` du boîtier à la longueur qu'on lui a demandée.
+##
+## `docs/01` §2 : `l<ticks>` est la SEULE commande dont le firmware accuse
+## réception. Cet accusé était reçu, parsé, et jeté. Or `docs/06` §4 liste « le
+## firmware réel diverge de `ss_basic.ino` » parmi les risques forts : un
+## boîtier reflashé qui borne ou tronque la longueur allumerait ses LED
+## d'arrivée au mauvais endroit, devant le public, sans que rien ne l'annonce.
+##
+## Le classement, lui, ne bouge pas : c'est le PC qui arbitre (docs/01 §5.4).
+## C'est bien pour cela qu'il faut le DIRE — sinon l'écart entre les LED du
+## boîtier et l'écran passerait pour un bug du logiciel.
+func _check_length_ack(ticks: int) -> void:
+	if ticks < 0 or _requested_length_ticks < 0 or ticks == _requested_length_ticks:
+		return
+	notice.emit(
+		"LONGUEUR : le boitier a compris %d ticks, %d demandes — ses LED d'arrivee"
+		% [ticks, _requested_length_ticks]
+		+ " seront a la mauvaise distance. Le classement, lui, reste arbitre par le PC."
+	)
 
 
 func _on_progress_updated(state: RaceState) -> void:
