@@ -261,3 +261,68 @@ func test_la_palette_du_document_est_celle_du_code() -> void:
 		if not sources.contains(hex):
 			missing.append(hex)
 	assert_eq(missing, [] as Array[String], "des couleurs annoncees que le rendu n'emploie pas")
+
+
+## L'arbre de `docs/03` §2 est celui du dépôt.
+##
+## C'est la premiere chose que lit quelqu'un qui arrive. Il omettait `tools/` —
+## vingt-six fichiers, dont les cinq outils de preuve que la CI lance — et
+## dessinait `scenes/shared/` et `tests/replay/`, qui n'existent pas dans le
+## depot. Un plan faux oriente moins bien que pas de plan.
+func test_l_arbre_de_l_architecture_est_celui_du_depot() -> void:
+	var guide := FileAccess.open("res://docs/03-ARCHITECTURE.md", FileAccess.READ)
+	assert_not_null(guide, "le document se lit")
+	var text := guide.get_as_text()
+	var block := text.substr(text.find("SilverSprint-v3/"))
+	block = block.substr(0, block.find("```"))
+
+	# Chaque dossier dessine doit exister ET contenir quelque chose. Un dossier
+	# vide dessine dans le plan est pire qu'absent : on le cherche.
+	var missing: Array[String] = []
+	var folder := RegEx.create_from_string("(?m)^[^a-z]*([a-z0-9_]+)/")
+	for found: RegExMatch in folder.search_all(block):
+		var name := found.get_string(1)
+		if name == "SilverSprint-v3" or missing.has(name):
+			continue
+		if not _folder_has_content(name):
+			missing.append(name)
+	assert_eq(missing, [] as Array[String], "des dossiers dessines vides ou absents")
+
+	# Et chaque dossier de code du projet doit y figurer.
+	var absent: Array[String] = []
+	for root: String in ["core", "hardware", "scenes", "audio", "tools", "tests", "art"]:
+		if not block.contains(root + "/"):
+			absent.append(root)
+	assert_eq(absent, [] as Array[String], "des dossiers du depot absents de l'arbre")
+
+
+## Un dossier de ce nom existe-t-il quelque part, avec au moins un fichier qui
+## ne soit pas un simple `.gitkeep` — le sien ou celui d'un sous-dossier ?
+func _folder_has_content(name: String, root: String = "res://") -> bool:
+	var dir := DirAccess.open(root)
+	if dir == null:
+		return false
+	var found := false
+	dir.list_dir_begin()
+	var entry := dir.get_next()
+	while not entry.is_empty() and not found:
+		if dir.current_is_dir() and not entry.begins_with("."):
+			var path := root.path_join(entry)
+			if entry == name:
+				found = _has_any_file(path)
+			else:
+				found = _folder_has_content(name, path)
+		entry = dir.get_next()
+	dir.list_dir_end()
+	return found
+
+
+## Un fichier, n'importe ou sous ce chemin, `.gitkeep` mis a part.
+func _has_any_file(path: String) -> bool:
+	for file: String in DirAccess.get_files_at(path):
+		if file != ".gitkeep":
+			return true
+	for sub: String in DirAccess.get_directories_at(path):
+		if not sub.begins_with(".") and _has_any_file(path.path_join(sub)):
+			return true
+	return false

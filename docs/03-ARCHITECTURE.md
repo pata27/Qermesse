@@ -84,17 +84,27 @@ SilverSprint-v3/
 │   ├── main.tscn                  # routeur
 │   ├── main.gd
 │   ├── app_controller.gd          # assemblage lien ⇄ cœur métier — le SEUL point de rencontre
+│   ├── spectacle_window.gd        # seconde fenêtre, écran public (§6)
 │   ├── operator/                  # fenêtre opérateur (roster, réglages, contrôle, résultats)
 │   │   ├── operator_panel.gd
-│   │   └── panel_{roster,mode,hardware,race,results}.gd
-│   ├── race3d/                    # scène 3D plein écran
-│   └── shared/                    # composants UI réutilisables
+│   │   └── panel_{roster,mode,hardware,race,results,spectacle}.gd
+│   └── race3d/                    # scène 3D plein écran, découpée par sujet :
+│                                  # scène, HUD, podium, tension, roue libre, écran scindé
 ├── art/
-│   ├── track/  models/  materials/  shaders/  vfx/
+│   └── shaders/                   # néon, piste, foule, maillot, lame, traînée, overlay
 ├── audio/
+│   └── race_audio.gd              # bande-son, bus dédié, coupée par défaut (04 §6)
+├── tools/                         # OUTILS DE PREUVE — la CI en lance trois
+│   ├── ss_emu/                    # émulateur du firmware sur pseudo-terminal (doc 07)
+│   ├── ss_monitor.gd              # validation du lien série — l'outil du jalon J1
+│   ├── ss_replay.gd               # rejoue une course enregistrée et compare le classement
+│   ├── ss_operator_demo.gd        # course complète menée à l'interface, headless
+│   ├── ss_race3d_demo.gd          # captures et mesure du budget de rendu
+│   └── check_extension.gd         # le module natif est-il CHARGÉ, pas seulement compilé
 └── tests/
     ├── unit/                      # GUT, headless
-    └── replay/                    # rejeu de courses JSON enregistrées
+    ├── support/                   # socles partagés — hors `unit/`, GUT n'y cherche pas de tests
+    └── fixtures/                  # courses réelles enregistrées, rejouées à chaque exécution
 ```
 
 **Règle d'or :** `core/` ne connaît ni Godot-la-scène, ni le port série, ni le rendu. Il reçoit des

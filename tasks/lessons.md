@@ -971,3 +971,19 @@ dans `core`, `scenes`, `audio` et `art`. Il a d'abord attrapé l'ancien code que
 l'explication — utile rappel qu'une valeur abandonnée n'a pas à rester écrite, même en note
 historique. Mesuré à l'écran : piste à 83 de luminance contre 29 pour le fond, le contraste que la
 règle réclame.
+
+## Le plan du dépôt est la première chose qu'on lit — et personne ne le relit
+
+L'arbre de `docs/03` §2 omettait `tools/` en entier : vingt-six fichiers, dont les cinq outils de
+preuve, dont trois que la CI lance à chaque poussée. Il dessinait en revanche `scenes/shared/`,
+`tests/replay/` et quatre sous-dossiers de `art/` qui n'ont jamais reçu un fichier. Un plan faux
+oriente moins bien que pas de plan : on cherche ce qui n'existe pas, on ignore ce qui existe.
+
+**Leçon** : un arbre de fichiers dans un document se périme silencieusement, parce que rien ne
+casse quand il ment. Il se vérifie comme le reste — chaque dossier dessiné doit exister ET contenir
+quelque chose, chaque dossier de code doit y figurer.
+
+**Le test s'est trompé deux fois avant d'être juste** : d'abord il reconstruisait mal les chemins
+d'un arbre ASCII et accusait `rules/`, `operator/`, `race3d/` ; puis il exigeait des fichiers
+DIRECTEMENT dans le dossier et accusait `art/`, qui n'a que des sous-dossiers. Une garde qui
+accuse à tort se désarme d'elle-même, parce qu'on finit par la croire fausse.
