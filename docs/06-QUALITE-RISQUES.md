@@ -22,7 +22,7 @@
 | Niveau | Outil | Portée |
 |---|---|---|
 | Unitaire C++ | doctest, binaire natif | `line_parser`, ring buffer, `FirmwareSim` — sans Godot |
-| Bout en bout série | `tools/ss_emu` sur pseudo-terminal | ouverture de port, handshake, threading, watchdog, reconnexion — la partie risquée |
+| Bout en bout série | `tools/ss_emu` sur pseudo-terminal | ouverture de port, handshake, threading, watchdog, reconnexion — la partie risquée. **Automatisé** (`test_lien_pseudo_terminal.gd`) : la suite lance l'émulateur sur un vrai pseudo-terminal et fait passer le module natif par un vrai port, jusqu'à la coupure en pleine course. Se saute explicitement sous Windows, qui n'a pas de pseudo-terminal POSIX, et là où l'émulateur ou le module natif ne sont pas construits |
 | Unitaire GDScript | GUT headless | `physics`, `race_engine`, les trois règles, `recorder`, `settings` |
 | Rejeu | GUT + courses JSON | une course enregistrée rejouée doit donner exactement le même classement — **y compris interrompue**, où le rejeu reproduit l'interruption et rend le classement partiel |
 | Outil de rejeu | GUT en sous-processus + CI | `tools/ss_replay` lui-même, verdicts ET codes de sortie, éprouvé sur une trace saine et une trace truquée. La suite exerçait `core/replay.gd` ; la ligne de commande que `DEPANNAGE` promet à l'opérateur n'était gardée par rien |

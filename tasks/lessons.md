@@ -1022,3 +1022,19 @@ complète, jamais exercée. L'émulateur sur un vrai pseudo-terminal, la sonde P
 puis le moniteur Godot à travers le module natif. Les deux témoins, écrits séparément et dans deux
 langages, annoncent les arrivées aux mêmes millisecondes : 7596 et 9897. C'est la preuve que la
 chaîne série tient de bout en bout, sans matériel branché.
+
+## La ligne la plus importante de la matrice était la seule sans automatisation
+
+`docs/06` §2 décrit huit niveaux de test. Celui qui porte la mention « LA PARTIE RISQUEE » —
+`ss_emu` sur pseudo-terminal, ouverture de port, handshake, threading, watchdog — était le seul
+qu'aucun test n'exécutait. `test_conformite_emulateur.gd` pilote l'émulateur par `--stdio` pour
+tourner partout, ce qui court-circuite précisément la couche que cette ligne désigne.
+
+**Leçon** : une matrice de tests se relit en se demandant, pour chaque ligne, quel fichier
+l'exécute. Celle qu'on a écrite avec le plus d'insistance n'est pas forcément celle qu'on a
+outillée — l'insistance dans le document peut même compenser inconsciemment l'absence d'outil.
+
+**Et le test avait tort avant le code** : ma première version tuait l'émulateur AU REPOS et
+s'étonnait que le lien reste IDENTIFIED. Le watchdog n'est armé que pendant une course : hors
+course, un port silencieux est normal, le boîtier n'émet des `R:` qu'en course. Le lien avait
+raison. La version juste arme une vraie course, attend que les trames coulent, puis débranche.

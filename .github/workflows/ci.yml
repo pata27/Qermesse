@@ -157,6 +157,18 @@ jobs:
           chmod +x ".godot-bin/${{ matrix.binary }}" || true
           ".godot-bin/${{ matrix.binary }}" --version
 
+      # L'EMULATEUR EST CONSTRUIT POUR LA SUITE GODOT, pas seulement pour les
+      # tests C++ : `test_lien_pseudo_terminal.gd` le lance sur un vrai
+      # pseudo-terminal et fait passer le module natif par un VRAI port. C'est
+      # le niveau « bout en bout serie » que `docs/06` §2 annonce depuis le
+      # debut et que rien n'automatisait. Sans ce binaire, le test se saute —
+      # jamais vert par absence, mais jamais execute non plus.
+      - name: Construire l'emulateur pour la suite Godot
+        if: runner.os != 'Windows'
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          cmake --build build --config RelWithDebInfo -j 2
+
       # L'import est obligatoire : sans lui, les scripts ne se resolvent pas et
       # GUT ne trouve aucun test. Il est lance deux fois — le premier passage
       # genere les .uid, le second les prend en compte.
