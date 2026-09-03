@@ -392,6 +392,12 @@ static func _build_trail_mesh(segments: int) -> ArrayMesh:
 	return mesh
 
 
+## Inclinaison courante du vélo, en radians — pour les tests, qui verifient que
+## le roulis est bien symetrique.
+func lean_rad() -> float:
+	return _lean
+
+
 ## Appelée à chaque image. `speed_kph` est la vitesse LISSÉE (docs/01 §7).
 func advance(delta: float, speed_kph: float, eliminated: bool, finished: bool) -> void:
 	var speed_m_s := speed_kph / 3.6
@@ -407,8 +413,13 @@ func advance(delta: float, speed_kph: float, eliminated: bool, finished: bool) -
 	_crank.rotation.x = -_crank_angle
 	_place_legs()
 
+	# ROULIS SYMETRIQUE, des deux cotes. La formule etait
+	# `sin(angle) * 0.5 + 0.5`, donc toujours positive : le velo penchait d'un
+	# seul cote puis revenait droit, comme un metronome bloque. Un sprinteur en
+	# danseuse bascule des deux cotes, une fois par demi-tour de pedalier, et
+	# c'est ce mouvement-la que le public reconnait.
 	var target_lean := clampf(speed_m_s / 18.0, 0.0, 1.0) * MAX_LEAN_RAD
-	target_lean *= sin(_crank_angle) * 0.5 + 0.5
+	target_lean *= sin(_crank_angle)
 	_lean = lerpf(_lean, target_lean, clampf(delta * 8.0, 0.0, 1.0))
 	_body.rotation.z = _lean
 

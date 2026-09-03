@@ -67,8 +67,11 @@ piste inclinée. Ligne d'arrivée matérialisée et visible à l'approche en mod
   l'annule pas, et un coureur qui arrive seul — le seul de la course, ou le dernier après les
   autres — n'a pas de photo-finish.
 
-**Riders.** Modèle unique de cycliste, cadence de pédalage indexée sur la vitesse réelle, inclinaison
-en virage, maillot coloré par instance. Un seul modèle, quatre matériaux : le coût d'assets reste minimal.
+**Riders.** Modèle unique de cycliste, cadence de pédalage indexée sur la vitesse réelle, **roulis
+en danseuse** — le vélo bascule d'un côté puis de l'autre, une fois par demi-tour de pédalier, et
+d'autant plus vite qu'on va vite —, maillot coloré par instance. La première rédaction disait
+« inclinaison en virage » : des rouleaux n'ont pas de virage, et c'est le balancement du sprinteur
+que le public reconnaît. Un seul modèle, quatre matériaux : le coût d'assets reste minimal.
 
 **Effets de vitesse.** Ce sont eux qui portent la sensation, pas la géométrie :
 * traînée lumineuse derrière chaque rider, longueur et intensité proportionnelles à la vitesse ;

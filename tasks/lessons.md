@@ -1092,3 +1092,19 @@ remplace. Vérifié malgré tout par deux exécutions complètes, et une garde e
 **Un chiffre à connaître** : la suite passe de 41 à 63 secondes selon que l'émulateur est construit
 ou non. Ces vingt-deux secondes sont le prix des deux tests sur pseudo-terminal — la couche la plus
 risquée. C'est cher et c'est justifié ; il fallait le mesurer pour pouvoir le dire.
+
+## Une formule qui « oscille » n'oscille pas forcément autour de zéro
+
+Le roulis du coureur valait `sin(angle) * 0.5 + 0.5`, multiplié par l'inclinaison maximale. La
+formule a l'air d'un balancement — elle est périodique, elle suit le pédalier — mais son image est
+[0, 1] : le vélo penchait d'un seul côté puis revenait droit, comme un métronome bloqué. Le
+`* 0.5 + 0.5` est l'idiome pour ramener un sinus dans [0, 1] ; il n'avait rien à faire là.
+
+**Leçon** : quand une formule périodique pilote un mouvement symétrique, vérifier son SIGNE, pas
+seulement sa périodicité. Le test le dit en une ligne — le minimum doit être négatif, le maximum
+positif, et les deux symétriques.
+
+**Et le document parlait d'autre chose** : « inclinaison en virage », alors que des rouleaux n'ont
+pas de virage. Le code visait le bon geste — le balancement du sprinteur en danseuse — et le
+document était resté sur un modèle mental de vélodrome. Deuxième fois cette nuit que la direction
+artistique est en retard sur une décision de rendu déjà prise.
