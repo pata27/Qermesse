@@ -45,6 +45,9 @@ var _legs: Array[MeshInstance3D] = []
 var _wheels: Array[Node3D] = []
 var _body: Node3D
 var _crank_angle := 0.0
+var _crank_arms: Array[MeshInstance3D] = []
+## Position du pied, cote par cote, telle que `_place_legs` vient de la poser.
+var _pedals: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _wheel_angle := 0.0
 var _lean := 0.0
 var _highlight := 0.0
@@ -306,6 +309,7 @@ func _build_cyclist() -> void:
 	# fait lire un pédalage. Accrochées rigidement, elles traversaient le sol.
 	for side: int in [-1, 1]:
 		var crank_arm := MeshInstance3D.new()
+		crank_arm.name = "CrankArm%d" % side
 		var crank_mesh := BoxMesh.new()
 		crank_mesh.size = Vector3(0.020, CRANK_LENGTH_M, 0.020)
 		crank_arm.mesh = crank_mesh
@@ -316,6 +320,7 @@ func _build_cyclist() -> void:
 		arm_pivot.rotation.x = 0.0 if side < 0 else PI
 		arm_pivot.add_child(crank_arm)
 		_crank.add_child(arm_pivot)
+		_crank_arms.append(crank_arm)
 
 		# Hauteur unitaire : la jambe est ÉTIRÉE à la longueur hanche-pédale à
 		# chaque image. Une capsule de hauteur fixe laissait des trous aux deux
@@ -425,11 +430,19 @@ func advance(delta: float, speed_kph: float, eliminated: bool, finished: bool) -
 	# l'allure affichée se remarque immédiatement.
 	_wheel_angle += speed_m_s / WHEEL_RADIUS_M * delta
 	_crank_angle += speed_m_s / WHEEL_RADIUS_M * CRANK_RATIO * delta
+	# LE SENS EST DONNE PAR LA MARCHE, pas par une piece voisine.
+	#
+	# On avance vers +Z (`RaceScene` : la porte d'arrivee est DEVANT, donc a z
+	# croissant). Une roue qui roule vers l'avant voit son point bas RECULER, et
+	# le pied au point bas fait de meme. C'est donc +angle autour de X.
+	#
+	# Une correction precedente avait aligne le pedalier sur les roues — mais
+	# les roues elles-memes tournaient a l'envers, et l'erreur s'est propagee
+	# au lieu de se corriger. Une piece qui tourne se regle sur le SOL, jamais
+	# sur sa voisine : c'est le seul referentiel qui ne peut pas etre faux.
 	for wheel: Node3D in _wheels:
-		wheel.rotation.x = -_wheel_angle
-	# MÊME SENS que les roues. Le pédalier tournait à l'endroit pendant que les
-	# roues tournaient à l'envers : les jambes pédalaient en marche arrière.
-	_crank.rotation.x = -_crank_angle
+		wheel.rotation.x = _wheel_angle
+	_crank.rotation.x = _crank_angle
 	_place_legs()
 
 	# ROULIS SYMETRIQUE, des deux cotes. La formule etait
@@ -571,18 +584,57 @@ func _celebrate(delta: float, finished: bool) -> void:
 
 ## Replace chaque jambe entre la hanche et sa pédale. Deux transformations par
 ## image et par rider : aucune géométrie n'est reconstruite.
+## Position du pied — et du bout de manivelle, qui est le même point — pour un
+## angle de pédalier, dans le plan de marche. Rend `(y, z)` relatif à l'axe.
+##
+## POINT DE PASSAGE UNIQUE. Une rotation de `angle` autour de X place le bout
+## d'une manivelle de longueur `L` pointant vers le bas exactement ici : le
+## nœud du pédalier et cette fonction disent donc la même chose par
+## construction, et non par accord.
+static func pedal_offset(angle: float) -> Vector2:
+	return Vector2(-cos(angle), -sin(angle)) * CRANK_LENGTH_M
+
+
+## Le bout de manivelle tel qu'il est RÉELLEMENT placé dans la scène, et le
+## pied posé par `_place_legs`. Pour les tests : deux chemins de calcul
+## différents qui doivent tomber au même endroit, à chaque angle.
+func pedal_probe(index: int) -> Dictionary:
+	var arm := _crank_arms[index]
+	var tip := arm.global_transform * Vector3(0.0, -CRANK_LENGTH_M * 0.5, 0.0)
+	return {
+		"manivelle": _crank.global_transform.affine_inverse() * tip,
+		"pied": _crank.transform.affine_inverse() * _pedals[index],
+	}
+
+
+## Rotation appliquee a chaque roue, et au pedalier. Pour les tests : le sens
+## de rotation ne se lit sur aucune capture — une roue a rayons tourne trop
+## vite pour qu'on voie de quel cote.
+func wheel_angles() -> Array[float]:
+	var angles: Array[float] = []
+	for wheel: Node3D in _wheels:
+		angles.append(wheel.rotation.x)
+	return angles
+
+
+func crank_probe_angle() -> float:
+	return _crank.rotation.x
+
+
 func _place_legs() -> void:
 	var hub_y := WHEEL_RADIUS_M
 	var bracket := Vector3(0.0, hub_y - 0.06, 0.06)
 	for index: int in range(_legs.size()):
 		var side := -1.0 if index == 0 else 1.0
-		var phase := -_crank_angle + (0.0 if index == 0 else PI)
-		# La pédale décrit un cercle dans le plan de marche.
-		var pedal := bracket + Vector3(
-			side * 0.075,
-			-cos(phase) * CRANK_LENGTH_M,
-			sin(phase) * CRANK_LENGTH_M
-		)
+		# LE MEME CALCUL QUE LA MANIVELLE, littéralement. Le bout de manivelle
+		# et le pied SONT le même point — c'est ce qui définit un pédalier — et
+		# les calculer séparément était la garantie qu'ils divergeraient. Ils
+		# avaient divergé en Z : les manivelles tournaient à l'envers des
+		# jambes, et seuls les points morts haut et bas les remettaient
+		# d'accord.
+		var offset := pedal_offset(_crank_angle + (0.0 if index == 0 else PI))
+		var pedal := bracket + Vector3(side * 0.075, offset.x, offset.y)
+		_pedals[index] = pedal
 		var hip := Vector3(side * 0.085, hub_y + 0.50, -0.24)
 		var span := pedal - hip
 		var length := span.length()
