@@ -869,3 +869,20 @@ parcourue.
 **Et le second valait mieux que le premier** : la moyenne négative n'a rien à voir avec la
 poursuite. Un rider pénalisé en mode distance, éliminé ou arrêté avant d'avoir remonté son
 handicap, aurait produit le même chiffre. Le cas dégénéré n'était que le révélateur.
+
+## Un seuil absolu doit être confronté aux bornes de la configuration
+
+La cloche annonce la fin imminente aux cinquante derniers mètres. La distance MINIMALE qu'accepte
+la configuration est cinquante mètres : sur une telle course, la cloche sonnait sur la ligne de
+départ. Même piège en mode temps — dix secondes d'annonce sur une durée minimale de dix secondes.
+Le seuil était juste sur le cas nominal, absurde à la borne, et je l'avais écrit moi-même deux
+tours plus tôt sans regarder les bornes que `validate()` autorise.
+
+**Leçon** : tout seuil exprimé en unités absolues — mètres, secondes — doit être lu à côté des
+bornes que la configuration accepte. La question tient en une phrase : « et si l'épreuve valait
+exactement le seuil ? ». Le correctif est du même ordre : plafonner au dernier quart, ce qui
+préserve les cinquante mètres sur une course de cinq cents et les ramène à douze sur une de
+cinquante.
+
+**Mesuré plutôt que raisonné** : cloche à 76 % du parcours sur 50 m et sur 100 m, à 90 % sur 500 m.
+C'est ce tableau qui dit que le plafond fait ce qu'on veut, pas la relecture du code.

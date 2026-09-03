@@ -226,3 +226,53 @@ func test_la_poursuite_n_a_pas_de_cloche() -> void:
 		state.apply_sample([lead, physics.metres_to_ticks(metres * 0.6), 0, 0], int(metres * 80.0))
 		controller.progress_updated.emit(state)
 	assert_eq(int(audio.cue_counts.get("cloche", 0)), 0, "aucune cloche en poursuite")
+
+
+func test_la_cloche_ne_sonne_pas_des_la_ligne_de_depart() -> void:
+	# LA COMBINAISON DEGENEREE. La cloche annonce la fin imminente aux
+	# cinquante derniers metres — or la distance MINIMALE d'une course est
+	# cinquante metres. Sur une course de 50 m, elle sonnait donc sur la ligne
+	# de depart, et sur une course de 60 m au dixieme de seconde suivant. Une
+	# annonce de fin qui tombe au depart ne dit plus rien.
+	var rig := _rig()
+	var controller: AppController = rig[0]
+	var audio: RaceAudio = rig[1]
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.DISTANCE
+	config.distance_m = 50.0
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+
+	var state := RaceState.new(config)
+	var physics := Physics.new(config.roller_mm)
+	state.apply_sample([physics.metres_to_ticks(1.0), 0, 0, 0], 200)
+	controller.progress_updated.emit(state)
+	assert_eq(int(audio.cue_counts.get("cloche", 0)), 0, "rien au premier metre")
+
+	# Elle sonne quand meme, mais dans le DERNIER QUART de l'epreuve.
+	state.apply_sample([physics.metres_to_ticks(45.0), 0, 0, 0], 4000)
+	controller.progress_updated.emit(state)
+	assert_eq(int(audio.cue_counts.get("cloche", 0)), 1, "et une fois pres de la ligne")
+
+
+func test_la_cloche_ne_sonne_pas_au_depart_d_une_course_en_temps_courte() -> void:
+	# Meme piege : la duree minimale est de dix secondes, et la cloche sonne aux
+	# dix dernieres.
+	var rig := _rig()
+	var controller: AppController = rig[0]
+	var audio: RaceAudio = rig[1]
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.TIME
+	config.duration_s = 10.0
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+
+	var state := RaceState.new(config)
+	var physics := Physics.new(config.roller_mm)
+	state.apply_sample([physics.metres_to_ticks(2.0), 0, 0, 0], 500)
+	controller.progress_updated.emit(state)
+	assert_eq(int(audio.cue_counts.get("cloche", 0)), 0, "rien a la premiere demi-seconde")
+
+	state.apply_sample([physics.metres_to_ticks(100.0), 0, 0, 0], 9000)
+	controller.progress_updated.emit(state)
+	assert_eq(int(audio.cue_counts.get("cloche", 0)), 1, "et une fois vers la fin")

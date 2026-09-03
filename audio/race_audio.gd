@@ -240,13 +240,20 @@ func _on_progress(state: RaceState) -> void:
 
 
 ## La course entre-t-elle dans ses derniers instants ?
+##
+## LE SEUIL NE PEUT PAS DEPASSER LE DERNIER QUART DE L'EPREUVE. Cinquante
+## metres est le bon repere sur cinq cents ; sur une course de cinquante — la
+## distance MINIMALE que la configuration accepte —, la cloche sonnait sur la
+## ligne de depart. Meme piege en temps : dix secondes d'annonce sur une course
+## de dix secondes. Une annonce de fin qui tombe au depart ne dit plus rien.
 static func _final_stretch(state: RaceState, leader: int) -> bool:
 	match state.config.mode:
 		RaceConfig.Mode.DISTANCE:
-			return state.config.distance_m - state.distance_m[leader] <= BELL_DISTANCE_M
+			var margin := minf(BELL_DISTANCE_M, state.config.distance_m * 0.25)
+			return state.config.distance_m - state.distance_m[leader] <= margin
 		RaceConfig.Mode.TIME:
 			var left := state.config.duration_s - float(state.elapsed_ms) / 1000.0
-			return left <= BELL_TIME_S
+			return left <= minf(BELL_TIME_S, state.config.duration_s * 0.25)
 	return false
 
 

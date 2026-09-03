@@ -148,9 +148,12 @@ fixe le plafond.
 * Nappe de fond dont l'intensité suit la vitesse du leader et, en poursuite, l'écart normalisé.
 * Bips de décompte, klaxon de départ, **cloche de la fin imminente** — une fois, jamais deux.
   Un goldsprint n'a pas de tour et une course en temps n'a pas de mètres : la cloche sonne aux
-  **50 derniers mètres** en mode distance et aux **10 dernières secondes** en mode temps. En
-  poursuite elle se tait — la fin y arrive quand l'écart se referme, ce que rien ne permet
-  d'annoncer à l'avance.
+  **50 derniers mètres** en mode distance et aux **10 dernières secondes** en mode temps, **sans
+  jamais dépasser le dernier quart de l'épreuve**. Ce plafond n'est pas une précaution théorique :
+  la distance minimale acceptée est de 50 m et la durée minimale de 10 s, si bien que la cloche
+  sonnait sur la ligne de départ d'une course courte. Une annonce de fin qui tombe au départ ne dit
+  plus rien. En poursuite elle se tait — la fin y arrive quand l'écart se referme, ce que rien ne
+  permet d'annoncer à l'avance.
 * Réactions de foule sur les dépassements, les accélérations et le franchissement.
 * Souffle de vent indexé sur la vitesse.
 **Ce qui a sonné se constate, il ne s'écoute pas.** Chaque son déclenché est noté (`last_cue`,
