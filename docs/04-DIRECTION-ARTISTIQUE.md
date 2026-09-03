@@ -121,6 +121,10 @@ fixe le plafond.
   Écran scindé : bandeau, chrono et titres réduits d'un peu moins de moitié, comme les cartes — à
   pleine taille ils mangeaient le haut de chaque volet.
 * **Par rider** — nom, numéro de piste, vitesse instantanée en km/h, distance parcourue, cadence.
+  Les cartes sont **complètes dès le décompte**, à zéro et objectif annoncé (`0.0 km/h`, `0 m
+  parcourus — reste 250 m`) : remplies seulement à la première trame `R:`, elles montraient un nom
+  et deux lignes vides pendant les trois secondes où tout le monde regarde, ce qui se lit comme un
+  affichage cassé.
   Écran scindé : **la carte se pose dans le volet qui montre son coureur**, et non toutes en
   colonne à gauche — sinon le spectateur qui regarde le quatrième volet cherche la vitesse de son
   coureur à l'autre bout de l'écran. Les coureurs d'un même paquet empilent leurs cartes dans leur

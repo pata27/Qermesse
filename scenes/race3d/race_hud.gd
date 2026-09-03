@@ -53,40 +53,22 @@ const CLEAR_CENTRE_X := (36.0 + CARD_WIDTH + 1920.0) * 0.5
 ## Milieu de l'écran, pour les modes sans cartes.
 const SCREEN_CENTRE_X := 960.0
 ## Barre de tension : largeur totale, du −G au +G.
-const TENSION_WIDTH := 760.0
-const TENSION_HEIGHT := 26.0
 ## Raideur du lissage des barres, en 1/s. Dix : elles suivent un écart qui se
 ## creuse sans traîner, mais ne rendent plus le pas des ticks.
-const TENSION_SMOOTHING := 10.0
 const LINK_LOST_TEXT := "LIEN PERDU"
 ## Le chiffre d'écart ne bouge que si l'écart lissé s'en éloigne d'autant. Un
 ## tick vaut ~0,3 m et arrive tantôt pour l'un, tantôt pour l'autre : brut, le
 ## chiffre battait entre deux valeurs à chaque trame — un stroboscope.
-const GAP_STEP_M := 0.15
-const GAP_SMOOTHING := 5.0
 
 var _controller: AppController
 var _mode_label: Label
 var _objective_label: Label
 var _clock_label: Label
-var _gap_label: Label
-var _tension: Control
-var _tension_bars: Array[ColorRect] = []
-var _tension_lead_target := 0.0
-var _tension_lead_shown := 0.0
-var _tension_lead_color := Color.WHITE
-var _tension_targets: Array = []
-var _tension_shown: Dictionary = {}  # couleur -> fraction lissee
-var _tension_left: Label
-var _tension_right: Label
-var _decision_label: Label
+## Bloc du mode poursuite — écart, barre de tension, jauge de décision.
+var _tension: RaceTension
 var _cards: Dictionary = {}  # lane -> Dictionary de contrôles
 var _target_speed: Dictionary = {}  # lane -> km/h visés
 var _shown_speed: Dictionary = {}  # lane -> km/h lissés
-var _target_gap := 0.0
-var _shown_gap := 0.0
-var _printed_gap := INF
-var _gap_scale := 1.0
 var _printed_speed: Dictionary = {}  # lane -> km/h effectivement écrits
 var _overlay: CanvasLayer
 var _countdown_veil: ColorRect
@@ -157,18 +139,13 @@ func _build() -> void:
 	_clock_label.position.y = 14
 	add_child(_clock_label)
 
-	# Écart au centre de l'écran : c'est le sujet du mode poursuite (docs/04 §4).
-	# Centré dans l'espace LIBRE à droite des cartes, pas au milieu de l'écran :
-	# depuis que les cartes font 700 px, un bloc centré à 960 leur passait
-	# dessus, et les compteurs de vitesse et de cadence marchaient sur la barre.
-	_gap_label = make_label(120, INK)
-	_gap_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_gap_label.position = Vector2(SCREEN_CENTRE_X - 320.0, 215)
-	_gap_label.size.x = 640
-	_gap_label.visible = false
-	add_child(_gap_label)
-
-	_build_tension()
+	# CONFIGURÉ AVANT D'ENTRER DANS L'ARBRE, comme le podium : un `Control`
+	# ajouté avant d'être dimensionné se retrouve de taille nulle, et tout son
+	# contenu s'empile en haut à gauche. La leçon a déjà coûté une régression.
+	_tension = RaceTension.new()
+	_tension.name = "Tension"
+	_tension.build(SCREEN_CENTRE_X)
+	add_child(_tension)
 
 	# LES PLEIN-ÉCRANS ONT LEUR PROPRE COUCHE.
 	#
@@ -285,6 +262,35 @@ func rebuild_cards() -> void:
 			"name": name_label,
 		}
 	_refresh_objective()
+	_reset_cards_to_start()
+
+
+## Remet les cartes a leur etat de depart : zero, et l'objectif annonce.
+##
+## Elles n'etaient remplies qu'a la premiere trame `R:`. Pendant les trois
+## secondes du decompte — le moment ou tout le monde regarde — elles montraient
+## un nom et deux lignes VIDES, ce qui se lit comme un affichage casse. Une
+## carte doit dire ce qu'elle contiendra avant de le contenir.
+func _reset_cards_to_start() -> void:
+	var config := _controller.current_config()
+	var development: float = maxf(_controller.settings.development_m, 0.5)
+	for lane: Variant in _cards.keys():
+		var card: Dictionary = _cards[lane]
+		(card["speed"] as Label).text = "%5.1f km/h" % 0.0
+		(card["cadence"] as Label).text = "%.0f tr/min" % (0.0 / development)
+		(card["bar"] as ProgressBar).value = 0.0
+		match config.mode:
+			RaceConfig.Mode.TIME:
+				(card["distance"] as Label).text = (
+					"%.0f m parcourus   —   reste %.1f s" % [0.0, config.duration_s]
+				)
+			_:
+				(card["distance"] as Label).text = (
+					"%.0f m parcourus   —   reste %.0f m" % [0.0, config.distance_m]
+				)
+	# Le chiffre affiche repart de zero lui aussi : sans cela, l'hysteresis
+	# comparerait la premiere vitesse de la course a celle de la precedente.
+	_printed_speed.clear()
 
 
 ## Anime le décompte : le chiffre entre agrandi puis se resserre, et l'annonce
@@ -326,8 +332,7 @@ func _animate_countdown(delta: float) -> void:
 func _process(delta: float) -> void:
 	_animate_countdown(delta)
 	_tick_podium(delta)
-	_layout_tension(delta)
-	_animate_gap(delta)
+	_tension.advance(delta)
 	if _target_speed.is_empty():
 		return
 	var alpha := 1.0 - exp(-delta * 4.0)
@@ -356,170 +361,6 @@ func _process(delta: float) -> void:
 		(card["speed"] as Label).text = "%5.1f km/h" % shown
 		var development: float = maxf(_controller.settings.development_m, 0.5)
 		(card["cadence"] as Label).text = "%.0f tr/min" % (shown / 3.6 / development * 60.0)
-
-
-## Le gros chiffre d'écart : lissé en continu, puis affiché avec hystérésis —
-## la même recette que la vitesse, pour la même raison.
-func _animate_gap(delta: float) -> void:
-	if not _gap_label.visible:
-		return
-	var alpha := 1.0 - exp(-delta * GAP_SMOOTHING)
-	_shown_gap = lerpf(_shown_gap, _target_gap, alpha)
-	if absf(_shown_gap - _printed_gap) < GAP_STEP_M:
-		return
-	_printed_gap = _shown_gap
-	_gap_label.text = "%.1f m" % _shown_gap
-	# Vire au rouge à l'approche du seuil — docs/04 §4.
-	_gap_label.add_theme_color_override(
-		"font_color", INK.lerp(ALERT, clampf(_shown_gap / _gap_scale, 0.0, 1.0))
-	)
-
-
-## BARRE DE TENSION — docs/04 §5 : « entre −G et +G ».
-##
-## Elle est SIGNÉE, et c'est tout l'intérêt. Une barre de 0 à G ne dit que la
-## taille de l'écart ; celle-ci dit aussi DE QUEL CÔTÉ il penche, en se
-## remplissant depuis le centre vers le coureur qui mène et en prenant sa
-## couleur. On lit d'un coup d'œil qui est en train de prendre le dessus, ce
-## qui est exactement la question du mode poursuite.
-##
-## Le sens suit la position à l'écran : le meneur est-il dans un couloir plus à
-## gauche que le poursuivi ? alors la barre penche à gauche. Sans cela le
-## symbole contredirait ce que montre la scène.
-func _build_tension() -> void:
-	_tension = Control.new()
-	_tension.name = "Tension"
-	_tension.position = Vector2(SCREEN_CENTRE_X - TENSION_WIDTH * 0.5, 352)
-	_tension.size = Vector2(TENSION_WIDTH, TENSION_HEIGHT)
-	_tension.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tension.visible = false
-	add_child(_tension)
-
-	# Contour clair : sur un fond de piste sombre et animé, un rectangle
-	# anthracite sans bord disparaît, et l'on ne voit plus par rapport à QUOI la
-	# barre se remplit. Le contour est ce qui donne l'échelle du −G au +G.
-	var border := ColorRect.new()
-	border.color = Color(0.55, 0.62, 0.75, 0.95)
-	border.set_anchors_preset(Control.PRESET_FULL_RECT)
-	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tension.add_child(border)
-
-	var track := ColorRect.new()
-	track.color = Color(0.07, 0.09, 0.13, 0.95)
-	track.set_anchors_preset(Control.PRESET_FULL_RECT)
-	track.offset_left = 2.0
-	track.offset_top = 2.0
-	track.offset_right = -2.0
-	track.offset_bottom = -2.0
-	track.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tension.add_child(track)
-
-	# UN RECTANGLE PAR COUREUR. Le leader remplit la droite, chaque poursuivant
-	# remplit la gauche de son retard, et les barres se superposent — la plus
-	# longue dessinée en premier, donc derrière, pour que toutes restent visibles.
-	for index: int in range(Protocol.MAX_RIDERS):
-		var bar := ColorRect.new()
-		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		bar.visible = false
-		_tension.add_child(bar)
-		_tension_bars.append(bar)
-
-	# Repère central : sans lui, une barre presque vide et une barre penchée à
-	# gauche se ressemblent.
-	var middle := ColorRect.new()
-	middle.color = Color(0.75, 0.80, 0.88)
-	middle.position = Vector2(TENSION_WIDTH * 0.5 - 1.0, -6.0)
-	middle.size = Vector2(2.0, TENSION_HEIGHT + 12.0)
-	middle.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tension.add_child(middle)
-
-	_tension_left = make_label(26, MUTED)
-	_tension_left.position = Vector2(0.0, TENSION_HEIGHT + 6.0)
-	_tension.add_child(_tension_left)
-
-	_tension_right = make_label(26, MUTED)
-	_tension_right.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_tension_right.position = Vector2(TENSION_WIDTH - 200.0, TENSION_HEIGHT + 6.0)
-	_tension_right.size.x = 200.0
-	_tension.add_child(_tension_right)
-
-	# La jauge « temps restant avant décision » — docs/02 §3 —, au centre sous
-	# la barre, entre −G et +G : c'est l'autre façon dont la course peut tomber.
-	_decision_label = make_label(26, MUTED)
-	_decision_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_decision_label.position = Vector2(200.0, TENSION_HEIGHT + 6.0)
-	_decision_label.size.x = TENSION_WIDTH - 400.0
-	_tension.add_child(_decision_label)
-
-
-## Place les barres. LE LEADER EST LA RÉFÉRENCE, pas la queue.
-##
-## Une seule barre « tête moins queue » avait un défaut visible à trois ou
-## quatre coureurs : quand le dernier était éliminé, la queue changeait, l'écart
-## se refermait et la barre du premier REDESCENDAIT alors qu'il n'avait pas
-## ralenti — et les deuxième et troisième n'apparaissaient nulle part.
-##
-## Ici, à droite, l'avance du leader sur son dauphin, à sa couleur. À gauche,
-## une barre par poursuivant, longueur = retard sur le leader en fraction de
-## l'objectif : à −G, il est éliminé. Les barres se superposent, la plus longue
-## derrière. Une élimination fait disparaître une barre sans déplacer les
-## autres, puisque leur retard sur le leader n'a pas changé.
-##
-## `chasers` : tableau de `[retard_fraction, couleur]`, un par poursuivant.
-## Ne fait que poser les CIBLES ; c'est `_layout_tension`, cadencé par l'écran,
-## qui dessine. Alimentées brutes à chaque trame du boîtier, les barres
-## tremblaient : la distance avance par ticks de 36 cm, soit près de trois
-## pixels d'un coup sur une barre de cinquante mètres, cent fois par seconde.
-func _set_tension(lead_ratio: float, lead_color: Color, chasers: Array) -> void:
-	_tension_lead_target = clampf(lead_ratio, 0.0, 1.0)
-	_tension_lead_color = lead_color
-	_tension_targets = chasers
-
-
-func _layout_tension(delta: float) -> void:
-	if not _tension.visible:
-		return
-	var alpha := 1.0 - exp(-delta * TENSION_SMOOTHING)
-	var half := TENSION_WIDTH * 0.5
-	for bar: ColorRect in _tension_bars:
-		bar.visible = false
-
-	_tension_lead_shown = lerpf(_tension_lead_shown, _tension_lead_target, alpha)
-	var lead_bar: ColorRect = _tension_bars[0]
-	lead_bar.color = _tension_lead_color
-	lead_bar.position = Vector2(half, 0.0)
-	lead_bar.size = Vector2(_tension_lead_shown * half, TENSION_HEIGHT)
-	lead_bar.visible = true
-
-	# Lissage PAR COULEUR, la couleur identifiant le coureur : c'est ce qui
-	# garde chaque barre continue quand l'ordre des retards change.
-	var seen: Dictionary = {}
-	var ordered: Array = []
-	for entry: Array in _tension_targets:
-		var key := str(entry[1])
-		var shown: float = lerpf(
-			float(_tension_shown.get(key, float(entry[0]))), float(entry[0]), alpha
-		)
-		_tension_shown[key] = shown
-		seen[key] = true
-		ordered.append([shown, entry[1]])
-	for key: String in _tension_shown.keys():
-		if not seen.has(key):
-			_tension_shown.erase(key)
-
-	# Du plus en retard au moins en retard : le plus long est dessiné en
-	# premier, donc derrière, et chaque couleur reste visible sur son bout.
-	ordered.sort_custom(func(a: Array, b: Array) -> bool: return float(a[0]) > float(b[0]))
-	for index: int in range(mini(ordered.size(), _tension_bars.size() - 1)):
-		var entry: Array = ordered[index]
-		var span := clampf(float(entry[0]), 0.0, 1.0) * half
-		var bar: ColorRect = _tension_bars[index + 1]
-		bar.color = entry[1]
-		bar.position = Vector2(half - span, 0.0)
-		bar.size = Vector2(span, TENSION_HEIGHT)
-		bar.visible = true
-
-
 
 
 ## DÉCOMPTE PLEIN ÉCRAN — docs/04 §5.
@@ -706,7 +547,6 @@ func _refresh_objective() -> void:
 	# chiffre du decompte — le moment le plus regarde de la soiree. En mode
 	# temps, ce meme moment montre les noms des coureurs, ce qui est utile.
 	var pursuit := config.mode == RaceConfig.Mode.PURSUIT
-	_gap_label.visible = pursuit and _under_way
 	_tension.visible = pursuit and _under_way
 	# En poursuite les cartes sont absentes : la bannière revient au milieu de
 	# l'écran. Dans les autres modes elle se centre dans l'espace qu'elles
@@ -729,10 +569,7 @@ func _on_state(_previous: int, current: int) -> void:
 		_target_speed.clear()
 		_shown_speed.clear()
 		_printed_speed.clear()
-		_tension_targets.clear()
-		_tension_shown.clear()
-		_tension_lead_target = 0.0
-		_tension_lead_shown = 0.0
+		_tension.reset()
 		_notice.text = ""
 		_covered_notice = ""
 		_notice.add_theme_color_override("font_color", ALERT)
@@ -742,14 +579,11 @@ func _on_state(_previous: int, current: int) -> void:
 		# barre reprennent leur visibilité selon le mode.
 		_podium.visible = false
 		_pending_result = null
-		_target_gap = 0.0
-		_shown_gap = 0.0
-		_printed_gap = INF
 		_notice.visible = true
 		_refresh_objective()
 	elif current == RaceEngine.State.FINISHED or current == RaceEngine.State.IDLE:
 		# La décision est prise : le compte à rebours n'a plus rien à dire.
-		_decision_label.text = ""
+		_tension.set_decision("", false)
 		if current == RaceEngine.State.IDLE:
 			_clock_label.text = ""
 
@@ -841,8 +675,7 @@ func _on_progress(state: RaceState) -> void:
 			var head: int = racing[0]
 			var last: int = racing[racing.size() - 1]
 			var scale := maxf(1.0, config.gap_m)
-			_target_gap = state.distance_m[head] - state.distance_m[last]
-			_gap_scale = scale
+			_tension.set_gap(state.distance_m[head] - state.distance_m[last], scale)
 			var lead_ratio := (state.distance_m[head] - state.distance_m[racing[1]]) / scale
 			var chasers: Array = []
 			for index: int in range(1, racing.size()):
@@ -851,15 +684,15 @@ func _on_progress(state: RaceState) -> void:
 					(state.distance_m[head] - state.distance_m[lane]) / scale,
 					Color(_controller.roster.rider(lane).color),
 				])
-			_set_tension(lead_ratio, Color(_controller.roster.rider(head).color), chasers)
-		_tension_left.text = "−%.0f m" % config.gap_m
-		_tension_right.text = "+%.0f m" % config.gap_m
+			_tension.set_bars(lead_ratio, Color(_controller.roster.rider(head).color), chasers)
+		_tension.set_bounds("−%.0f m" % config.gap_m, "+%.0f m" % config.gap_m)
 		# Rouge sur la dernière demi-minute : le public doit sentir que ça va
 		# tomber. (Pas dans la bannière : en 1280 px l'objectif allongé
 		# passait sous le chrono.)
-		_decision_label.text = RulePursuit.decision_text(state)
-		var urgent := RulePursuit.seconds_before_decision(state) < 30.0
-		_decision_label.add_theme_color_override("font_color", ALERT if urgent else MUTED)
+		_tension.set_decision(
+			RulePursuit.decision_text(state),
+			RulePursuit.seconds_before_decision(state) < 30.0
+		)
 
 
 func _on_eliminated(rider: int, rank: int, _gap_m: float) -> void:
@@ -919,7 +752,6 @@ func _on_aborted(note: String) -> void:
 ## widgets appartiennent au HUD, la décision reste donc ici ; la mise en page
 ## du classement, elle, est partie dans `RacePodium`.
 func _show_podium(result: RaceResult) -> void:
-	_gap_label.visible = false
 	_tension.visible = false
 	_notice.visible = false
 	for entry: Dictionary in _cards.values():
@@ -935,16 +767,23 @@ func card_name_label(lane: int) -> Label:
 	return null if not _cards.has(lane) else (_cards[lane] as Dictionary)["name"] as Label
 
 
+## La ligne de detail d'une carte — distance parcourue et ce qu'il reste.
+func card_detail_text(lane: int) -> String:
+	if not _cards.has(lane):
+		return ""
+	return ((_cards[lane] as Dictionary)["distance"] as Label).text
+
+
 func card_speed_text(lane: int) -> String:
 	return "" if not _cards.has(lane) else ((_cards[lane] as Dictionary)["speed"] as Label).text
 
 
 func gap_visible() -> bool:
-	return _gap_label.visible
+	return _tension.visible
 
 
 func decision_text() -> String:
-	return _decision_label.text
+	return _tension.decision_text()
 
 
 func notice_text() -> String:

@@ -331,3 +331,26 @@ func test_sans_ecran_scinde_les_cartes_restent_en_colonne() -> void:
 			"plein cadre : la colonne de gauche, comme avant"
 		)
 	assert_gt(_hud.card_position(3).y, _hud.card_position(0).y, "empilees")
+
+
+func test_les_cartes_sont_lisibles_des_le_decompte() -> void:
+	# CE QUE LE PUBLIC VOIT PENDANT LE DECOMPTE. Les cartes n'etaient remplies
+	# qu'a la premiere trame `R:` : pendant les trois secondes du decompte, elles
+	# affichaient un nom et deux lignes VIDES. Sur un mur, un cadre vide se lit
+	# comme un affichage casse, au moment precis ou tout le monde regarde.
+	_controller.roster.rider(0).name = "Lucie"
+	_controller.roster.set_active(0, true)
+	_controller.settings.distance_m = 250.0
+	_hud.rebuild_cards()
+
+	assert_string_contains(_hud.card_speed_text(0), "0.0 km/h", "la vitesse part de zero")
+	assert_string_contains(_hud.card_detail_text(0), "0 m parcourus", "la distance aussi")
+	assert_string_contains(_hud.card_detail_text(0), "250 m", "et l'objectif est annonce")
+
+
+func test_les_cartes_annoncent_la_duree_en_mode_temps() -> void:
+	_controller.roster.set_active(0, true)
+	_controller.settings.mode = RaceConfig.Mode.TIME
+	_controller.settings.duration_s = 60.0
+	_hud.rebuild_cards()
+	assert_string_contains(_hud.card_detail_text(0), "60.0 s", "le temps a courir")

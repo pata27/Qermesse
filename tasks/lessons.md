@@ -770,3 +770,20 @@ apparaître dans la source de l'aiguillage.
 Matériel dès qu'il y en a, pas annoncées une par une. Une notice par trame noierait le journal si
 le shield en émet en continu — et sur un boîtier ordinaire, une ligne « kiosque : 0 » serait du
 bruit permanent.
+
+## La limite de lignes se paie au moment où on la franchit
+
+Remplir les cartes dès le décompte a fait passer `race_hud.gd` de 992 à 1008 lignes — huit de trop.
+La tentation était de tasser mon propre ajout ; le fichier serait revenu cogner la limite au
+correctif suivant. J'ai extrait `RaceTension` : tout ce qui ne s'affiche qu'en poursuite — le gros
+chiffre d'écart, la barre signée, la jauge « décision dans » — soit 164 lignes, et le HUD retombe à
+811 avec de la marge.
+
+**Leçon** : quand un fichier franchit la limite, la découpe se fait sur un axe qui a du sens — ici
+un MODE de course — et pas sur ce qui vient d'être ajouté. Le linter dit qu'il faut couper ; il ne
+dit pas où.
+
+**Et une extraction de `Control` se vérifie à l'image.** Les tests lisent du texte, pas des
+positions : ils sont restés verts la fois où le podium extrait s'était empilé en haut à gauche,
+faute d'avoir été dimensionné avant d'entrer dans l'arbre. Capture de poursuite à quatre coureurs
+faite, barre signée et bornes en place.
