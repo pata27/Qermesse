@@ -36,6 +36,8 @@ var perf := PerfMonitor.new()
 
 var _controller: AppController
 var _camera_rig: CameraRig
+## Balade cinématique — vitrine seulement, voir `set_cinematic`.
+var _cinematic := 0.0
 var _split: SplitScreen
 var _track: MeshInstance3D
 var _rails: Node3D
@@ -118,6 +120,7 @@ func rebuild_riders() -> void:
 		var rig := RiderRig.new()
 		add_child(rig)
 		rig.setup(lane, Color(_controller.roster.rider(lane).color), segments)
+		rig.set_detailed_shadows(bool(quality.option("detailed_shadows")))
 		_rigs[lane] = rig
 		_interpolators[lane] = RiderInterpolator.new()
 
@@ -182,6 +185,17 @@ func _animate_lane_glow(delta: float) -> void:
 		changed = true
 	if changed:
 		_upload_lane_colors()
+
+
+## Promène les caméras autour de leur sujet — vitrine seulement, voir
+## `CameraRig.cinematic` et `AttractMode`.
+func set_cinematic(amount: float) -> void:
+	_cinematic = amount
+
+
+## Amplitude de la balade, appliquée à toutes les caméras.
+func cinematic() -> float:
+	return _cinematic
 
 
 ## Repose les couleurs du roster sur des coureurs DEJA construits.
@@ -585,6 +599,11 @@ func _reposition_riders(delta: float) -> void:
 		var rig := _camera_rig if pane == 0 else _split.rig(pane)
 		if rig == null:
 			continue
+		# POSÉ ICI, à chaque image, et non une fois pour toutes : les caméras de
+		# volet sont créées à la demande, quand le peloton casse. Une vitrine
+		# lancée avant la scission n'aurait promené que la caméra principale, et
+		# l'écran serait à moitié vivant.
+		rig.cinematic = _cinematic
 		# Vitesse du premier du groupe : c'est lui qui donne le rythme du volet.
 		# La vitesse d'AFFICHAGE, lissée sur une seconde, et non celle lissée
 		# sur deux cents millisecondes : celle-ci saute d'un tick à l'autre, et
@@ -756,6 +775,15 @@ func _relieve_for_panes(panes: int) -> void:
 	if _crowd != null:
 		_crowd.visible = crowded
 	_ambience.relieve(quality, full)
+	# L'OMBRE DETAILLEE RETOMBE SUR SON VOLUME APPROCHE DES QUE L'ECRAN SE
+	# SCINDE. C'est exactement la ou son cout se multiplie : chaque volet
+	# redessine la scene, et vingt-six pieces par coureur redeviennent alors
+	# les quatre cents appels de rendu que le volume approche existait pour
+	# eviter. La scission est deja un evenement visuel majeur, elle masque le
+	# changement.
+	var detailed := full and bool(quality.option("detailed_shadows"))
+	for lane: int in _rigs:
+		(_rigs[lane] as RiderRig).set_detailed_shadows(detailed)
 
 
 ## Rapport d'image de l'ÉCRAN — pas celui d'une vue de volet, qui n'en couvre
@@ -900,6 +928,10 @@ func _update_effects(delta: float) -> void:
 ## Réapplique le profil courant — après une dégradation, ou un choix manuel.
 func apply_quality() -> void:
 	_ambience.apply(quality)
+	for lane: int in _rigs:
+		(_rigs[lane] as RiderRig).set_detailed_shadows(
+			bool(quality.option("detailed_shadows"))
+		)
 	_apply_msaa()
 	_crowd.build(int(quality.option("crowd_count")), float(_lane_count) * TrackBuilder.LANE_WIDTH_M)
 	_track_material.set_shader_parameter("glow_boost", 1.0 if quality.option("glow") else 0.6)

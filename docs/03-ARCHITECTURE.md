@@ -85,6 +85,7 @@ SilverSprint-v3/
 │   ├── main.gd
 │   ├── app_controller.gd          # assemblage lien ⇄ cœur métier — le SEUL point de rencontre
 │   ├── spectacle_window.gd        # seconde fenêtre, écran public (§6)
+│   ├── attract_mode.gd            # vitrine : vraies courses en boucle quand personne ne pédale
 │   ├── operator/                  # fenêtre opérateur (roster, réglages, contrôle, résultats)
 │   │   ├── operator_panel.gd
 │   │   └── panel_{roster,mode,hardware,race,results,spectacle}.gd

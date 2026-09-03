@@ -12,6 +12,10 @@ var controller: AppController
 var operator: OperatorPanel
 var spectacle: SpectacleWindow
 var audio: RaceAudio
+## La vitrine — ce que l'écran montre quand personne ne pédale. Elle vit ICI et
+## non dans le panneau : elle pilote le contrôleur et la scène, c'est-à-dire
+## exactement les deux choses que ce routeur tient déjà.
+var attract: AttractMode
 
 
 ## Coutures, posees AVANT l'entree dans l'arbre : `_ready` construit le
@@ -38,6 +42,11 @@ func _ready() -> void:
 	audio.name = "RaceAudio"
 	add_child(audio)
 	audio.setup(controller)
+
+	attract = AttractMode.new()
+	attract.name = "AttractMode"
+	add_child(attract)
+	attract.setup(controller, self)
 
 	operator.setup(controller, self)
 

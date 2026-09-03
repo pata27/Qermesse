@@ -26,6 +26,7 @@ const AUTOMATIC_ITEM := 1000
 var _root: Node
 var _controller: AppController
 var _toggle: Button
+var _demo: Button
 var _screens: OptionButton
 var _fullscreen: CheckBox
 var _quality: OptionButton
@@ -53,6 +54,14 @@ func _build() -> void:
 	_toggle.custom_minimum_size = Vector2(220, 44)
 	_toggle.pressed.connect(_on_toggle)
 	add_child(_toggle)
+
+	# LA VITRINE. Entre deux manches, le projecteur affichait un podium figé ou
+	# rien, et la file se dissout. Le bouton est ici, sous la fenêtre spectacle,
+	# parce que c'est de cet écran-là qu'il s'agit.
+	_demo = Button.new()
+	_demo.custom_minimum_size = Vector2(220, 44)
+	_demo.pressed.connect(_on_demo)
+	add_child(_demo)
 
 	var screen_row := HBoxContainer.new()
 	add_child(screen_row)
@@ -114,6 +123,52 @@ func _build() -> void:
 
 
 ## Recharge la liste des écrans ET l'état de la fenêtre. Appelée à chaque
+## Le bouton de la vitrine, et ce qu'il refuse de faire.
+##
+## Elle ne se lance pas pendant une course : on n'interrompt jamais des gens qui
+## pédalent pour une démonstration. Et elle ne se lance pas fenêtre fermée — il
+## n'y aurait rien à montrer, et un bouton qui semble agir sans rien changer à
+## l'écran est pire qu'un bouton grisé.
+func _refresh_demo(spectacle_open: bool) -> void:
+	var running := _demo_running()
+	_demo.text = "Arrêter le mode démo" if running else "Mode démo (vitrine)"
+	_demo.add_theme_color_override(
+		"font_color", Color("#FFB300") if running else Color("#F2F5FA")
+	)
+	var racing := _controller.race_in_progress()
+	_demo.disabled = not running and (racing or not spectacle_open)
+	if running:
+		_demo.tooltip_text = (
+			"Des coureurs synthétiques occupent l'écran. Rien n'est enregistré : "
+			+ "ces courses n'entrent ni dans Courses du jour ni dans les fichiers."
+		)
+	elif racing:
+		_demo.tooltip_text = "Impossible pendant une course."
+	elif not spectacle_open:
+		_demo.tooltip_text = "Ouvrir d'abord la fenêtre spectacle : c'est elle qui montre."
+	else:
+		_demo.tooltip_text = (
+			"Fait courir des coureurs synthétiques pour occuper l'écran entre "
+			+ "deux manches. Rien n'est enregistré, et vos réglages sont rendus à l'arrêt."
+		)
+
+
+func _demo_running() -> bool:
+	var attract: Node = _root.get("attract")
+	return attract != null and bool(attract.call("is_running"))
+
+
+func _on_demo() -> void:
+	var attract: Node = _root.get("attract")
+	if attract == null:
+		return
+	if bool(attract.call("is_running")):
+		attract.call("stop")
+	else:
+		attract.call("start")
+	refresh()
+
+
 ## changement : brancher un vidéoprojecteur ne doit pas obliger à redémarrer.
 func refresh() -> void:
 	var count := DisplayServer.get_screen_count()
@@ -153,6 +208,7 @@ func refresh() -> void:
 
 	var open: bool = _root.call("spectacle_visible")
 	_toggle.text = "Fermer la fenêtre spectacle" if open else "Ouvrir la fenêtre spectacle"
+	_refresh_demo(open)
 	_fullscreen.button_pressed = bool(_root.call("spectacle_fullscreen"))
 	_fullscreen.disabled = not open
 

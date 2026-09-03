@@ -140,6 +140,18 @@ func set_simulator_profile(name: String) -> bool:
 
 
 ## Profils du boîtier SIMULÉ ; vide sur le matériel, qui n'en a pas.
+## Profil et nombre de capteurs cables du simulateur, tels qu'ils sont
+## REELLEMENT poses. La vitrine les ecrase le temps de sa demonstration et doit
+## pouvoir les rendre exactement : sans lecture, elle ne saurait pas quoi rendre
+## et remettrait des valeurs par defaut a la place de celles de l'operateur.
+func simulator_profile() -> String:
+	return str(_impl.profile) if "profile" in _impl else ""
+
+
+func simulator_riders() -> int:
+	return int(_impl.wired_riders) if "wired_riders" in _impl else 0
+
+
 func simulator_profiles() -> Array:
 	return _impl.profiles() if _impl.has_method("profiles") else []
 

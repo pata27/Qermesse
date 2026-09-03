@@ -33,6 +33,20 @@ const CSV_HEADER := (
 	+ "vitesse_moy_kph,vitesse_max_kph,rang,note"
 )
 
+## Course de DÉMONSTRATION : rien ne part au disque.
+##
+## Le mode démo fait courir des coureurs synthétiques pour occuper l'écran quand
+## personne ne pédale. Ces courses n'ont pas eu lieu : les laisser atterrir dans
+## « Courses du jour », dans le journal du jour et dans le dossier des courses
+## rendrait la soirée de l'opérateur illisible — et un doute sur ce qui a
+## réellement été couru est un doute sur TOUT le fichier.
+##
+## LE SILENCE EST POSÉ ICI, sur les deux seules portes de sortie vers le disque,
+## et non chez les appelants. Le contrôleur écrit à sept endroits différents ;
+## un seul `if` oublié suffirait à polluer le fichier de la journée, et
+## personne ne s'en apercevrait avant de le relire.
+var muted := false
+
 var _logs_dir: String
 var _races_dir: String
 var _csv_path: String = ""
@@ -222,6 +236,8 @@ func _row_value(row: Dictionary, key: String, fallback: String = "") -> String:
 
 
 func _append_csv(row: Dictionary) -> void:
+	if muted:
+		return
 	if not AppPaths.ensure_dir(_logs_dir, _problems):
 		return
 	_csv_path = _logs_dir.path_join(AppPaths.daily_log_name())
@@ -372,6 +388,8 @@ func _escape_csv(value: String) -> String:
 
 
 func _write_json(result: RaceResult) -> String:
+	if muted:
+		return ""
 	if not AppPaths.ensure_dir(_races_dir, _problems):
 		return ""
 	var path := _races_dir.path_join("%s.json" % _uuid)

@@ -35,9 +35,26 @@ const MAX_VIBRATION_RAD := 0.0026
 const VIBRATION_FROM_KPH := 20.0
 const VIBRATION_FULL_KPH := 52.0
 const PHOTO_FINISH_GAP_M := 1.0
+## Écart maximal de l'orbite de vitrine, en radians. Au-delà, la caméra passe
+## derrière l'épaule opposée et le coureur est vu de face — ce qui n'est plus
+## une course, c'est un portrait.
+const MAX_CINE_YAW_RAD := 0.62
 
 var camera: Camera3D
 var behaviour: Behaviour = Behaviour.PACK
+
+## BALADE CINÉMATIQUE, réservée à la vitrine (`AttractMode`). 0 = caméra de
+## course, 1 = mouvement complet.
+##
+## En course la caméra n'a pas d'idées : sa place est dictée par ce qu'il faut
+## montrer, et un mouvement gratuit rendrait un photo-finish moins lisible. Hors
+## course, quand l'écran ne sert qu'à donner envie d'essayer, elle peut
+## respirer — c'est ce que fait toute borne d'arcade en attente.
+##
+## Le mouvement s'ajoute PAR-DESSUS le cadrage de course au lieu de le
+## remplacer : la vitrine montre alors les vraies images du logiciel, vues
+## autrement. Une caméra libre aurait montré autre chose que le produit.
+var cinematic := 0.0
 
 var _target_position := BASE_OFFSET
 var _target_look := Vector3.ZERO
@@ -60,6 +77,7 @@ var _frame_fraction := 1.0
 var _dutch_now := 0.0
 var _snap_pending := false
 var _vibe_clock := 0.0
+var _cine_clock := 0.0
 
 
 func _ready() -> void:
@@ -286,6 +304,43 @@ func snap() -> void:
 	_apply_projection()
 
 
+## La place visée, éventuellement promenée autour du sujet — voir `cinematic`.
+##
+## Trois périodes incommensurables : le mouvement ne se répète jamais à
+## l'identique, alors qu'un seul sinus donnerait un va-et-vient de métronome
+## qu'on reconnaît en dix secondes. C'est une boucle d'attente, elle tourne
+## parfois une heure devant la même personne.
+## L'écart caméra-sujet, promené. Pur et statique : le mouvement se vérifie
+## alors au calcul, alors qu'une orbite ne se lit sur aucune capture.
+static func cine_offset(offset: Vector3, clock: float, amount: float) -> Vector3:
+	if amount <= 0.0:
+		return offset
+	# ORBITE AUTOUR DU SUJET, pas déplacement latéral : la distance au coureur
+	# ne change pas, donc le cadrage tient — c'est le point de vue qui tourne.
+	var yaw := sin(clock * 0.21) * MAX_CINE_YAW_RAD * amount
+	var moved := offset.rotated(Vector3.UP, yaw)
+	# PLUS ELLE TOURNE, PLUS ELLE MONTE.
+	#
+	# La main courante est à 4,9 m de l'axe et les gradins sont juste derrière :
+	# une orbite à hauteur constante finit dedans, et la caméra filme alors à
+	# travers le décor. En liant la montée à l'angle, elle passe AU-DESSUS au
+	# lieu de traverser — et de plus haut elle plonge vers la piste, ce qui est
+	# exactement le plan qu'on veut à ce moment-là.
+	var swing := absf(yaw) / (MAX_CINE_YAW_RAD * amount)
+	# Un peu de respiration en plus, lente et indépendante : sans elle, la
+	# hauteur ne dépendrait que de l'angle et le mouvement se lirait comme un
+	# rail.
+	moved.y += (0.35 + swing * 2.9 + sin(clock * 0.13) * 0.35) * amount
+	return moved
+
+
+func _orbited(delta: float) -> Vector3:
+	if cinematic <= 0.0:
+		return _target_position
+	_cine_clock += delta
+	return _target_look + cine_offset(_target_position - _target_look, _cine_clock, cinematic)
+
+
 func advance(delta: float) -> void:
 	if _snap_pending:
 		_snap_pending = false
@@ -295,7 +350,7 @@ func advance(delta: float) -> void:
 	# Amortissement indépendant du framerate : la caméra doit se comporter
 	# pareil à 60 et à 144 images par seconde.
 	var alpha := 1.0 - exp(-delta * 3.2)
-	camera.position = camera.position.lerp(_target_position, alpha)
+	camera.position = camera.position.lerp(_orbited(delta), alpha)
 	# LE CHAMP ET LE ROULIS SE CALENT PLUS LENTEMENT QUE LA POSITION.
 	#
 	# Tous deux dérivent de la vitesse, qui arrive par ticks : à 45 km/h un tick

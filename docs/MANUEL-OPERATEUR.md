@@ -105,6 +105,27 @@ récent en tête, effacé au départ de la course suivante. C'est là qu'apparai
 muette, pointe suspecte, trames perdues, faux départ, lien perdu. Aucune ne peut plus être effacée
 par la suivante.
 
+## 4 bis. Entre deux manches — le mode démo
+
+Panneau **Fenêtre spectacle** → **Mode démo (vitrine)**. Des coureurs synthétiques enchaînent des
+manches tout seuls sur l'écran public : les trois modes, deux à quatre pistes, l'écran qui se
+scinde, la caméra qui tourne autour du peloton. C'est ce qu'affiche une borne d'arcade quand
+personne ne joue, et c'est fait pour la même raison — un projecteur figé pendant l'apéritif, et la
+file se dissout.
+
+Ce sont de **vraies courses**, arbitrées par le même moteur : ce qu'on montre est le produit, pas
+une animation à part.
+
+* **Rien n'est enregistré.** Ces courses n'entrent ni dans **Courses du jour**, ni dans le journal,
+  ni dans le dossier des courses. Elles n'ont pas eu lieu.
+* **Vos réglages sont rendus à l'arrêt** — mode, distance, durée, écart, pistes actives, profil du
+  simulateur, et le choix simulateur/matériel. Lancez la vitrine pendant l'apéritif, arrêtez-la
+  quand les coureurs arrivent, tout est comme vous l'aviez laissé.
+* Le bouton est **grisé pendant une course** : on n'interrompt pas des gens qui pédalent. Il l'est
+  aussi tant que la fenêtre spectacle est fermée — il n'y aurait rien à montrer.
+* La vitrine bascule sur le **simulateur** le temps de tourner, même si le boîtier est branché : un
+  vrai boîtier attendrait des ticks que personne ne produit.
+
 ## 5. Si ça coince
 
 `DEPANNAGE.md`, dans cet ordre : START grisé → boîtier non détecté → ticks sur la mauvaise

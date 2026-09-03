@@ -57,6 +57,18 @@ const STALLED_LANE_MS := 5000
 ## Coutures de test, a fixer AVANT l'entree dans l'arbre. En production elles
 ## gardent leurs valeurs par defaut ; en test elles evitent d'ecrire dans les
 ## donnees de l'utilisateur et de dependre de ses reglages.
+## VITRINE : des coureurs synthétiques occupent l'écran, personne ne pédale.
+##
+## Rien de ce qui s'y passe n'a eu lieu. Le `Recorder` est rendu muet, la course
+## n'entre pas dans « Courses du jour », et les réglages ne sont pas sauvés —
+## sans quoi la vitrine écraserait la configuration que l'opérateur avait posée
+## pour sa vraie course suivante.
+var demo_mode := false:
+	set(value):
+		demo_mode = value
+		if recorder != null:
+			recorder.muted = value
+
 var preferences_enabled := true
 ## Coutures de test : fichiers de reglages et de roster. Vides = chemins de
 ## l'utilisateur.
@@ -412,6 +424,15 @@ func set_simulator_profile(name: String) -> bool:
 	return _link.set_simulator_profile(name)
 
 
+## Ce que le simulateur porte en ce moment — la vitrine l'emprunte et le rend.
+func simulator_profile() -> String:
+	return _link.simulator_profile()
+
+
+func simulator_riders() -> int:
+	return _link.simulator_riders()
+
+
 func simulator_profiles() -> Array:
 	return _link.simulator_profiles()
 
@@ -637,13 +658,19 @@ func _on_false_start(rider: int, policy: RaceConfig.FalseStartPolicy) -> void:
 func _on_race_finished(result: RaceResult) -> void:
 	_link.set_race_active(false)
 	recorder.finish_race(result)
-	_history.append(result)
+	# UNE COURSE DE DEMONSTRATION N'A PAS EU LIEU. Le `Recorder` est muet, mais
+	# « Courses du jour » se remplit depuis CETTE liste, et les reglages se
+	# sauvent ici : sans ces deux gardes, la vitrine repeuplerait l'historique
+	# de la soiree avec des coureurs qui n'existent pas.
+	if not demo_mode:
+		_history.append(result)
 	race_finished.emit(result)
 	# Le classement est a l'ecran ; s'il n'est PAS sur disque, l'operateur
 	# doit le savoir maintenant, pas en cherchant le CSV a la fin de la soiree.
 	if not recorder.problems().is_empty():
 		notice.emit("ENREGISTREMENT : %s" % recorder.problems()[recorder.problems().size() - 1])
-	save_preferences()
+	if not demo_mode:
+		save_preferences()
 	# LE RESULTAT EST A L'ECRAN : la FSM le dit. `docs/02` §1 fait suivre
 	# FINISHED de RESULTS, « resultat consultable, en attente d'acquittement » ;
 	# c'est un etat ou l'on sejourne, le temps que l'operateur regarde le
@@ -727,7 +754,13 @@ func _on_race_aborted(note: String) -> void:
 	var partial := engine.result()
 	if partial != null:
 		recorder.finish_race(partial)
-		_history.append(partial)
+		# MEME GARDE QU'A L'ARRIVEE. Arreter la vitrine abandonne la manche en
+		# cours, et ce chemin-ci ecrivait le resultat partiel dans « Courses du
+		# jour » : eteindre la demonstration ajoutait une course INTERROMPUE que
+		# personne n'avait courue, juste avant la vraie soiree.
+		if not demo_mode:
+			_history.append(partial)
 	recorder.record_abort(note)
 	race_aborted.emit(note)
-	save_preferences()
+	if not demo_mode:
+		save_preferences()

@@ -46,6 +46,8 @@ var _wheels: Array[Node3D] = []
 var _body: Node3D
 var _crank_angle := 0.0
 var _crank_arms: Array[MeshInstance3D] = []
+var _shadow_proxy: MeshInstance3D
+var _detailed_shadows := false
 ## Position du pied, cote par cote, telle que `_place_legs` vient de la poser.
 var _pedals: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _wheel_angle := 0.0
@@ -350,18 +352,69 @@ func _build_cyclist() -> void:
 ## invisible dans la passe principale. Sous les néons d'un vélodrome, l'ombre
 ## d'un coureur est une tache douce : personne n'y lit un rayon de roue.
 func _build_shadow_proxy() -> void:
-	for node: Node in _body.find_children("*", "GeometryInstance3D", true, false):
-		(node as GeometryInstance3D).cast_shadow = \
-			GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-
 	var proxy := MeshInstance3D.new()
 	proxy.name = "ShadowProxy"
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3(0.42, 1.05, 1.55)
 	proxy.mesh = mesh
 	proxy.position = Vector3(0.0, 0.62, 0.0)
-	proxy.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	_shadow_proxy = proxy
 	_body.add_child(proxy)
+	set_detailed_shadows(false)
+
+
+## L'ombre suit-elle la VRAIE silhouette, ou le volume approché ?
+##
+## Les deux modes s'excluent : laisser les deux projeter donnerait une
+## silhouette enfermee dans une boite, ce qui est pire que l'un ou l'autre.
+##
+## En profil eleve on paie les vingt-six pieces et l'ombre montre un coureur —
+## on distingue le buste, les bras, la jambe qui descend. Ailleurs le volume
+## approche s'en charge seul : sous les neons d'un velodrome l'ombre est une
+## tache douce, et personne n'y lit un rayon de roue.
+func set_detailed_shadows(detailed: bool) -> void:
+	_detailed_shadows = detailed
+	var pieces := (
+		GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+		if detailed
+		else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	)
+	# LES MAILLAGES SEULEMENT. La trainee est transparente et les confettis sont
+	# des particules : les faire projeter donnerait une ombre a des choses qui
+	# n'ont pas de corps, et le cout serait paye pour rien.
+	for node: Node in _body.find_children("*", "MeshInstance3D", true, false):
+		var piece := node as MeshInstance3D
+		if piece == _shadow_proxy or piece == _trail:
+			continue
+		piece.cast_shadow = pieces
+	# ON LE CACHE, on ne le fait pas taire. `SHADOW_CASTING_SETTING_OFF` retire
+	# l'ombre mais laisse le MAILLAGE se dessiner : le volume approche — une
+	# boite de quarante centimetres sur un metre — est alors apparu en plein
+	# ecran, debout sur le velo. `SHADOWS_ONLY` est ce qui le tient hors de la
+	# passe principale, et il doit le rester en permanence ; c'est la
+	# VISIBILITE qui decide s'il projette.
+	if _shadow_proxy != null:
+		_shadow_proxy.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+		_shadow_proxy.visible = not detailed
+
+
+## L'ombre detaillee est-elle active ? Pour les tests : un `cast_shadow` ne se
+## lit sur aucune capture, et une ombre doublee — silhouette DANS une boite —
+## est exactement ce qu'on veut interdire.
+func detailed_shadows() -> bool:
+	return _detailed_shadows
+
+
+## Etat du volume approche : est-il projete, et surtout reste-t-il INVISIBLE
+## dans la passe principale ? Pour les tests — une boite apparue sur le velo ne
+## se lit dans aucune assertion sur les ombres.
+func shadow_proxy_state() -> Dictionary:
+	return {
+		"visible": _shadow_proxy.visible,
+		"shadows_only": (
+			_shadow_proxy.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+		),
+	}
 
 
 func _build_trail() -> void:

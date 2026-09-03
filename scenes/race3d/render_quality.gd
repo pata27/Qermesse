@@ -13,6 +13,13 @@ enum Level { LOW, MEDIUM, HIGH }
 
 ## Effets identifiés comme coûteux par `docs/06` §4 — ce sont les premiers
 ## coupés quand le budget est dépassé.
+##
+## `detailed_shadows` : l'ombre suit-elle la VRAIE silhouette du coureur, ou un
+## volume approché ? Un coureur est fait de vingt-six pièces, et une lumière
+## directionnelle les redessine une fois par cascade — plus de quatre cents
+## appels de rendu à quatre coureurs, rien que pour les ombres. C'est jouable
+## sur une machine qui tient le profil élevé, et c'est exactement ce qui
+## empêchait l'image d'être fluide ailleurs.
 const PROFILES := {
 	Level.LOW: {
 		"name": "bas",
@@ -23,6 +30,7 @@ const PROFILES := {
 		"radial_blur": false,
 		"trail_segments": 8,
 		"shadows": false,
+		"detailed_shadows": false,
 		"msaa": 0,
 		"ssao": false,
 	},
@@ -35,6 +43,7 @@ const PROFILES := {
 		"radial_blur": false,
 		"trail_segments": 16,
 		"shadows": true,
+		"detailed_shadows": false,
 		"msaa": 1,
 		"ssao": false,
 	},
@@ -47,6 +56,7 @@ const PROFILES := {
 		"radial_blur": true,
 		"trail_segments": 32,
 		"shadows": true,
+		"detailed_shadows": true,
 		"msaa": 2,
 		"ssao": true,
 	},

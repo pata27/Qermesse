@@ -78,6 +78,25 @@ même correction. Deux exceptions, et elles sont motivées : les outils en ligne
 **Composition.** Vue 3/4 arrière légèrement surélevée, deux à quatre couloirs parallèles sur une
 piste inclinée. Ligne d'arrivée matérialisée et visible à l'approche en mode distance.
 
+### Les ombres des coureurs
+
+Un coureur est fait de vingt-six pièces. Les faire toutes projeter donne une ombre qui **ressemble
+à un cycliste** — on y lit le buste, les bras, la roue qui tourne — mais une lumière directionnelle
+les redessine une fois par cascade.
+
+* **Profils bas et moyen** : un volume approché projette seul, les pièces se taisent. Sous les néons
+  d'un vélodrome l'ombre est une tache douce, et personne n'y lit un rayon de roue. Le profil moyen
+  est celui que la détection choisit sur un GPU intégré : c'est donc le cas courant.
+* **Profil élevé** : la vraie silhouette. C'est un choix délibéré de l'opérateur, sur une machine
+  qu'il sait capable.
+* **Dès que l'écran se scinde**, on retombe sur le volume approché quel que soit le profil : chaque
+  volet redessine la scène, et c'est précisément là que le coût se multiplie.
+
+Le volume approché reste en permanence en `SHADOWS_ONLY` : c'est ce qui le tient **hors de l'image**.
+Couper son ombre autrement — en lui retirant le droit de projeter — le laisse se dessiner, et une
+boîte d'un mètre apparaît debout sur le vélo. C'est arrivé, et aucune assertion sur les ombres ne
+pouvait le voir.
+
 **Caméra.** Un rig unique avec des comportements par mode :
 * *distance / temps* — suit le leader, cadre l'ensemble du peloton, léger dutch angle à haute vitesse ;
 * *poursuite* — cadre l'écart : elle recule et s'élève quand il se creuse, se resserre quand ça se recolle ;
