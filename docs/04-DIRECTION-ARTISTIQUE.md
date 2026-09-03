@@ -33,6 +33,26 @@ moins lisible qu'un rendu à fort contraste et silhouettes franches — en plus 
 Chaque rider est identifié par **couleur + numéro de piste + nom**, jamais par la couleur seule
 (daltonisme, projecteur qui délave les teintes).
 
+### La palette de pistes est un DÉFAUT, pas une contrainte
+
+Ces quatre teintes sont celles qu'on obtient sans rien régler, et elles restent le bon choix quand
+rien ne s'y oppose : quatre couleurs franches, distinctes même sur un projecteur pâle.
+
+Mais l'écran public est en face de vélos réels, posés sur des rouleaux, et **c'est le vélo qui a
+raison**. Un spectateur qui cherche « le rouge » regarde la salle, pas la charte. L'opérateur peut
+donc choisir la couleur de chaque piste, et la **remettre au défaut** d'un bouton — ce qui est le
+seul geste utile quand la salle change de vélos entre deux soirées.
+
+Deux conséquences en découlent.
+
+* **La couleur choisie est persistée**, comme les noms. Elle ne se relit du fichier que si elle est
+  valide ; sinon la piste retrouve son défaut, plutôt que de charger un écran public avec une
+  teinte illisible venue d'un fichier édité à la main.
+* **Deux pistes de même couleur sont signalées, pas interdites.** Si la salle aligne deux vélos
+  rouges, l'opérateur a raison contre la charte, et le logiciel n'a pas à réécrire la réalité — le
+  numéro de piste et le nom continuent d'identifier chacun (voir plus haut). Mais il le dit, parce
+  qu'un doublon involontaire rend l'écran ambigu.
+
 ## 3. Typographie
 
 Une graisse condensée à fort caractère pour les chiffres géants (chrono, écart, vitesse) et une

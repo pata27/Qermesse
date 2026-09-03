@@ -63,6 +63,25 @@ func setup(rider_lane: int, jersey: Color, trail_segments: int) -> void:
 	_build()
 
 
+## Change la couleur du maillot sans reconstruire le coureur.
+##
+## L'operateur regle les couleurs en regardant les velos poses sur les
+## rouleaux : l'ecran doit suivre la pipette, pas le prochain depart.
+## Reconstruire le coureur a chaque mouvement du curseur ferait saccader
+## l'image pour un simple changement de teinte.
+func set_jersey(jersey: Color) -> void:
+	color = jersey
+	if _jersey_material != null:
+		_jersey_material.set_shader_parameter("jersey_color", color)
+	if _rim_material != null:
+		_rim_material.albedo_color = color
+		_rim_material.emission = color
+	if _frame_material != null:
+		_frame_material.emission = color
+	if _trail_material != null:
+		_trail_material.set_shader_parameter("trail_color", color)
+
+
 func _build() -> void:
 	_make_materials()
 

@@ -92,6 +92,7 @@ func setup(controller: AppController, level: int = -1) -> void:
 	_apply_msaa()
 
 	_controller.race_state_changed.connect(_on_race_state_changed)
+	_controller.roster_changed.connect(apply_rider_colors)
 	_controller.progress_updated.connect(_on_progress)
 	_controller.rider_finished.connect(_on_rider_finished)
 	_controller.rider_eliminated.connect(_on_rider_eliminated)
@@ -181,6 +182,26 @@ func _animate_lane_glow(delta: float) -> void:
 		changed = true
 	if changed:
 		_upload_lane_colors()
+
+
+## Repose les couleurs du roster sur des coureurs DEJA construits.
+##
+## Distincte de `rebuild_riders`, qui recree tout : ici rien ne change de forme,
+## seulement de teinte. C'est ce qui permet a l'ecran public de suivre la
+## pipette de l'operateur pendant qu'il compare a un velo pose sur les rouleaux.
+## Le coureur d'une piste, ou `null` si elle n'est pas en course. Pour les
+## tests, qui verifient a quelle couleur il est reellement peint.
+func rider_rig(lane: int) -> RiderRig:
+	return _rigs.get(lane)
+
+
+func apply_rider_colors() -> void:
+	for lane: int in _rigs:
+		var rig: RiderRig = _rigs[lane]
+		rig.set_jersey(Color(_controller.roster.rider(lane).color))
+	_upload_lane_colors()
+	if _hud != null:
+		_hud.rebuild_cards()
 
 
 func _rebuild_track_material() -> void:

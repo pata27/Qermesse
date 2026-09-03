@@ -23,6 +23,9 @@ signal false_start_detected(rider: int, policy: int)
 signal race_finished(result: RaceResult)
 signal race_aborted(note: String)
 signal notice(text: String)
+## Le roster a change autrement que par une course — une couleur choisie pour
+## coller au velo pose sur les rouleaux. L'ecran public s'y aligne aussitot.
+signal roster_changed()
 ## Ticks bruts par piste, pour le test capteurs du panneau materiel.
 signal sensor_activity(ticks: PackedInt32Array)
 
@@ -379,6 +382,22 @@ func save_preferences() -> bool:
 
 
 ## Accelere le temps du simulateur — demonstrations et tests.
+## Couleur d'une piste — docs/04 §2. Passe par le controleur et non par le
+## roster directement : c'est lui qui previent l'ecran public, qui n'a aucun
+## lien avec le panneau operateur.
+func set_rider_color(lane: int, color: String) -> bool:
+	if not roster.set_color(lane, color):
+		return false
+	roster_changed.emit()
+	return true
+
+
+## Rend une piste a sa couleur de charte.
+func reset_rider_color(lane: int) -> void:
+	roster.reset_color(lane)
+	roster_changed.emit()
+
+
 func set_simulation_speed(scale: float) -> void:
 	_link.set_simulation_speed(scale)
 

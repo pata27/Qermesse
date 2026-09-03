@@ -710,3 +710,42 @@ func test_un_nom_tape_au_clavier_s_ecrit_dans_l_ordre() -> void:
 	_controller.roster.rider(0).name = "Zoé"
 	_panel.roster_panel().refresh()
 	assert_eq(field.text, "Zoé", "un roster change hors du champ se voit quand meme")
+
+
+func test_la_couleur_d_une_piste_se_choisit_et_se_remet_au_defaut() -> void:
+	# L'ecran public est en face de velos reels poses sur des rouleaux, et
+	# c'est le VELO qui a raison : un spectateur qui cherche « le rouge »
+	# regarde la salle, pas la charte (docs/04 §2). La palette n'est donc plus
+	# une contrainte, seulement un defaut — auquel un bouton ramene, ce qui est
+	# le seul geste utile quand la salle change de velos.
+	var roster_panel := _panel.roster_panel()
+	assert_true(roster_panel.reset_button(0).disabled, "rien a remettre tant qu'on n'a rien change")
+
+	roster_panel.color_picker(0).color_changed.emit(Color("#C81010"))
+	assert_eq(_controller.roster.rider(0).color, "#C81010", "le velo rouge de la piste 1")
+	roster_panel.refresh()
+	assert_false(roster_panel.reset_button(0).disabled, "le bouton s'allume, la piste a change")
+
+	roster_panel.reset_button(0).pressed.emit()
+	assert_eq(_controller.roster.rider(0).color, Roster.DEFAULT_COLORS[0], "retour a la charte")
+	assert_true(roster_panel.reset_button(0).disabled, "et le bouton se rendort")
+	# Le selecteur suit la donnee, il ne vit pas sa vie de son cote.
+	assert_true(
+		roster_panel.color_picker(0).color.is_equal_approx(Color(Roster.DEFAULT_COLORS[0])),
+		"le selecteur montre bien la couleur revenue"
+	)
+
+
+func test_deux_pistes_de_meme_couleur_sont_dites_a_l_operateur() -> void:
+	# Signale, n'interdit pas. Si la salle aligne deux velos rouges,
+	# l'operateur a raison contre la charte — le numero de piste et le nom
+	# identifient toujours chacun (docs/03 §6). Mais un doublon involontaire
+	# rend l'ecran ambigu, et cela se dit.
+	var roster_panel := _panel.roster_panel()
+	assert_eq(roster_panel.warning_text(), "", "rien a signaler au depart")
+
+	roster_panel.color_picker(1).color_changed.emit(Color("#00D8F5"))
+	roster_panel.refresh()
+	assert_string_contains(roster_panel.warning_text(), "pistes 1 et 2")
+	assert_string_contains(roster_panel.warning_text(), "se confondront")
+	assert_eq(_controller.roster.rider(1).color, "#00D8F5", "la couleur est prise malgre tout")

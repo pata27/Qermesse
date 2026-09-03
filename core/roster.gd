@@ -8,8 +8,13 @@
 class_name Roster
 extends RefCounted
 
-## docs/04 §2 — palette figee, une couleur par piste.
+## docs/04 §2 — couleur PAR DEFAUT de chaque piste. L'operateur peut la changer
+## pour coller aux velos reellement poses sur les rouleaux, et y revenir.
 const DEFAULT_COLORS := ["#00E5FF", "#FF2E88", "#FFB300", "#00E676"]
+## Ecart en dessous duquel deux couleurs se confondent a la projection. Les
+## teintes par defaut sont a plus de 0,6 l'une de l'autre ; deux rouges choisis
+## a la main tombent bien en dessous.
+const COLOR_CLASH := 0.25
 
 ## Longueur AFFICHABLE d'un nom, en caracteres.
 ##
@@ -97,6 +102,45 @@ func set_active(lane: int, active: bool) -> void:
 		entry.active = active
 
 
+## Couleur choisie pour une piste. Refuse ce qui n'est pas une couleur : le
+## point d'entree est unique, la validation aussi.
+func set_color(lane: int, color: String) -> bool:
+	var entry := rider(lane)
+	if entry == null or not Color.html_is_valid(color):
+		return false
+	entry.color = color
+	return true
+
+
+## Rend une piste a sa couleur de charte — docs/04 §2. Le seul geste utile
+## quand la salle change de velos entre deux soirees.
+func reset_color(lane: int) -> void:
+	var entry := rider(lane)
+	if entry != null:
+		entry.color = DEFAULT_COLORS[lane]
+
+
+## Pistes ACTIVES dont la couleur se confond avec celle d'une autre.
+##
+## Signale, n'interdit pas — docs/04 §2. Si la salle aligne deux velos rouges,
+## l'operateur a raison contre la charte et le logiciel n'a pas a reecrire la
+## realite ; le numero de piste et le nom identifient chacun. Mais un doublon
+## involontaire rend l'ecran ambigu, et cela se dit.
+func clashing_lanes() -> Array[int]:
+	var clashing: Array[int] = []
+	var lanes := active_lanes()
+	for a: int in lanes:
+		for b: int in lanes:
+			if a == b or clashing.has(a):
+				continue
+			var distance := Color(rider(a).color) - Color(rider(b).color)
+			var gap := absf(distance.r) + absf(distance.g) + absf(distance.b)
+			if gap < COLOR_CLASH:
+				clashing.append(a)
+	clashing.sort()
+	return clashing
+
+
 ## Pour le CSV : {lane: {name, dossard}} — docs/02 §5.
 ## Ce que le recorder ecrit au disque : le nom ENTIER.
 ##
@@ -130,14 +174,17 @@ func from_dict(data: Dictionary) -> void:
 			target.name = loaded.name
 			target.dossard = loaded.dossard
 			target.active = loaded.active
-			# LA COULEUR NE SE RELIT PAS. Elle vient de la palette figee
-			# (docs/04 §2) et sert a identifier une piste avec son numero
-			# (docs/03 §6) : aucun reglage ne l'expose, mais elle etait relue du
-			# fichier. Un roster edite a la main pouvait donner la meme couleur
-			# a deux pistes, ou une couleur invalide — et l'ecran public
-			# devenait ambigu. Plus subtil : le jour ou la palette changera, les
-			# rosters existants imposeraient encore les anciennes couleurs.
-			# Elle reste ECRITE dans le fichier, pour qui le lit.
+			# LA COULEUR SE RELIT, MAIS SOUS CONDITION. Elle ne venait pas du
+			# fichier tant que la palette etait figee ; elle se regle desormais,
+			# donc elle se retrouve au lancement suivant comme les noms.
+			#
+			# Validee, en revanche. Un roster edite a la main — ou ecrit par une
+			# version future — peut porter n'importe quoi, et une teinte
+			# illisible sur l'ecran public ne se decouvrirait qu'en soiree. Une
+			# couleur invalide rend donc la piste a son defaut, qui est toujours
+			# lisible.
+			if Color.html_is_valid(loaded.color):
+				target.color = loaded.color
 
 
 func save(path: String = "") -> bool:

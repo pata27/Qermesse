@@ -55,6 +55,13 @@ décrit le déroulé normal d'une soirée.
 1. **Riders** : cocher les pistes actives, saisir noms et dossards. Les noms sont mémorisés. Le
    champ s'arrête à dix-huit caractères, la largeur que l'écran public peut montrer ; un nom plus
    long y serait de toute façon coupé.
+   La **couleur** de chaque piste se règle à côté, et **l'écran public suit immédiatement** —
+   maillot, jantes, traînée et néon de piste : on la choisit en regardant le vélo posé sur les
+   rouleaux, jusqu'à ce que les deux correspondent. **Défaut** ramène à la couleur de charte, et
+   ce bouton est grisé tant que la piste n'a pas été changée. Les couleurs sont mémorisées comme
+   les noms. Si deux pistes actives finissent trop proches, le panneau le dit — il ne l'interdit
+   pas : deux vélos rouges dans la salle, c'est vous qui avez raison, et le numéro de piste
+   continue d'identifier chacun.
 2. **Mode de course** :
    * **Distance** — premier à parcourir la distance ; tout le monde va au bout.
    * **Temps** — plus grande distance dans le temps imparti ; le classement est la distance.

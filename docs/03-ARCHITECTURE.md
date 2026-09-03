@@ -168,8 +168,10 @@ courant est celui d'une **autre** course, et le podium encore affiché se met à
 été trouvé et corrigé trois fois, sur trois consommateurs différents, parce qu'il avait été réparé
 à la source sans qu'on cherche tous ses lecteurs.
 
-Seules les **couleurs** viennent encore du roster : la palette est figée par piste (`04` §2) et ne
-change jamais.
+Seules les **couleurs** viennent encore du roster. La palette de `04` §2 en donne le DÉFAUT ;
+l'opérateur peut la changer pour faire correspondre l'écran aux vélos réellement posés sur les
+rouleaux, et revenir au défaut d'un bouton. Rien ne repose sur la seule couleur, donc rien ne se
+casse quand elle change.
 
 ### Interpolation
 

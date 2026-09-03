@@ -331,13 +331,15 @@ func test_un_rider_sans_nom_reste_identifiable() -> void:
 	assert_eq(roster.rider(2).display_name(), "Chloe")
 
 
-func test_la_couleur_vient_de_la_palette_jamais_du_fichier() -> void:
-	# docs/04 §2 : « palette figee, une couleur par piste », et docs/03 §6 fait
-	# de la couleur une des deux facons d'identifier une piste. Aucun reglage
-	# ne l'expose — mais elle etait RELUE du fichier. Un roster edite a la main
-	# pouvait donc donner la meme couleur a deux pistes, ou une couleur
-	# invalide, et l'ecran public devenait ambigu. Plus subtil : le jour ou la
-	# palette changera, les rosters existants garderaient les anciennes.
+func test_une_couleur_choisie_se_relit_mais_seulement_si_c_en_est_une() -> void:
+	# La couleur ne se relisait PAS du fichier tant que la palette etait figee.
+	# Elle se regle desormais — l'ecran public doit correspondre aux velos poses
+	# sur les rouleaux (docs/04 §2) — donc elle se retrouve au lancement
+	# suivant, comme les noms.
+	#
+	# Mais validee. Un fichier edite a la main peut porter n'importe quoi, et
+	# une teinte illisible ne se decouvrirait qu'en soiree : la piste retrouve
+	# alors son defaut, qui est toujours lisible.
 	var file := FileAccess.open(_path("couleurs.json"), FileAccess.WRITE)
 	file.store_string('{"riders": [' +
 		'{"lane": 0, "name": "Alice", "active": true, "color": "#FF2E88"},' +
@@ -347,18 +349,40 @@ func test_la_couleur_vient_de_la_palette_jamais_du_fichier() -> void:
 	var roster := Roster.new()
 	assert_true(roster.load_from(_path("couleurs.json")))
 	assert_eq(roster.rider(0).name, "Alice", "le reste du fichier est bien relu")
-	assert_eq(roster.rider(0).color, Roster.DEFAULT_COLORS[0], "cyan, quoi que dise le fichier")
-	assert_eq(roster.rider(1).color, Roster.DEFAULT_COLORS[1], "et magenta pour la piste 2")
+	assert_eq(roster.rider(0).color, "#FF2E88", "la couleur choisie se retrouve")
+	assert_eq(roster.rider(1).color, Roster.DEFAULT_COLORS[1], "l'invalide rend au defaut")
 
 
-func test_chaque_piste_a_sa_couleur_de_la_palette() -> void:
+func test_la_couleur_se_choisit_se_valide_et_se_remet_au_defaut() -> void:
+	var roster := Roster.new()
+	assert_eq(roster.rider(0).color, "#00E5FF", "cyan par defaut, docs/04 §2")
+	assert_true(roster.set_color(0, "#C81010"), "le velo rouge de la salle")
+	assert_eq(roster.rider(0).color, "#C81010")
+	# Point d'entree unique, validation unique : rien d'autre n'entre.
+	assert_false(roster.set_color(0, "bleu marine"), "ce n'est pas une couleur")
+	assert_eq(roster.rider(0).color, "#C81010", "et rien n'a bouge")
+	roster.reset_color(0)
+	assert_eq(roster.rider(0).color, Roster.DEFAULT_COLORS[0], "le bouton rend la charte")
+
+
+func test_deux_pistes_de_meme_couleur_sont_signalees_pas_interdites() -> void:
+	# docs/04 §2. Si la salle aligne deux velos rouges, l'operateur a raison
+	# contre la charte — le numero de piste et le nom identifient toujours
+	# chacun. Mais un doublon involontaire rend l'ecran ambigu, et cela se dit.
 	var roster := Roster.new()
 	var seen: Array[String] = []
 	for lane: int in range(Protocol.MAX_RIDERS):
-		var color := roster.rider(lane).color
-		assert_false(seen.has(color), "deux pistes ne peuvent pas partager une couleur")
-		seen.append(color)
-	assert_eq(roster.rider(0).color, "#00E5FF", "cyan, docs/04 §2")
+		assert_false(seen.has(roster.rider(lane).color), "la palette n'a pas de doublon")
+		seen.append(roster.rider(lane).color)
+	assert_eq(roster.clashing_lanes(), [] as Array[int], "et rien n'est signale au depart")
+
+	roster.set_color(1, "#00D8F5")  # presque le cyan de la piste 1
+	assert_eq(roster.clashing_lanes(), [0, 1] as Array[int], "les deux pistes sont nommees")
+	assert_eq(roster.rider(1).color, "#00D8F5", "mais la couleur est bien prise")
+
+	# Une piste INACTIVE ne gene personne : elle n'est pas a l'ecran.
+	roster.set_active(1, false)
+	assert_eq(roster.clashing_lanes(), [] as Array[int], "plus de conflit hors course")
 
 
 func test_le_roster_alimente_le_csv_avec_noms_et_dossards() -> void:

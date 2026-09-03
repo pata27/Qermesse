@@ -257,3 +257,27 @@ func _scripts_under(path: String) -> PackedStringArray:
 	for sub: String in DirAccess.get_directories_at(path):
 		found.append_array(_scripts_under(path.path_join(sub)))
 	return found
+
+
+func test_une_couleur_choisie_atteint_l_ecran_public_sans_attendre_le_depart() -> void:
+	# Le geste consiste a COMPARER : l'operateur regarde le velo pose sur les
+	# rouleaux et regle la teinte jusqu'a ce qu'elle corresponde. Si l'ecran
+	# public n'y repond qu'au prochain armement, la comparaison est impossible
+	# et l'operateur croit que le reglage n'a rien fait.
+	var controller: AppController = _main.controller
+	_main.open_spectacle()
+	await wait_physics_frames(2)
+	var scene: RaceScene = _main.spectacle.scene
+	var rig: RiderRig = scene.rider_rig(0)
+	assert_not_null(rig, "la piste 1 est a l'ecran")
+	assert_true(rig.color.is_equal_approx(Color(Roster.DEFAULT_COLORS[0])), "cyan au depart")
+
+	assert_true(controller.set_rider_color(0, "#C81010"), "le velo rouge de la salle")
+	await wait_physics_frames(1)
+	assert_true(rig.color.is_equal_approx(Color("#C81010")), "le maillot a suivi, sans course")
+
+	controller.reset_rider_color(0)
+	await wait_physics_frames(1)
+	assert_true(
+		rig.color.is_equal_approx(Color(Roster.DEFAULT_COLORS[0])), "et le retour au defaut aussi"
+	)
