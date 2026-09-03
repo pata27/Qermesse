@@ -103,7 +103,7 @@ func refresh() -> void:
 	var running := _controller.race_in_progress()
 	_stop.disabled = not running
 	_restart.disabled = not running and not can_start
-	_state_label.text = "Etat : %s" % _controller.engine.state_name()
+	_state_label.text = "Etat : %s" % RaceEngine.state_label(_controller.engine.state())
 	_refresh_lanes()
 
 
@@ -117,6 +117,11 @@ func stop_button() -> Button:
 
 func restart_button() -> Button:
 	return _restart
+
+
+## Ce que l'operateur lit sur l'etat de la course.
+func state_text() -> String:
+	return _state_label.text
 
 
 func notice_text() -> String:

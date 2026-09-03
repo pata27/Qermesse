@@ -590,3 +590,12 @@ func test_le_tableau_marque_l_instant_d_elimination_au_lieu_de_zero() -> void:
 	assert_string_contains(text, "14.01 s x", "l'elimine a son instant, marque")
 	assert_false(text.contains("0.00 s"), "jamais 0,00 s pour un elimine")
 	assert_string_contains(text, "x = elimine", "la marque est expliquee")
+
+
+func test_le_panneau_course_affiche_le_libelle_et_non_l_enum() -> void:
+	# « Etat : IDLE » n'apprend rien a un operateur, et ces six mots
+	# n'apparaissent nulle part dans le MANUEL : ils viennent du diagramme
+	# d'etats de docs/02, qui est un document de conception.
+	var race_panel := _panel.race_panel()
+	assert_string_contains(race_panel.state_text(), RaceEngine.state_label(RaceEngine.State.IDLE))
+	assert_false(race_panel.state_text().contains("IDLE"), "aucun nom de code a l'ecran")

@@ -731,3 +731,31 @@ func test_la_moyenne_d_un_elimine_s_arrete_a_son_elimination() -> void:
 	var expected := _result.distance_m[1] / (float(_result.eliminated_ms[1]) / 1000.0) * 3.6
 	assert_almost_eq(_result.avg_kph[1], expected, 0.01, "moyenne sur le temps couru")
 	assert_gt(_result.avg_kph[1], 20.0, "proche des 25 km/h reels, pas diluee")
+
+
+func test_chaque_etat_a_un_libelle_lisible_par_un_operateur() -> void:
+	# Les noms d'enum viennent du diagramme de `docs/02` §1, qui est un document
+	# de CONCEPTION : ils n'apparaissent nulle part dans le manuel de
+	# l'operateur. Ce qui s'affiche doit dire ce qui se passe.
+	for state: int in RaceEngine.State.values():
+		var label := RaceEngine.state_label(state)
+		assert_false(label.is_empty(), "l'etat %d a un libelle" % state)
+		assert_ne(
+			label, RaceEngine.State.keys()[state],
+			"l'etat %s ne s'affiche pas sous son nom de code" % RaceEngine.State.keys()[state]
+		)
+		assert_eq(label, label.to_lower(), "en minuscules, comme une phrase")
+	assert_string_contains(RaceEngine.state_label(RaceEngine.State.IDLE), "repos")
+	assert_string_contains(RaceEngine.state_label(RaceEngine.State.RUNNING), "course en cours")
+
+
+func test_un_refus_d_armement_nomme_l_etat_en_francais() -> void:
+	var engine := RaceEngine.new()
+	var config := RaceConfig.new()
+	assert_true(engine.arm(config, 0), "le premier armement passe")
+	assert_false(engine.arm(config, 0), "le second est refuse")
+	assert_false(engine.last_error().is_empty(), "le second armement est refuse")
+	assert_false(
+		engine.last_error().contains("ARMING"), "pas de nom de code dans un message d'erreur"
+	)
+	assert_string_contains(engine.last_error(), RaceEngine.state_label(engine.state()))

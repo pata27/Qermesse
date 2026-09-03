@@ -64,8 +64,32 @@ func state() -> State:
 	return _state
 
 
+## Nom de CODE de l'etat — pour les journaux et les outils de diagnostic, qui
+## parlent le langage du diagramme de `docs/02` §1.
 func state_name() -> String:
 	return State.keys()[_state]
+
+
+## Ce que l'operateur lit. Les noms d'enum viennent d'un document de
+## CONCEPTION : « Etat : IDLE » n'apprend rien a qui tient la souris un soir de
+## course, et ces six mots n'apparaissent nulle part dans le manuel. Le libelle
+## dit ce qui se passe, et quand c'est utile ce qu'on attend — voir la table du
+## MANUEL, qui est la meme.
+static func state_label(state: State) -> String:
+	match state:
+		State.IDLE:
+			return "au repos — pret a lancer"
+		State.ARMING:
+			return "armement — le boitier doit repondre"
+		State.COUNTDOWN:
+			return "decompte"
+		State.RUNNING:
+			return "course en cours"
+		State.FINISHED:
+			return "arrivee — classement fige"
+		State.RESULTS:
+			return "resultat affiche — a acquitter"
+	return "etat inconnu"
 
 
 func race_state() -> RaceState:
@@ -90,7 +114,7 @@ func last_error() -> String:
 func arm(config: RaceConfig, now_ms: int) -> bool:
 	_last_error = ""
 	if _state != State.IDLE:
-		_last_error = "impossible d'armer depuis l'etat %s" % state_name()
+		_last_error = "impossible d'armer depuis l'etat « %s »" % state_label(_state)
 		return false
 	var problems := config.validate()
 	if not problems.is_empty():

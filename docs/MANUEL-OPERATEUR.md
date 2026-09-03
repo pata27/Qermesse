@@ -72,6 +72,17 @@ décrit le déroulé normal d'une soirée.
    Chaque ligne donne l'heure d'arrivée **en heure locale** (`21:47`), le mode et le vainqueur ;
    les fichiers, eux, sont horodatés en UTC.
 
+Sous les boutons, une ligne dit **où en est la course**, en toutes lettres :
+
+| Ligne | Ce que ça veut dire |
+|---|---|
+| au repos — pret a lancer | rien en cours ; START est disponible |
+| armement — le boitier doit repondre | les commandes sont parties, on attend le premier `CD:` |
+| decompte | 3 · 2 · 1, piloté par le boîtier |
+| course en cours | les coureurs roulent, l'arbitrage tourne |
+| arrivee — classement fige | le PC a tranché, plus rien ne peut changer le résultat |
+| resultat affiche — a acquitter | le podium est à l'écran public jusqu'au prochain départ |
+
 Sous les boutons, le panneau **Course** tient un court journal : les cinq derniers messages, le plus
 récent en tête, effacé au départ de la course suivante. C'est là qu'apparaissent les alertes — piste
 muette, pointe suspecte, trames perdues, faux départ, lien perdu. Aucune ne peut plus être effacée

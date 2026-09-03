@@ -209,7 +209,7 @@ func start_blocked_reason() -> String:
 			Protocol.state_name(_link.get_link_state())
 		)
 	if not _engine_at_rest():
-		return "une course est deja en cours (%s)" % engine.state_name()
+		return "une course est deja en cours (%s)" % RaceEngine.state_label(engine.state())
 	var problems := current_config().validate()
 	if not problems.is_empty():
 		return ", ".join(problems)

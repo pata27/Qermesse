@@ -541,3 +541,19 @@ jusqu'à supprimer l'effet entier.
 défaut. `ss_race3d_demo` mesure désormais la luminance du fond sur la capture et sort en erreur
 au-delà du plafond que `docs/04` §4 chiffre. Vérifié dans les deux sens : 35,7 conforme avec le
 correctif, 62,0 et code 4 en remettant l'albédo blanche.
+
+## Un nom d'enum n'est pas un mot de l'interface
+
+Le panneau Course affichait « Etat : IDLE ». Ces six mots — IDLE, ARMING, COUNTDOWN, RUNNING,
+FINISHED, RESULTS — viennent du diagramme d'états de `docs/02` §1, qui est un document de
+CONCEPTION. Ils n'apparaissent nulle part dans le manuel de l'opérateur : celui qui tient la souris
+un soir de course n'avait aucune clé pour les lire. Deux messages d'erreur les recrachaient aussi.
+
+**Leçon** : ce qui traverse la frontière du code vers l'écran doit être traduit une fois, dans une
+fonction qui porte ce rôle. `state_name()` reste, pour les journaux et les outils de diagnostic qui
+parlent la langue du diagramme ; `state_label()` est ce que lit l'opérateur, et la table du MANUEL
+est la même.
+
+**Comment le retrouver** : capturer l'interface et la LIRE comme un utilisateur qui n'a pas écrit
+le code. Un mot en majuscules anglaises au milieu d'un panneau français se voit en une seconde,
+alors qu'il ne fait échouer aucun test.
