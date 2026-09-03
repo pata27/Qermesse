@@ -705,3 +705,20 @@ vaut mieux que les deux correctifs qu'il rend inutiles à refaire.
 
 **Et il se prouve en rouge** : en retirant le relais, le test annonce « `Link` doit relayer
 `inject_corrupt_frame` » ; remis, il repasse au vert.
+
+## Un réglage déclaré que rien ne lit est une promesse non tenue
+
+`RenderQuality.PROFILES` portait un `msaa` par niveau — 0, 1, 2, qui sont exactement les valeurs de
+`Viewport.MSAA_DISABLED / 2X / 4X`. Le tableau l'annonçait, `docs/04` §4 annonçait trois niveaux de
+qualité, l'aide de la surcharge de diagnostic citait `msaa=0` en exemple — et aucune ligne ne
+lisait la clé. Le niveau « bas », fait pour une machine faible, gardait l'anticrénelage, y compris
+sur les trois viewports supplémentaires de l'écran scindé, là où le coût est.
+
+**Leçon** : un dictionnaire de configuration se lit dans les deux sens. Chaque clé déclarée doit
+avoir un lecteur, et c'est vérifiable par la machine — le test compare les clés du profil aux
+`option("…")` présents dans les sources de la scène.
+
+**Et il faut mesurer ce qu'on rétablit** : la première mesure comparait « bas » à « élevé », qui
+diffèrent aussi par la foule, la brume et le halo — elle ne prouvait rien sur l'anticrénelage. La
+surcharge `SS_QOPT=msaa=…`, prévue par le code pour isoler un effet à la fois, donne la vraie
+comparaison : 1367 bords durs contre 1298, à niveau égal par ailleurs.

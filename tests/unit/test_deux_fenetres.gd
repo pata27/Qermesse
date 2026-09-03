@@ -154,3 +154,51 @@ func test_choisir_l_ecran_automatique_ecrit_bien_l_automatique() -> void:
 		_main.controller.settings.show_window_screen, -1,
 		"automatique, et non l'ecran numero 1"
 	)
+
+
+func test_le_niveau_de_qualite_regle_vraiment_l_anticrenelage() -> void:
+	# `RenderQuality.PROFILES` declare un `msaa` par niveau — 0, 1, 2, qui sont
+	# exactement les valeurs de `Viewport.MSAA_DISABLED / 2X / 4X`. Personne ne
+	# le lisait : le bouton existait dans le tableau, dans le document et dans
+	# l'outil de mesure, et ne touchait rien. Le niveau « bas », fait pour les
+	# machines faibles, gardait l'anticrenelage.
+	_main.controller.settings.render_quality = RenderQuality.Level.LOW
+	_main.open_spectacle()
+	assert_eq(
+		_main.spectacle.msaa_3d, Viewport.MSAA_DISABLED,
+		"en qualite basse, l'anticrenelage est coupe"
+	)
+
+	_main.spectacle.scene.quality.level = RenderQuality.Level.HIGH
+	_main.spectacle.scene.apply_quality()
+	assert_eq(
+		_main.spectacle.msaa_3d, Viewport.MSAA_4X,
+		"en qualite elevee, il est au maximum du profil"
+	)
+
+
+func test_aucun_reglage_de_profil_n_est_lettre_morte() -> void:
+	# LE DEFAUT DE CLASSE. Un reglage declare dans `PROFILES` que rien ne lit est
+	# une promesse non tenue : le document annonce trois niveaux de qualite, et
+	# l'un des leviers ne bougeait rien. Chaque cle doit etre lue quelque part.
+	var sources := ""
+	for path: String in [
+		"res://scenes/race3d/race_scene.gd",
+		"res://scenes/race3d/split_screen.gd",
+		"res://scenes/race3d/render_quality.gd",
+		"res://scenes/race3d/rider_rig.gd",
+		"res://scenes/race3d/crowd.gd",
+	]:
+		var file := FileAccess.open(path, FileAccess.READ)
+		if file != null:
+			sources += file.get_as_text()
+
+	var unread: Array[String] = []
+	for key: Variant in (RenderQuality.PROFILES[RenderQuality.Level.HIGH] as Dictionary).keys():
+		var name := str(key)
+		# `name` est le libelle affiche, pas un levier de rendu.
+		if name == "name":
+			continue
+		if not sources.contains('option("%s")' % name):
+			unread.append(name)
+	assert_eq(unread, [] as Array[String], "des reglages de profil que rien ne lit")

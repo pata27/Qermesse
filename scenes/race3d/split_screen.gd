@@ -52,6 +52,9 @@ const SLICE_MARGIN := 0.16
 ## Facteur de résolution des vues de volet, voir `_ensure_pane`.
 const SLICE_RENDER_SCALE := 0.8
 var _window_factor := 1.0
+## Anticrenelage des vues de volet, pose par la scene d'apres le profil de
+## qualite — docs/04 §4.
+var _msaa: Viewport.MSAA = Viewport.MSAA_2X
 
 
 ## Un volet : sa vue, sa caméra, sa lame.
@@ -129,6 +132,13 @@ func set_window_factor(factor: float) -> void:
 		pane.viewport.scaling_3d_scale = _render_scale() * _window_factor
 
 
+## Anticrenelage des volets, suivant le profil de qualite.
+func set_msaa(mode: Viewport.MSAA) -> void:
+	_msaa = mode
+	for pane: Pane in _panes:
+		pane.viewport.msaa_3d = mode
+
+
 ## Facteur de résolution effectif, surchargeable par `SS_SLICE_SCALE` pour
 ## pouvoir le chiffrer sans recompiler.
 static func _render_scale() -> float:
@@ -148,10 +158,12 @@ func _ensure_pane(index: int) -> Pane:
 		pane.viewport.world_3d = _world
 		pane.viewport.own_world_3d = false
 		pane.viewport.transparent_bg = false
-		# PLEINE RÉSOLUTION ET ANTICRÉNELAGE. Rendues en demi-résolution puis
-		# étirées, ces vues faisaient fourmiller les néons — des traits d'un
-		# pixel de large ne supportent aucun rééchantillonnage.
-		pane.viewport.msaa_3d = Viewport.MSAA_2X
+		# ANTICRÉNELAGE. Rendues en demi-résolution puis étirées, ces vues
+		# faisaient fourmiller les néons — des traits d'un pixel de large ne
+		# supportent aucun rééchantillonnage. Le niveau de qualité en décide
+		# désormais : un volet créé avant le premier `set_msaa` prend la valeur
+		# courante, que la scène lui repose ensuite.
+		pane.viewport.msaa_3d = _msaa
 		# RÉSOLUTION RÉDUITE, mais seulement ici.
 		#
 		# Cette scène est limitée par le remplissage : à quatre volets elle rend

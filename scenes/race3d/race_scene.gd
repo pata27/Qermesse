@@ -84,6 +84,10 @@ func setup(controller: AppController, level: int = -1) -> void:
 	_build_post_process()
 	_build_split()
 	_build_hud()
+	# Au montage aussi, et pas seulement sur un changement de niveau : la
+	# fenetre garde sinon l'anticrenelage par defaut du projet jusqu'au premier
+	# reglage manuel.
+	_apply_msaa()
 
 	_controller.race_state_changed.connect(_on_race_state_changed)
 	_controller.progress_updated.connect(_on_progress)
@@ -886,6 +890,28 @@ func _group_frame(order: Array[int], from: int, to: int, positions: Dictionary) 
 	}
 
 
+## Anticrenelage — docs/04 §4.
+##
+## Les valeurs 0, 1 et 2 de `PROFILES` sont exactement celles de
+## `Viewport.MSAA_DISABLED / 2X / 4X` : le tableau les portait depuis le
+## début, et RIEN ne les lisait. Le niveau « bas », fait pour une machine
+## faible, gardait donc l'anticrenelage de la fenêtre, et le niveau « élevé »
+## n'en obtenait pas plus que les autres.
+##
+## Les volets en héritent aussi. Leur commentaire d'origine rappelle qu'un
+## trait de néon d'un pixel ne supporte aucun rééchantillonnage — c'est vrai,
+## et c'est précisément le compromis d'un niveau « bas » : sur un GPU qui ne
+## tient pas les 60 fps, on préfère une image qui fourmille à une image qui
+## saccade (docs/04 §4, « coupée ou dégradée »).
+func _apply_msaa() -> void:
+	var mode := clampi(int(quality.option("msaa")), 0, 3) as Viewport.MSAA
+	var view := get_viewport()
+	if view != null:
+		view.msaa_3d = mode
+	if _split != null:
+		_split.set_msaa(mode)
+
+
 ## Suit la taille de la fenêtre pour la vue scindée.
 ## La 3D ne se rend jamais plus fin que la fenêtre — docs/04, budget. La vue
 ## pleine et les volets suivent le même facteur ; l'habillage 2D, lui, reste
@@ -943,6 +969,7 @@ func apply_quality() -> void:
 	env.glow_enabled = bool(quality.option("glow"))
 	env.volumetric_fog_enabled = bool(quality.option("volumetric_fog"))
 	env.ssao_enabled = bool(quality.option("ssao"))
+	_apply_msaa()
 	_crowd.build(int(quality.option("crowd_count")), float(_lane_count) * TrackBuilder.LANE_WIDTH_M)
 	_track_material.set_shader_parameter("glow_boost", 1.0 if quality.option("glow") else 0.6)
 	# Les traînées se reconstruisent d'elles-mêmes à la prochaine image, avec

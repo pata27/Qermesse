@@ -94,6 +94,11 @@ est persisté et désarme la dégradation automatique** : sinon il serait défai
 seconde sous le budget, et la machine du projecteur retrouverait un niveau trop lourd à chaque
 soirée.
 
+L'**anticrénelage** fait partie des leviers du niveau, au même titre que la foule ou le
+volumétrique : coupé en `bas`, 2× en `moyen`, 4× en `élevé`, et les vues de l'écran scindé le
+suivent. Un trait de néon d'un pixel ne supporte aucun rééchantillonnage — mais sur une machine qui
+ne tient pas les 60 fps, une image qui fourmille vaut mieux qu'une image qui saccade.
+
 **L'automatique est un choix, pas seulement un état de départ.** Le sélecteur l'offre comme
 première entrée, au même titre que l'écran, et il indique le niveau réellement détecté
 (`automatique (moyen)`). Sans ce retour en arrière, un opérateur qui essaie « élevé » un soir perd
