@@ -193,6 +193,14 @@ Ces trois points sont désormais tenus par un test automatique au simulateur
 (`test_operateur_incidents.gd`). Les cocher ici reste utile : ce que le test ne peut pas prouver,
 c'est que **le boîtier réel** émette bien `FS:` quand un rouleau tourne pendant le décompte.
 
+Le bandeau public, lui, se produit à la demande, sans matériel — c'est la capture à joindre :
+
+```sh
+godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --faux-depart 1
+```
+
+Elle écrit `r3d-N-faux-depart.png` : le bandeau rouge par-dessus le décompte, cartes à zéro.
+
 Recommencer avec la politique **Relance** :
 
 - [ ] La course est annulée immédiatement et revient au repos.

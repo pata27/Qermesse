@@ -95,6 +95,7 @@ Preuves dans `tasks/preuves/`.
 | `tools/ss_emu/` | émulateur du firmware sur pseudo-terminal — permet de développer et de tester tout le lien série sans matériel branché |
 | `tools/ss_probe.py` | sonde console indépendante : handshake, ticks en direct, watchdog. Témoin croisé, sans code commun avec l'émulateur. Codes de sortie : 0 course vue, 1 pas de `V:` sur ce port, 2 aucune arrivée pendant la fenêtre |
 | `tools/ss_replay.gd` | rejoue une course enregistrée et vérifie qu'elle redonne le même classement. Sur un dossier, chaque course réelle devient un cas de test permanent |
+| `tools/ss_race3d_demo.gd` | mesure le budget de rendu et produit les captures de preuve — dont le signal de départ et, avec `--faux-depart <piste>`, le bandeau de faux départ que `docs/RECETTE.md` §7 fait constater |
 
 ```sh
 cmake -S tools/ss_emu -B tools/ss_emu/build && cmake --build tools/ss_emu/build -j

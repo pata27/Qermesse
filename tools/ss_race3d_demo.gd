@@ -4,6 +4,7 @@
 ##   godot --script tools/ss_race3d_demo.gd -- --video <dossier>
 ##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --courses 2
 ##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --noms Alice,Bob
+##   godot --script tools/ss_race3d_demo.gd -- --capture <dossier> --faux-depart 1
 ##
 ## Codes de sortie : 0 fait, 1 depart refuse, 2 scene impossible a charger,
 ## 3 delai maximal depasse (`--delai N`, 300 s par defaut), 4 fond trop clair
@@ -52,6 +53,8 @@ var _riders := 4
 var _luminance_failed := false
 ## Le budget de rendu de `docs/04` §4 n'a pas ete tenu — sortie en erreur.
 var _budget_failed := false
+## Piste sur laquelle injecter un faux depart, ou -1. Voir `--faux-depart`.
+var _false_start_lane := -1
 var _quality := -1
 var _speed := 1.0
 ## Dossier de donnees des outils de preuve — JAMAIS celui de l'operateur.
@@ -170,6 +173,13 @@ func _parse_args() -> void:
 			"--profil":
 				i += 1
 				_profile = args[i] if i < args.size() else _profile
+			"--faux-depart":
+				# Injecte un faux depart sur cette piste PENDANT le decompte —
+				# le firmware ne le signale qu'a ce moment (docs/01 §2). Sert a
+				# produire la preuve de `docs/RECETTE.md` §7, qui demande de
+				# constater le bandeau : personne ne l'avait jamais capture.
+				i += 1
+				_false_start_lane = int(args[i]) if i < args.size() else -1
 			"--images":
 				i += 1
 				_video_frames = int(args[i]) if i < args.size() else _video_frames
@@ -391,6 +401,12 @@ func _capture_stills() -> void:
 	while not shown_countdown:
 		await _step()
 		if _controller.engine.state() == RaceEngine.State.COUNTDOWN:
+			if _false_start_lane >= 0:
+				_controller.simulate_false_start(_false_start_lane)
+				# Le bandeau arrive avec la trame `FS:`, pas au meme instant.
+				for _wait: int in range(20):
+					await _step()
+				await _shoot("faux-depart")
 			await _shoot("decompte")
 			shown_countdown = true
 		elif _controller.engine.state() == RaceEngine.State.RUNNING:

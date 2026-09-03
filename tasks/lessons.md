@@ -1145,3 +1145,19 @@ au passage que le mot n'est pas rogné : 72 px de marge à gauche, 61 à droite.
 peine d'outiller cette classe : non — la section cite aussi `500 m` et `CD:`, des exemples de
 format, et une garde qui les confondrait avec des littéraux d'écran accuserait à tort. Renoncer à
 une garde est parfois la bonne décision, à condition de dire pourquoi.
+
+## Une case de recette se coche mieux avec une image reproductible
+
+`docs/RECETTE.md` §7 demande de constater le bandeau de faux départ. Le test automatique ajouté
+plus tôt prouve la ligne du CSV et le texte du bandeau — mais l'image, celle qu'on joint à la
+preuve du jalon, se produisait à la main : régler la politique, lancer, faire tourner un rouleau au
+bon moment. Personne ne l'avait jamais capturée.
+
+**Leçon** : quand une vérification humaine demande de REGARDER quelque chose, la rendre
+reproductible d'une commande vaut mieux que de l'automatiser à moitié. Le test dit que le texte est
+juste ; la capture montre où il tombe, de quelle couleur, et par-dessus quoi. Les deux servent, et
+aucun ne remplace l'autre.
+
+**Ce que la capture montre en plus du bandeau** : les cartes à zéro avec l'objectif annoncé, le
+décompte encore à 3. Trois correctifs de cette nuit visibles sur une seule image — c'est ce qui
+rend un jeu de preuves utile plutôt que décoratif.
