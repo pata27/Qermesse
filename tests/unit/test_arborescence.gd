@@ -230,3 +230,34 @@ func test_chaque_alerte_de_l_operateur_est_dans_le_depannage() -> void:
 		if not text.contains(head):
 			undocumented.append(head)
 	assert_eq(undocumented, [] as Array[String], "des alertes absentes de DEPANNAGE.md")
+
+
+## La palette de `docs/04` §2 est celle du code.
+##
+## `#161B26`, l'« ardoise » que le document donnait pour la piste, n'existait
+## nulle part : le rendu utilise un bois clair, avec sa raison ecrite a cote —
+## une piste sombre sur fond anthracite disparait. Le code avait raison, le
+## document etait reste en arriere, et rien ne les confrontait.
+func test_la_palette_du_document_est_celle_du_code() -> void:
+	var guide := FileAccess.open("res://docs/04-DIRECTION-ARTISTIQUE.md", FileAccess.READ)
+	assert_not_null(guide, "le document se lit")
+	var palette := guide.get_as_text()
+	var table := palette.substr(palette.find("## 2. Palette"), 1200)
+
+	var sources := ""
+	for root: String in ["res://core", "res://scenes", "res://audio", "res://art"]:
+		var files := PackedStringArray()
+		_walk(root, files)
+		for path: String in files:
+			if path.get_extension() != "gd" and path.get_extension() != "gdshader":
+				continue
+			var file := FileAccess.open(path, FileAccess.READ)
+			if file != null:
+				sources += file.get_as_text()
+
+	var missing: Array[String] = []
+	for found: RegExMatch in RegEx.create_from_string("#[0-9A-Fa-f]{6}").search_all(table):
+		var hex := found.get_string(0)
+		if not sources.contains(hex):
+			missing.append(hex)
+	assert_eq(missing, [] as Array[String], "des couleurs annoncees que le rendu n'emploie pas")

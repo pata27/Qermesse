@@ -26,7 +26,7 @@ moins lisible qu'un rendu à fort contraste et silhouettes franches — en plus 
 | Rider 3 | ambre `#FFB300` | idem |
 | Rider 4 | vert `#00E676` | idem |
 | Fond | anthracite `#0B0E14` | |
-| Piste | ardoise `#161B26` | |
+| Piste | bois clair `#6B5138` | **Nettement plus clair qu'il n'y paraît à l'écrit.** La première rédaction annonçait une ardoise sombre : sur fond anthracite, la piste disparaissait et le vélodrome n'existait plus. Une piste éclairée par des projecteurs de salle est CLAIRE, et c'est ce contraste avec le fond qui la fait exister |
 | Accent / typo | blanc cassé `#F2F5FA` | |
 | Alerte | rouge `#FF3B30` | faux départ, perte de lien, seuil de poursuite |
 

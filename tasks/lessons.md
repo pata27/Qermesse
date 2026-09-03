@@ -954,3 +954,20 @@ introduit ses propres défauts.
 
 **Et un flag capturé par une lambda est une copie** : pour observer un signal depuis un test ou une
 sonde, muter un tableau, jamais réaffecter un booléen local.
+
+## Le document peut être en retard sur une décision déjà prise et expliquée
+
+`docs/04` §2 donnait la piste pour une ardoise sombre. Le rendu emploie un bois clair depuis
+longtemps, avec sa raison écrite juste à côté du code : une piste sombre sur fond anthracite
+disparaît, et le vélodrome n'existe plus. La décision était prise, motivée, appliquée — et le
+tableau de la palette ne l'avait jamais suivie.
+
+**Leçon** : ce n'est pas toujours le code qui dérive. Une décision prise en cours de route et
+justifiée dans un commentaire doit remonter dans le document, sinon le prochain qui lit la palette
+« corrigera » le rendu vers une valeur abandonnée.
+
+**Tenu par la machine** : un test compare les codes hexadécimaux du tableau aux couleurs employées
+dans `core`, `scenes`, `audio` et `art`. Il a d'abord attrapé l'ancien code que j'avais cité dans
+l'explication — utile rappel qu'une valeur abandonnée n'a pas à rester écrite, même en note
+historique. Mesuré à l'écran : piste à 83 de luminance contre 29 pour le fond, le contraste que la
+règle réclame.
