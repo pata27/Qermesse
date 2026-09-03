@@ -902,3 +902,18 @@ Un message absent le laisse sans recours au pire moment.
 de message figure dans le guide. Il a aussi rattrapé un « boitier » sans accent que le balayage
 d'accents avait manqué — le guide écrivait « boîtier », le code non, et la comparaison littérale l'a
 vu.
+
+## Un réglage n'est pas une sortie
+
+Le curseur de volume était grisé tant que le son était coupé — et il l'est par défaut. `docs/04` §6
+demande pourtant que la coupure ET le volume « se règlent la veille, une fois ». Pour préparer le
+volume dans une salle vide, il fallait donc activer le son et faire du bruit : l'inverse exact du
+besoin, et l'inverse exact de la consigne sous laquelle tout ce travail se fait.
+
+**Leçon** : griser un contrôle parce que son effet n'est pas audible confond le RÉGLAGE et la
+SORTIE. Un volume se pose à froid et s'applique quand on ouvre le son ; c'est d'ailleurs ce que
+faisait déjà la couche audio, seule l'interface l'interdisait.
+
+**Trouvé par la même méthode que le tour précédent, dans l'autre sens** : en comparant les
+commandes du panneau au manuel, une seule manquait — « Volume ». En allant voir pourquoi elle
+n'était pas décrite, le défaut d'usage est apparu derrière l'omission.

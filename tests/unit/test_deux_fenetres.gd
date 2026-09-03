@@ -202,3 +202,15 @@ func test_aucun_reglage_de_profil_n_est_lettre_morte() -> void:
 		if not sources.contains('option("%s")' % name):
 			unread.append(name)
 	assert_eq(unread, [] as Array[String], "des reglages de profil que rien ne lit")
+
+
+func test_le_curseur_de_volume_reste_manoeuvrable_son_coupe() -> void:
+	# Le curseur etait grise tant que le son etait coupe. Comme il l'est par
+	# defaut, preparer le volume la veille imposait d'activer le son.
+	var panel: PanelSpectacle = _main.operator.spectacle_panel()
+	panel.refresh()
+	assert_true(_main.audio.is_muted(), "coupe par defaut")
+	assert_true(
+		panel.volume_slider().editable,
+		"le volume se regle meme son coupe : c'est un reglage, pas une sortie"
+	)

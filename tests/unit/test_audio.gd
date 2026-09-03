@@ -276,3 +276,27 @@ func test_la_cloche_ne_sonne_pas_au_depart_d_une_course_en_temps_courte() -> voi
 	state.apply_sample([physics.metres_to_ticks(100.0), 0, 0, 0], 9000)
 	controller.progress_updated.emit(state)
 	assert_eq(int(audio.cue_counts.get("cloche", 0)), 1, "et une fois vers la fin")
+
+
+func test_le_volume_se_regle_meme_son_coupe() -> void:
+	# docs/04 §6 : « la coupure ET le volume sont persistes : ils se reglent la
+	# VEILLE, une fois ». Or le curseur etait desactive tant que le son etait
+	# coupe — et le son est coupe par defaut. Pour preparer le volume la veille,
+	# il fallait donc activer le son, donc faire du bruit : exactement ce que
+	# l'operateur cherche a eviter dans une salle vide, et exactement ce que la
+	# consigne de ce projet interdit.
+	var controller := AppController.new()
+	controller.preferences_enabled = false
+	add_child_autofree(controller)
+	var audio := RaceAudio.new()
+	add_child_autofree(audio)
+	audio.setup(controller)
+	assert_true(audio.is_muted(), "coupe par defaut")
+
+	audio.set_volume_db(-18.0)
+	assert_almost_eq(
+		controller.settings.audio_volume_db, -18.0, 0.001,
+		"le reglage se prend et se persiste sans decouper le son"
+	)
+	assert_true(audio.is_muted(), "et le son reste coupe")
+	audio.set_volume_db(0.0)

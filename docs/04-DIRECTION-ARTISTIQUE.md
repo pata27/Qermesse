@@ -162,4 +162,6 @@ son, et la seule façon honnête de la valider quand la consigne interdit d'en j
 
 * **Coupure audio globale d'un bouton** : en événementiel, la sono est souvent gérée séparément
   et un logiciel qui sonne par-dessus la musique est un problème. **La coupure ET le volume sont
-  persistés** : ils se règlent la veille, une fois, et sont réappliqués au lancement suivant.
+  persistés** : ils se règlent la veille, une fois, et sont réappliqués au lancement suivant. Le
+  volume se règle **son coupé** : c'est un réglage, pas une sortie. Le griser tant que le son est
+  muet — et il l'est par défaut — obligeait à faire du bruit pour préparer une salle vide.

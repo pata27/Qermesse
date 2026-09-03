@@ -144,7 +144,12 @@ func refresh() -> void:
 			"font_color", Color("#FF3B30") if muted else Color("#2BE08A")
 		)
 		_volume.set_value_no_signal(float(audio.call("volume_db")))
-		_volume.editable = not muted
+		# LE CURSEUR RESTE MANOEUVRABLE SON COUPE. Il etait grise tant que le
+		# son l'etait — et il l'est par defaut : preparer le volume la veille,
+		# comme `docs/04` §6 le demande, imposait donc d'activer le son et de
+		# faire du bruit dans une salle vide. Le volume est un REGLAGE, pas une
+		# sortie : il se pose a froid et s'applique quand on active le son.
+		_volume.editable = true
 
 	var open: bool = _root.call("spectacle_visible")
 	_toggle.text = "Fermer la fenêtre spectacle" if open else "Ouvrir la fenêtre spectacle"
@@ -209,6 +214,11 @@ static func _item_of(setting: int) -> int:
 
 static func _setting_of(item_id: int) -> int:
 	return -1 if item_id == AUTOMATIC_ITEM else item_id
+
+
+## Le curseur de volume — pour les tests.
+func volume_slider() -> HSlider:
+	return _volume
 
 
 ## Les deux sélecteurs — pour les tests.
