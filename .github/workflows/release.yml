@@ -132,13 +132,41 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Les deux documents que l'operateur ouvrira le soir venu voyagent AVEC
+      # les binaires : quelqu'un qui telecharge une archive n'a pas forcement le
+      # depot sous la main, et « voir DEPANNAGE.md » ne veut alors rien dire.
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: artefacts
-      - name: Rassembler
+      # UNE ARCHIVE PAR PLATEFORME, et le contenu de `dist/` ENTIER dedans.
+      #
+      # L'export ne produit pas qu'un executable : sous Linux et sous Windows,
+      # le module serie est une bibliotheque partagee qui doit se trouver A COTE
+      # de lui. Une premiere version deversait tous les fichiers a plat dans la
+      # release, ce qui donnait cinq telechargements dont deux que personne ne
+      # pouvait deviner necessaires — et un logiciel qui se lance tres bien,
+      # sans jamais voir le boitier.
+      #
+      # Une archive par plateforme est donc la seule forme honnete : on
+      # telecharge un fichier, on l'ouvre, tout y est et au bon endroit.
+      - name: Empaqueter, une archive par plateforme
         run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
           mkdir -p release
-          find artefacts -type f -exec cp {} release/ \;
+          for dir in artefacts/*/; do
+            label="$(basename "$dir")"
+            label="${label#silversprint-}"
+            case "$label" in
+              Linux) name="SilverSprint-v3-${version}-linux-x86_64" ;;
+              Windows) name="SilverSprint-v3-${version}-windows-x86_64" ;;
+              macOS) name="SilverSprint-v3-${version}-macos-universal" ;;
+              *) name="SilverSprint-v3-${version}-${label}" ;;
+            esac
+            cp docs/MANUEL-OPERATEUR.md docs/DEPANNAGE.md "$dir"
+            (cd "$dir" && zip -r -9 "../../release/${name}.zip" .)
+          done
           ls -la release/
       # PRE-VERSION SI LE TAG LE DIT. Convention semver : un tag qui porte un
       # tiret — `v0.9.0-beta` — est une pre-version, et GitHub doit l'annoncer
@@ -151,8 +179,17 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-') }}
           body: |
-            Binaires construits par la CI sur les trois systemes : Linux
-            (`.x86_64`), Windows (`.exe`), macOS (`.zip` contenant le `.app`).
+            **Une archive par plateforme**, construite par la CI sur le systeme
+            correspondant. Telecharger celle de son systeme, la decompresser,
+            tout lancer depuis le dossier obtenu :
+
+            * `…-linux-x86_64.zip` — l'executable et le module serie
+            * `…-windows-x86_64.zip` — idem, `.exe` et `.dll`
+            * `…-macos-universal.zip` — l'application `.app`
+
+            Sous Linux et Windows, **le module serie doit rester a cote de
+            l'executable** : c'est lui qui parle au boitier. Le manuel operateur
+            et le guide de depannage sont dans chaque archive.
 
             ### Ce qui est valide, et ce qui ne l'est pas
 
