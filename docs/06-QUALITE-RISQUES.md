@@ -15,7 +15,10 @@
    trois des douze trouvées —, soit elle fait double emploi et disparaît. Les méthodes virtuelles
    de Godot sont hors décompte : c'est le moteur qui les appelle.
 6. **Le protocole série est documenté avant d'être codé**, et `docs/01` reste la source de vérité.
-7. **Aucune tâche cochée sans preuve** : sortie de test, capture, ou vidéo.
+7. **Aucune tâche cochée sans preuve** : sortie de test, capture, ou vidéo. Et **un test sauté
+   n'est pas une preuve** : les tests dont le décor peut manquer se déclarent `pending`, jamais
+   `pass_test`. La ligne `Risky/Pending` du résumé les compte — verts par absence, ils auraient
+   affirmé exactement ce qu'ils n'ont pas vérifié.
 
 ## 2. Tests
 

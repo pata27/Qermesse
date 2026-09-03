@@ -76,7 +76,7 @@ func _await_state(wanted: int, frames: int = 600) -> bool:
 func test_le_module_natif_ouvre_un_vrai_port_et_arme_une_course() -> void:
 	var missing := _missing_decor()
 	if not missing.is_empty():
-		pass_test("saute : %s" % missing)
+		pending("saute : %s" % missing)
 		return
 
 	var path := _start_emulator("egaux")
@@ -135,7 +135,7 @@ func test_le_lien_coupe_est_vu_quand_le_boitier_disparait_en_course() -> void:
 	# produire sans vrai port.
 	var missing := _missing_decor()
 	if not missing.is_empty():
-		pass_test("saute : %s" % missing)
+		pending("saute : %s" % missing)
 		return
 
 	var path := _start_emulator("egaux")

@@ -138,7 +138,7 @@ static func _finish_ms(lines: PackedStringArray, rider: int) -> int:
 func test_link_sim_produit_la_meme_suite_de_trames_que_ss_emu() -> void:
 	var binary := _emulator_binary()
 	if binary.is_empty():
-		pass_test("ss_emu n'est pas construit ici — vérifié là où il l'est (CI POSIX)")
+		pending("ss_emu n'est pas construit ici — vérifié là où il l'est (CI POSIX)")
 		return
 
 	var emu := _run_emulator(binary)

@@ -54,7 +54,7 @@ func _write_tampered() -> String:
 func test_l_outil_de_rejeu_dit_conforme_et_divergent_au_bon_moment() -> void:
 	var godot := OS.get_executable_path()
 	if godot.is_empty() or not FileAccess.file_exists(godot):
-		pass_test("binaire Godot introuvable — verifie la ou il l'est")
+		pending("binaire Godot introuvable — verifie la ou il l'est")
 		return
 
 	var output: Array = []
@@ -88,7 +88,7 @@ func test_l_outil_de_rejeu_dit_conforme_et_divergent_au_bon_moment() -> void:
 func test_l_outil_de_rejeu_refuse_de_sortir_a_zero_sans_rien_a_lire() -> void:
 	var godot := OS.get_executable_path()
 	if godot.is_empty() or not FileAccess.file_exists(godot):
-		pass_test("binaire Godot introuvable — verifie la ou il l'est")
+		pending("binaire Godot introuvable — verifie la ou il l'est")
 		return
 	var output: Array = []
 	var code := OS.execute(

@@ -22,10 +22,17 @@ Trois vérifications qui ne demandent aucun matériel :
 ctest --test-dir build --output-on-failure          # attendu : 100% tests passed
 godot --headless --script tests/run.gd ; echo $?    # attendu : 0
 godot --headless --script tools/check_extension.gd  # attendu : « module natif SerialLink : CHARGE »
+godot --headless --script tools/ss_replay.gd -- tests/fixtures/*.json  # attendu : 0 divergence
 ```
 
-Si l'un des trois échoue, **s'arrêter là** : un problème logiciel connu ne se diagnostique pas au
+Si l'un des quatre échoue, **s'arrêter là** : un problème logiciel connu ne se diagnostique pas au
 milieu d'un problème matériel.
+
+**Et lire la ligne `Risky/Pending` du résumé : elle doit valoir zéro.** Certains tests se sautent
+quand leur décor manque — l'émulateur pas construit, le module natif pas compilé, Windows qui n'a
+pas de pseudo-terminal. Un test sauté n'est pas un test vert : c'est une couche qui n'a pas été
+éprouvée, et le plus souvent la couche série, la plus risquée. Sur la machine qui part en
+événement, aucun de ces décors ne doit manquer.
 
 ---
 

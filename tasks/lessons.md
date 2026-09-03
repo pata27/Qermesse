@@ -1057,3 +1057,19 @@ protège plus de rien.
 **Vérifié dans les trois sens** : sur la scène de référence elle conclut et passe ; hors calibrage
 elle imprime sans conclure ; et avec l'albédo blanche remise, elle attrape toujours son défaut à 62
 contre 45.
+
+## « Jamais vert par absence » l'était pourtant
+
+Cinq tests se sautent quand leur décor manque — émulateur pas construit, module natif pas compilé,
+Windows sans pseudo-terminal. Leurs commentaires promettaient tous « sauté explicitement, jamais
+vert par absence ». Ils appelaient `pass_test()`, qui les compte comme RÉUSSIS. La suite annonçait
+269 verts sur une machine où la couche série n'avait pas été touchée.
+
+**Leçon** : l'intention écrite dans un commentaire ne remplace pas le mécanisme. GUT distingue
+`pending` de `pass_test` et affiche une ligne `Risky/Pending` : c'était disponible, personne ne
+s'en servait. Vérifié en cachant le binaire — « Passing 266, Risky/Pending 3 » au lieu de 269
+verts, et le code de sortie reste 0, ce qui est juste : sous Windows le saut est légitime.
+
+**Corollaire pour la recette** : la ligne `Risky/Pending` entre dans les vérifications d'avant
+événement, et elle doit valoir zéro. Un test sauté n'est pas un test vert — c'est une couche qui
+n'a pas été éprouvée, et le plus souvent la plus risquée.
