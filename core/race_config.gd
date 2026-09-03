@@ -47,7 +47,11 @@ func validate() -> Array[String]:
 		problems.append("aucune piste active : il faut au moins un rider")
 	for rider: int in active_riders:
 		if rider < 0 or rider >= Protocol.MAX_RIDERS:
-			problems.append("piste %d hors bornes 0..3" % rider)
+			# INDICE, et le mot le dit. Partout ailleurs « piste N » designe le
+			# numero HUMAIN, 1..4 ; ici la valeur est justement hors de cette
+			# plage — elle ne peut venir que d'un fichier edite a la main — et la
+			# nommer « piste » la ferait lire comme un numero de couloir.
+			problems.append("indice de piste %d hors bornes 0..3" % rider)
 	if active_riders.size() != _unique(active_riders).size():
 		problems.append("une piste est déclarée deux fois")
 	if roller_mm <= 0.0:

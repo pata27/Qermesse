@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """ss_probe — sonde console independante pour le lien serie SilverSprint.
 
+Les colonnes `P0..P3` de la ligne d'etat suivent les CHAMPS de la trame `R:`,
+pour se confronter a l'octet pres ; les evenements recopient la trame telle
+quelle. Cet outil regarde le fil, pas la course : il ne traduit rien en numeros
+de piste humains, contrairement a l'application et a `ss_monitor`.
+
 N'a AUCUN code commun avec ss_emu : c'est le principe meme d'un temoin. Elle
 ouvre un port serie, mene le handshake de docs/01 §4, lance une course et
 affiche les ticks en direct, avec le watchdog 500 ms de docs/01 §6.2.

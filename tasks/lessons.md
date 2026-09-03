@@ -1193,3 +1193,19 @@ RELANCE, jamais vu. Le défaut était dans le texte de ce bandeau. Deux autres s
 endroit — l'outil attendait cinq minutes une course que la relance avait annulée, puis sortait en
 « délai dépassé » ; et il écrivait quatre captures d'après-ligne montrant une scène vide sous des
 noms qui promettent un résultat. Une preuve trompeuse est pire qu'une preuve absente.
+
+## Le grep de trente secondes en valait deux autres
+
+La leçon du tour précédent disait qu'un `% rider` sans `+ 1` se cherche en trente secondes. Fait :
+deux occurrences de plus, dans `ss_monitor` — le témoin du jalon J1. Il annonçait « ARRIVEE piste 0 »
+pendant que l'application disait « PISTE 1 ». Deux témoins qui se contredisent sur qui a fait quoi,
+au jalon même où l'on cherche à les faire concorder.
+
+**Leçon** : écrire dans une leçon qu'une vérification est facile ne la fait pas. Il faut la faire —
+et si elle est vraiment facile, l'outiller pour qu'elle se refasse seule.
+
+**Une exception assumée plutôt qu'uniformisée** : les colonnes `P0..P3` des lignes d'état de
+`ss_monitor` et `ss_probe.py` suivent les CHAMPS d'une trame `R:`, pour se confronter à l'octet
+près. Elles restent en 0..3, et les deux outils le disent maintenant dans leur en-tête. Une
+convention se respecte, mais elle a le droit d'avoir des frontières — à condition qu'elles soient
+écrites.

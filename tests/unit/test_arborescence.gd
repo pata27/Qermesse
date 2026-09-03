@@ -350,3 +350,41 @@ func test_la_suite_n_appelle_aucune_fonction_depreciee() -> void:
 		if RegEx.create_from_string("(?<![_a-z])wait_frames\\(").search(text) != null:
 			offenders.append(path.get_file())
 	assert_eq(offenders, [] as Array[String], "des appels a `wait_frames`, deprecie")
+
+
+## Un texte destine a un humain nomme la piste en 1..4, jamais son indice.
+##
+## `abort("faux départ piste %d" % rider)` ecrivait l'indice BRUT : un faux
+## depart sur la piste 2 accusait publiquement « piste 1 », au bandeau, au CSV
+## et dans l'historique du jour. `tick_filter.gd` porte pourtant la regle,
+## commentee, depuis toujours.
+##
+## La verification est etroite exprès : toute chaine qui contient « piste %d »
+## doit formater `rider + 1` — ou nommer explicitement un INDICE, seul cas ou la
+## valeur brute a du sens.
+func test_aucun_texte_ne_nomme_une_piste_par_son_indice() -> void:
+	var offenders: Array[String] = []
+	for root: String in ["res://core", "res://scenes", "res://audio", "res://tools"]:
+		var files := PackedStringArray()
+		_walk(root, files)
+		for path: String in files:
+			if path.get_extension() != "gd":
+				continue
+			var file := FileAccess.open(path, FileAccess.READ)
+			if file == null:
+				continue
+			var lines := file.get_as_text().split("\n")
+			for index: int in range(lines.size()):
+				var line: String = lines[index]
+				if not line.to_lower().contains("piste %d"):
+					continue
+				if line.to_lower().contains("indice de piste"):
+					continue
+				# Le format et son argument tiennent parfois sur deux lignes.
+				var window := line
+				for ahead: int in range(1, 4):
+					if index + ahead < lines.size():
+						window += lines[index + ahead]
+				if not window.contains("+ 1"):
+					offenders.append("%s:%d" % [str(path).get_file(), index + 1])
+	assert_eq(offenders, [] as Array[String], "des pistes nommees par leur indice")

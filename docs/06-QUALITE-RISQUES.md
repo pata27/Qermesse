@@ -15,7 +15,12 @@
    trois des douze trouvées —, soit elle fait double emploi et disparaît. Les méthodes virtuelles
    de Godot sont hors décompte : c'est le moteur qui les appelle.
 6. **Le protocole série est documenté avant d'être codé**, et `docs/01` reste la source de vérité.
-7. **Aucune tâche cochée sans preuve** : sortie de test, capture, ou vidéo. Et **un test sauté
+7. **Un indice n'est pas un numéro de piste.** Le code compte les pistes de 0 à 3 ; tout texte lu
+   par un humain — bandeau public, note du CSV, message d'erreur, sortie d'outil — les nomme de 1
+   à 4. Un faux départ sur la piste 2 a longtemps accusé « piste 1 » au bandeau et dans le fichier.
+   Un test vérifie que toute chaîne contenant `piste %d` formate `rider + 1`. Seules les colonnes
+   d'une ligne d'état qui suit les champs d'une trame `R:` restent en 0..3, et leur outil le dit.
+8. **Aucune tâche cochée sans preuve** : sortie de test, capture, ou vidéo. Et **un test sauté
    n'est pas une preuve** : les tests dont le décor peut manquer se déclarent `pending`, jamais
    `pass_test`. La ligne `Risky/Pending` du résumé les compte — verts par absence, ils auraient
    affirmé exactement ce qu'ils n'ont pas vérifié.

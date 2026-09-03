@@ -9,6 +9,12 @@
 ##
 ## Affiche en direct : etat du lien, version firmware, ticks et distance des
 ## quatre pistes, trames anormales, statistiques.
+##
+## Les colonnes de la ligne d'etat sont etiquetees `P0..P3` : elles suivent les
+## CHAMPS de la trame `R:`, pour qu'on puisse les confronter a l'octet pres. Les
+## evenements, eux, nomment la piste en 1..4 comme l'ecran et le CSV. La
+## difference est voulue : la ligne d'etat regarde le fil, les evenements
+## parlent de la course.
 extends SceneTree
 
 const REFRESH_S := 0.1
@@ -161,12 +167,17 @@ func _on_frame(kind: int, payload: Dictionary) -> void:
 		Protocol.Frame.COUNTDOWN:
 			_note("decompte %d" % int(payload.get("value", -1)))
 		Protocol.Frame.RIDER_FINISH:
+			# NUMERO HUMAIN, 1..4, comme l'ecran et le CSV. La trame porte un
+			# indice ; l'imprimer brut faisait dire « piste 0 » a ce temoin
+			# pendant que l'application disait « PISTE 1 » — deux temoins qui se
+			# contredisent sur qui a fait quoi, au jalon meme ou l'on cherche a
+			# les faire concorder.
 			_note(
 				"ARRIVEE piste %d a %d ms"
-				% [int(payload.get("rider", -1)), int(payload.get("elapsed_ms", 0))]
+				% [int(payload.get("rider", -1)) + 1, int(payload.get("elapsed_ms", 0))]
 			)
 		Protocol.Frame.FALSE_START:
-			_note("FAUX DEPART piste %d" % int(payload.get("rider", -1)))
+			_note("FAUX DEPART piste %d" % (int(payload.get("rider", -1)) + 1))
 		Protocol.Frame.LENGTH_ACK:
 			_note("ack longueur : %d ticks" % int(payload.get("ticks", 0)))
 		Protocol.Frame.VERSION:
