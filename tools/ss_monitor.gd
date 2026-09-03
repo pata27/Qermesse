@@ -77,7 +77,12 @@ func _parse_args() -> void:
 			"--sim":
 				_use_sim = true
 			_:
-				printerr("option inconnue : %s" % args[i])
+				# ARRET, pas simple avertissement. La recette J1 fait taper ces
+				# commandes le jour du boitier : continuer avec les valeurs par
+				# defaut donnerait un resultat auquel l'operateur se fierait.
+				printerr("ECHEC : option inconnue « %s »" % args[i])
+				quit(1)
+				return
 		i += 1
 
 

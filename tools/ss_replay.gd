@@ -58,6 +58,13 @@ func _parse_args() -> void:
 			"--detail":
 				_detail = true
 			_:
+				# Ce qui commence par `--` est une option, pas un fichier : la
+				# prendre pour un chemin produisait un « fichier introuvable »
+				# qui accusait le disque plutot que la faute de frappe.
+				if args[i].begins_with("--"):
+					printerr("ECHEC : option inconnue « %s »" % args[i])
+					quit(2)
+					return
 				_paths.append(args[i])
 		i += 1
 
@@ -86,6 +93,11 @@ func _check(path: String) -> bool:
 	# de course » : vrai, mais a cote de la cause. Le fichier arrive justement
 	# parce que quelque chose cloche ; le diagnostic doit viser juste.
 	var problems := loaded.config.validate()
+	if loaded.recorded_mode_name != loaded.config.mode_name():
+		problems.append(
+			"mode inconnu « %s » — rejoue comme %s"
+			% [loaded.recorded_mode_name, loaded.config.mode_name()]
+		)
 	if not problems.is_empty():
 		print("%-28s  INEXPLOITABLE  %s" % [path.get_file(), ", ".join(problems)])
 		return false

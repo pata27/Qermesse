@@ -26,6 +26,11 @@ class Loaded:
 	var recorded_elapsed_ms: int = 0
 	var recorded_end_reason: int = 0
 	## Course arretee avant son terme, et pourquoi — docs/02 §5.
+	## Le nom de mode tel qu'il est ECRIT dans le fichier. `mode_from_name`
+	## retombe sur « distance » pour un nom inconnu : sans garder l'original, un
+	## fichier edite a la main se rejouerait avec la mauvaise regle, et la
+	## divergence constatee accuserait la course au lieu du fichier.
+	var recorded_mode_name: String = ""
 	var recorded_interrupted: bool = false
 	var recorded_interruption_note: String = ""
 
@@ -67,6 +72,7 @@ static func load_file(path: String) -> Loaded:
 	out.recorded_ranking = ranking
 	out.recorded_elapsed_ms = int(result.get("elapsed_ms", 0))
 	out.recorded_end_reason = int(result.get("end_reason", 0))
+	out.recorded_mode_name = str(data.get("config", {}).get("mode", ""))
 	out.recorded_interrupted = bool(result.get("interrupted", false))
 	out.recorded_interruption_note = str(result.get("interruption_note", ""))
 	out.ok = true
