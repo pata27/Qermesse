@@ -659,3 +659,18 @@ connu était « le décompte sonne » ; un témoin qui le nie accuse l'instrumen
 dans le rituel ni dans la CI depuis sa création : une erreur d'ordre de définitions y dormait. Le
 critère est simple — tout dossier de code du projet est dans la ligne `gdlint` ; seul `addons/`,
 tiers et vendorisé, en est dehors.
+
+## `$?` après un pipe ne mesure pas ce qu'on croit
+
+En éprouvant les codes de sortie de `ss_replay`, j'ai lu `code=0` sur trois cas d'échec et j'ai
+cru tenir un défaut grave : un outil qui imprime « DIVERGENT » et sort à zéro. C'était mon `$?`
+qui rapportait l'état de `grep`, en bout de pipe, et non celui de Godot. Remesuré sans pipe, les
+codes étaient corrects — 1 sur divergence, 2 sans rien à lire, 0 sur conformité.
+
+**Leçon** : un code de sortie se mesure sur la commande elle-même, jamais derrière un `|`. Et
+avant d'annoncer un défaut grave dans du code éprouvé, refaire la mesure autrement — c'est
+l'instrument qui est le plus souvent en cause.
+
+**Ce que l'épisode a quand même donné** : l'outil était sain, mais rien ne le gardait. La suite
+exerçait `core/replay.gd`, pas la ligne de commande que `DEPANNAGE` promet à l'opérateur. Un test
+en sous-processus et une étape de CI la tiennent désormais, verdicts et codes compris.

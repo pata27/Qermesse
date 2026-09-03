@@ -18,6 +18,7 @@
 | Bout en bout série | `tools/ss_emu` sur pseudo-terminal | ouverture de port, handshake, threading, watchdog, reconnexion — la partie risquée |
 | Unitaire GDScript | GUT headless | `physics`, `race_engine`, les trois règles, `recorder`, `settings` |
 | Rejeu | GUT + courses JSON | une course enregistrée rejouée doit donner exactement le même classement — **y compris interrompue**, où le rejeu reproduit l'interruption et rend le classement partiel |
+| Outil de rejeu | GUT en sous-processus + CI | `tools/ss_replay` lui-même, verdicts ET codes de sortie, éprouvé sur une trace saine et une trace truquée. La suite exerçait `core/replay.gd` ; la ligne de commande que `DEPANNAGE` promet à l'opérateur n'était gardée par rien |
 | Deux fenêtres | GUT headless | `Main.open_spectacle()` monte la fenêtre spectacle et sa scène, avec le niveau de qualité et le plein écran issus des réglages. Une régression y casse l'écran du public, et se vérifiait jusqu'ici en branchant un vidéoprojecteur |
 | Traces de référence | GUT + `tests/fixtures/` | deux courses réelles enregistrées **avant** plusieurs changements du moteur, rejouées à chaque exécution : le format d'hier reste lisible et l'arbitrage n'a pas dérivé. Un test généré ne le prouve pas — il produit sa trace avec le code du jour |
 | Injection de pannes | `link_sim` | trame corrompue, perte de lien, tick fantôme, faux départ |
@@ -31,7 +32,8 @@ réels que personne n'aurait su écrire à la main.
 ## 3. CI
 
 Matrice `ubuntu-latest` / `windows-latest` / `macos-latest` :
-build du GDExtension, tests C++, import du projet Godot, tests GUT headless, export des binaires.
+build du GDExtension, tests C++, import du projet Godot, tests GUT headless, rejeu des traces de
+référence par `ss_replay`, course complète à l'interface, export des binaires.
 Sur tag : publication d'une release avec les trois artefacts.
 
 ## 4. Risques et parades

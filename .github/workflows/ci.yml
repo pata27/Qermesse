@@ -167,6 +167,19 @@ jobs:
         run: |
           ".godot-bin/${{ matrix.binary }}" --headless --script tools/check_extension.gd
 
+      # Le rejeu des traces de reference PAR L'OUTIL, et non par le seul
+      # `core/replay.gd` que la suite exerce deja. `DEPANNAGE` promet a
+      # l'operateur qu'une course envoyee peut etre rejouee a l'identique :
+      # c'est cette ligne de commande qui tient la promesse, et elle doit
+      # marcher sur les trois systemes, pas seulement sur la machine du
+      # developpeur. Son code de sortie fait foi — 1 des qu'une trace diverge.
+      - name: Rejeu des traces de reference
+        shell: bash
+        run: |
+          ".godot-bin/${{ matrix.binary }}" --headless --script tools/ss_replay.gd -- \
+            tests/fixtures/course-distance-4-coureurs.json \
+            tests/fixtures/course-poursuite-3-eliminations.json
+
       # Bout en bout : une course complete menee a l'interface operateur, au
       # simulateur. Les tests unitaires verifient les pieces ; celui-ci verifie
       # que l'assemblage produit bien une course et un CSV.
