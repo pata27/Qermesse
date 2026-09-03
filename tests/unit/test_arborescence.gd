@@ -233,14 +233,27 @@ func test_chaque_alerte_de_l_operateur_est_dans_le_depannage() -> void:
 	var undocumented: Array[String] = []
 	var pattern := RegEx.create_from_string('notice\\.emit\\(\\s*"([^"]+)"')
 	for found: RegExMatch in pattern.search_all(source.get_as_text()):
+		# LE PLUS LONG MORCEAU FIXE, pas le debut. Chercher ce qui precede le
+		# premier « % » exemptait en silence toute alerte ouvrant sur la piste
+		# concernee — « PISTE %d : ... » donne « PISTE », cinq lettres, sous le
+		# seuil. Les deux alertes de cette famille etaient documentees, mais par
+		# chance : la garde ne les regardait pas. Un morceau fixe long est un
+		# bien meilleur ancrage qu'un prefixe, et il tombe au milieu de la
+		# phrase, la ou elle dit quelque chose.
 		var message := found.get_string(1)
-		var head := message.split("%")[0].strip_edges()
-		# Un message purement variable — « lien : %s » — n'a pas de debut a
-		# chercher ; c'est l'etat du lien qui est documente, pas le prefixe.
-		if head.length() < 8:
+		var longest := ""
+		for piece: String in message.split("%"):
+			# Le premier caractere apres un « % » est le format — d, s, f, .1f.
+			var fixed := RegEx.create_from_string("^[0-9.]*[a-zA-Z]").sub(piece, "")
+			fixed = fixed.strip_edges()
+			if fixed.length() > longest.length():
+				longest = fixed
+		# Un message purement variable — « lien : %s » — n'a pas de morceau fixe
+		# a chercher ; c'est l'etat du lien qui est documente, pas le prefixe.
+		if longest.length() < 8:
 			continue
-		if not text.contains(head):
-			undocumented.append(head)
+		if not text.contains(longest):
+			undocumented.append(longest)
 	assert_eq(undocumented, [] as Array[String], "des alertes absentes de DEPANNAGE.md")
 
 

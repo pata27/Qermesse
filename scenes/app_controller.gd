@@ -38,6 +38,19 @@ const LINK_GRACE_MS := 3000
 ## demandait a l'operateur de le verifier lui-meme ; le logiciel le voit.
 const SILENT_LANE_MS := 10000
 
+## Silence tolere APRES des ticks : au-dela, la piste s'est eteinte en route.
+##
+## L'autre garde ne voit que les pistes muettes DEPUIS LE DEPART. Or un capteur
+## lache bien plus volontiers pendant l'effort qu'avant : cable arrache par la
+## secousse, aimant qui part, coureur qui s'arrete. Cette piste-la produisait
+## des ticks, donc rien ne la signalait — et en distance la course l'attend
+## jusqu'au plafond de dix minutes, devant le public, sans un mot.
+##
+## Un tick vaut un tour de rouleau, 36 cm au rouleau standard : cinq secondes
+## sans un seul tick, c'est un arret ou un capteur mort, jamais une allure
+## lente — il faudrait rouler sous 0,3 km/h.
+const STALLED_LANE_MS := 5000
+
 ## Coutures de test, a fixer AVANT l'entree dans l'arbre. En production elles
 ## gardent leurs valeurs par defaut ; en test elles evitent d'ecrire dans les
 ## donnees de l'utilisateur et de dependre de ses reglages.
@@ -63,6 +76,10 @@ var _startup_problems: Array[String] = []
 var _requested_length_ticks := -1
 ## Pistes deja signalees comme muettes, pour ne le dire qu'une fois par course.
 var _silent_lanes_warned: Array[int] = []
+var _stalled_lanes_warned: Array[int] = []
+## Dernier compteur vu par piste, et l'instant FIRMWARE ou il a bouge.
+var _last_tick_count := PackedInt32Array()
+var _last_tick_ms := PackedInt32Array()
 var _dropped_warned := false
 var _link: Link = null
 var _link_lost_since_ms: int = -1
@@ -249,6 +266,11 @@ func start_race() -> bool:
 	# terminer d'abord, sinon `g` tomberait sur un firmware deja parti.
 	end_sensor_test()
 	_silent_lanes_warned.clear()
+	_stalled_lanes_warned.clear()
+	_last_tick_count = PackedInt32Array()
+	_last_tick_count.resize(Protocol.MAX_RIDERS)
+	_last_tick_ms = PackedInt32Array()
+	_last_tick_ms.resize(Protocol.MAX_RIDERS)
 	_dropped_warned = false
 	# NEW RACE : la course precedente, terminee, est acquittee. Elle reste a
 	# l'ecran public jusqu'au decompte suivant — c'est le HUD qui decide.
@@ -524,6 +546,7 @@ func _check_length_ack(ticks: int) -> void:
 
 func _on_progress_updated(state: RaceState) -> void:
 	_warn_silent_lanes(state)
+	_warn_stalled_lanes(state)
 	progress_updated.emit(state)
 
 
@@ -539,6 +562,41 @@ func _warn_silent_lanes(state: RaceState) -> void:
 			"PISTE %d : aucun tick depuis le départ — coureur absent"
 			% (rider + 1)
 			+ " ou capteur débranché ? La course attend cette piste."
+		)
+
+
+## Signale UNE FOIS par course chaque piste qui s'est TUE EN ROUTE.
+##
+## Distincte de la piste muette depuis le depart, et volontairement : le motif
+## n'est pas le meme, et le message non plus. Ici la piste a bel et bien
+## fonctionne, donc ni le cablage ni la case cochee ne sont en cause — c'est
+## arrive pendant la course.
+##
+## Rien n'est signale pour une piste qui a fini de courir : arrivee ou
+## eliminee, son silence est normal, et l'accuser serait crier au loup a chaque
+## fin de course.
+func _warn_stalled_lanes(state: RaceState) -> void:
+	if _last_tick_ms.size() < Protocol.MAX_RIDERS:
+		return
+	for rider: int in state.config.active_riders:
+		var ticks := state.ticks[rider]
+		if ticks != _last_tick_count[rider]:
+			_last_tick_count[rider] = ticks
+			_last_tick_ms[rider] = state.elapsed_ms
+			continue
+		# Muette depuis le depart : l'autre garde s'en charge, avec ses mots.
+		if ticks == 0 or _stalled_lanes_warned.has(rider):
+			continue
+		if state.finished_ms[rider] > 0 or state.eliminated[rider]:
+			continue
+		var silence_ms := state.elapsed_ms - _last_tick_ms[rider]
+		if silence_ms < STALLED_LANE_MS:
+			continue
+		_stalled_lanes_warned.append(rider)
+		notice.emit(
+			"PISTE %d : plus un seul tick depuis %.0f s alors qu'elle roulait"
+			% [rider + 1, silence_ms / 1000.0]
+			+ " — coureur arrêté ou capteur perdu en route ? La course attend cette piste."
 		)
 
 

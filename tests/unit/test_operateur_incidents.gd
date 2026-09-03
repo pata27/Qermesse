@@ -590,3 +590,48 @@ func test_la_trace_est_le_flux_recu_trame_pour_trame() -> void:
 		Replay.replay(loaded).ranking, finished[0].ranking,
 		"le rejeu de la trace brute redonne le meme classement"
 	)
+
+
+func test_une_piste_qui_se_tait_en_pleine_course_est_signalee() -> void:
+	# `DEPANNAGE` : « La course ne se termine jamais ». La garde existante ne
+	# voyait que les pistes muettes DEPUIS LE DEPART — une case cochee sans
+	# personne dessus. Or un capteur lache bien plus volontiers pendant
+	# l'effort : cable arrache par la secousse, aimant parti, coureur a
+	# l'arret. Cette piste-la avait produit des ticks, donc rien ne la
+	# signalait, et en distance la course l'attendait jusqu'au plafond de dix
+	# minutes, devant le public, sans un mot.
+	#
+	# Le profil `abandon` du simulateur fait exactement cela : la piste 2 cesse
+	# de produire des ticks a la vingtieme seconde de course.
+	assert_true(await _await_identified())
+	assert_true(_controller.set_simulator_profile("abandon"), "profil abandon")
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+	# Assez longue pour que la piste 1 ne franchisse pas avant l'alerte.
+	_controller.settings.distance_m = 800.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+
+	var alert := ""
+	for i: int in range(2000):
+		await wait_physics_frames(1)
+		for text: String in notices:
+			if text.contains("plus un seul tick"):
+				alert = text
+				break
+		if not alert.is_empty():
+			break
+	assert_string_contains(alert, "PISTE 2", "la piste nommee est celle qui s'est tue")
+	assert_string_contains(alert, "capteur perdu en route", "et le motif possible est dit")
+	# Une seule fois : une alerte repetee a chaque trame noierait le journal.
+	var count := 0
+	for text: String in notices:
+		if text.contains("plus un seul tick"):
+			count += 1
+	assert_eq(count, 1, "signalee une seule fois")
+	# La piste QUI ROULE n'est jamais accusee.
+	for text: String in notices:
+		assert_false(
+			text.contains("PISTE 1 : plus un seul tick"), "la piste 1 roule, on ne l'accuse pas"
+		)
+	_controller.engine.abort("fin du test")

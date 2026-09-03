@@ -1325,3 +1325,34 @@ cherche dans le manuel la ligne qu'il a sous les yeux, au mot près.
 
 Règle : quand un commentaire affirme que deux listes sont identiques, cette
 affirmation est un test qui n'a pas encore été écrit.
+
+## Une garde qui s'exempte elle-même par une clause de confort
+
+La garde qui exige que chaque alerte de l'opérateur figure dans `DEPANNAGE.md`
+prenait le début du message, avant le premier `%`, et sautait les débuts de
+moins de huit caractères — « un message purement variable n'a pas de début à
+chercher ». Clause raisonnable, effet non voulu : toute alerte ouvrant sur la
+piste concernée, `PISTE %d : …`, donne « PISTE », cinq lettres. La famille
+entière était exemptée. Les deux alertes concernées étaient documentées, mais
+par chance.
+
+Corrigé en cherchant le **plus long morceau fixe** du message, pas son début :
+il tombe au milieu de la phrase, là où elle dit quelque chose. La garde a
+aussitôt mordu sur l'alerte ajoutée le même jour — preuve qu'elle regarde
+enfin. C'est la deuxième fois qu'une garde de ce projet se révèle bâillonnée
+par un détail de sa propre implémentation ; la question à se poser devant
+n'importe quelle garde verte est **« qu'est-ce qu'elle laisse passer ? »**, pas
+« passe-t-elle ? ».
+
+## Deux pannes qui se ressemblent à l'écran n'ont pas le même message
+
+Une piste muette depuis le départ et une piste qui s'éteint en route
+produisent le même symptôme — un compteur figé — et appellent deux gestes
+différents. La première, c'est une case cochée sans personne, ou un câble
+jamais branché : on décoche et on repart. La seconde, c'est arrivé PENDANT la
+course, donc le câblage a fonctionné : on cherche ce qui a bougé, ou le coureur
+s'est simplement arrêté.
+
+Le logiciel ne voyait que la première, alors que la seconde est la plus
+probable : un capteur lâche pendant l'effort, pas avant. Écrire un seul message
+pour les deux aurait envoyé l'opérateur vérifier un câblage qui marchait.

@@ -125,10 +125,23 @@ que les **quatre** pistes matérielles aient franchi la ligne, ce qui n'arrive j
 capteurs câblés. En v3, c'est le PC qui arbitre et ne compte que les pistes déclarées actives —
 vérifier d'ailleurs que le roster ne contient pas une piste cochée sans cycliste dessus.
 
-**Le logiciel le dit lui-même.** Dix secondes après le départ, toute piste cochée qui n'a produit
-aucun tick est signalée dans le panneau **Course** : `PISTE 3 : aucun tick depuis le départ —
-coureur absent ou capteur débranché ? La course attend cette piste.` C'est le moment d'arrêter et de
-repartir, plutôt que d'attendre le plafond de dix minutes devant le public.
+**Le logiciel le dit lui-même**, et il distingue deux cas — le motif n'est pas le même.
+
+*La piste n'a jamais rien produit.* Dix secondes après le départ, toute piste cochée restée muette
+est signalée dans le panneau **Course** : `PISTE 3 : aucun tick depuis le départ — coureur absent
+ou capteur débranché ? La course attend cette piste.` Personne sur la piste, ou un câble jamais
+branché.
+
+*La piste s'est tue en route.* Cinq secondes sans un seul tick alors qu'elle roulait :
+`PISTE 2 : plus un seul tick depuis 5 s alors qu'elle roulait — coureur arrêté ou capteur perdu en
+route ? La course attend cette piste.` Le câblage n'est pas en cause, il a fonctionné : c'est
+arrivé **pendant** la course — câble arraché par la secousse, aimant parti, ou simplement un
+coureur à l'arrêt. Un tick vaut un tour de rouleau, 36 cm : cinq secondes de silence, c'est
+l'arrêt, pas une allure lente.
+
+Dans les deux cas, c'est le moment d'arrêter et de repartir, plutôt que d'attendre le plafond de
+dix minutes devant le public. Rien n'est signalé pour une piste déjà arrivée ou éliminée : son
+silence est normal.
 
 ---
 
