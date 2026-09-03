@@ -17,6 +17,11 @@
 ## Sur un dossier, chaque course reelle devient un cas de test permanent : c'est
 ## l'argument de `core/replay.gd`, et c'est ce que cet outil rend praticable.
 ##
+## Une trace peut etre CONFORME, DIVERGENTE, ILLISIBLE (format inconnu),
+## INEXPLOITABLE (configuration invalide) ou SANS RESULTAT (la trace ne mene a
+## aucune fin de course). Le fichier arrive parce que quelque chose cloche : le
+## diagnostic doit viser la cause, pas ses consequences.
+##
 ## Codes de sortie : 0 tout conforme, 1 au moins une divergence, 2 rien a lire.
 extends SceneTree
 
@@ -73,6 +78,16 @@ func _check(path: String) -> bool:
 	var loaded := Replay.load_file(path)
 	if not loaded.ok:
 		print("%-28s  ILLISIBLE  %s" % [path.get_file(), loaded.error])
+		return false
+
+	# UNE TRACE INEXPLOITABLE DIT POURQUOI. Une configuration invalide — un
+	# couloir hors bornes dans un fichier edite a la main, une distance
+	# aberrante — faisait echouer l'armement, et l'outil concluait « aucune fin
+	# de course » : vrai, mais a cote de la cause. Le fichier arrive justement
+	# parce que quelque chose cloche ; le diagnostic doit viser juste.
+	var problems := loaded.config.validate()
+	if not problems.is_empty():
+		print("%-28s  INEXPLOITABLE  %s" % [path.get_file(), ", ".join(problems)])
 		return false
 
 	var replayed := Replay.replay(loaded)
