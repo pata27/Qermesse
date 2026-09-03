@@ -123,13 +123,13 @@ func winner() -> int:
 func end_reason_name() -> String:
 	match end_reason:
 		RaceRule.EndReason.ALL_FINISHED:
-			return "tous arrives"
+			return "tous arrivés"
 		RaceRule.EndReason.TIME_ELAPSED:
-			return "duree ecoulee"
+			return "durée écoulée"
 		RaceRule.EndReason.LAST_ONE_STANDING:
 			return "dernier en course"
 		RaceRule.EndReason.TIME_CAP:
-			return "plafond de duree"
+			return "plafond de durée"
 		RaceRule.EndReason.DISTANCE_CAP:
 			return "plafond de distance"
 	return "indetermine"

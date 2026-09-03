@@ -54,7 +54,7 @@ func test_lien_perdu_au_dela_de_trois_secondes_la_course_est_abandonnee() -> voi
 	await wait_seconds(0.8)
 	assert_eq(_controller.engine.state(), RaceEngine.State.IDLE, "au-dela de 3 s : abandon")
 	assert_eq(aborted.size(), 1)
-	assert_string_contains(aborted[0], "grace")
+	assert_string_contains(aborted[0], "grâce")
 	var events := _csv_events()
 	assert_has(events, "LINK_LOST")
 	assert_eq(events[events.size() - 1], "RACE_ABORTED", "la derniere ligne du CSV")
@@ -291,7 +291,7 @@ func test_une_course_interrompue_garde_sa_trace_rejouable() -> void:
 
 	var relu := Recorder.new(_logs, _races).load_day()[0]
 	assert_true(relu.interrupted, "et elle se declare interrompue")
-	assert_string_contains(relu.interruption_note, "operateur", "en disant pourquoi")
+	assert_string_contains(relu.interruption_note, "opérateur", "en disant pourquoi")
 
 
 func test_l_historique_n_invente_pas_de_vainqueur_a_une_course_arretee() -> void:

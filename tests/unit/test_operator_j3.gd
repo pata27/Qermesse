@@ -472,18 +472,20 @@ func test_le_tableau_ne_barre_pas_une_course_decidee_au_plafond() -> void:
 	capped.ranking = [0, 1]
 	capped.interrupted = true
 	capped.end_reason = RaceRule.EndReason.TIME_CAP
-	capped.interruption_note = "plafond de securite atteint : plafond de duree"
+	capped.interruption_note = "plafond de sécurité atteint : plafond de durée"
 	capped.rider_names = {0: "Alice", 1: "Bob"}
 
 	_panel.results_panel().show_result(capped)
 	var table := _panel.results_panel().table_text()
 	assert_false(table.contains("INTERROMPUE"), "elle s'est decidee, elle n'a pas ete arretee")
-	assert_string_contains(table, "plafond de duree", "et le motif se lit")
+	assert_string_contains(table, "plafond de durée", "et le motif se lit")
 
 	capped.end_reason = RaceRule.EndReason.NONE
-	capped.interruption_note = "arret operateur"
+	capped.interruption_note = "arrêt opérateur"
 	_panel.results_panel().show_result(capped)
-	assert_string_contains(_panel.results_panel().table_text(), "INTERROMPUE : arret operateur")
+	assert_string_contains(
+		_panel.results_panel().table_text(), "INTERROMPUE : arrêt opérateur"
+	)
 
 
 func test_un_nom_long_ne_desaligne_pas_le_tableau_des_resultats() -> void:
@@ -559,7 +561,7 @@ func test_l_historique_du_jour_survit_a_un_redemarrage() -> void:
 	assert_eq(controller.history().size(), 1, "l'historique est relu au demarrage")
 	assert_eq(panel.results_panel().history_count(), 1, "et le panneau le montre")
 	panel.results_panel().select_history(0)
-	assert_string_contains(panel.results_panel().table_text(), "tous arrives")
+	assert_string_contains(panel.results_panel().table_text(), "tous arrivés")
 	assert_string_contains(panel.results_panel().table_text(), "7.90 s")
 
 

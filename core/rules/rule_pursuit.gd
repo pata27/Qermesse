@@ -95,8 +95,8 @@ static func decision_text(state: RaceState) -> String:
 	var time_share := seconds / maxf(1.0, state.config.pursuit_time_cap_s)
 	var distance_share := metres / maxf(1.0, state.config.pursuit_distance_cap_m)
 	if distance_share < time_share:
-		return "decision a %.0f m" % metres
-	return "decision dans %d:%02d" % [int(seconds) / 60, int(seconds) % 60]
+		return "décision à %.0f m" % metres
+	return "décision dans %d:%02d" % [int(seconds) / 60, int(seconds) % 60]
 
 
 func _safety_cap(state: RaceState) -> EndReason:

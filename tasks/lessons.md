@@ -617,3 +617,18 @@ repasse au vert une fois la constante rétablie.
 **Leçon** : quand l'ordre s'inverse par accident et que le code arrive avant le test, ne pas se
 contenter du vert. Neutraliser le correctif une fois suffit à savoir si le test regarde bien ce
 qu'on croit. C'est la même vérification dans les deux sens que pour les garde-fous d'assets.
+
+## L'orthographe de l'écran public est une question de rendu
+
+L'écran spectacle mélangeait « éliminé » et « tous arrives », « ARRIVÉE » et « FAUX DEPART ». Rien
+ne l'avait décidé : les chaînes suivaient l'époque du fichier qui les portait — `core/`, écrit tôt,
+sans accents ; `scenes/race3d/`, écrit tard, avec. Le podium affichait les deux orthographes à
+trois lignes d'écart.
+
+**Leçon** : une incohérence de texte n'est pas un détail quand le texte fait soixante points sur un
+mur devant un public. Elle se traite comme un défaut de rendu, avec la même règle écrite dans le
+document de direction artistique et la même preuve par capture.
+
+**Portée assumée** : le sweep s'arrête à l'écran spectacle et à ce qui l'alimente. La fenêtre
+opérateur garde ses « Materiel » et « Resultats » — même dérive, autre surface, vue par une seule
+personne, et un sweep plus large mérite son propre passage.

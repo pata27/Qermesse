@@ -264,7 +264,7 @@ func stop_race() -> void:
 	# public — pour une course qui s'etait tres bien finie.
 	if _engine_at_rest():
 		return
-	engine.abort("arret operateur")
+	engine.abort("arrêt opérateur")
 
 
 ## Relance : arrete puis rearme, en une seule intention.

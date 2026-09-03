@@ -134,7 +134,7 @@ func test_les_evenements_declares_sont_reellement_ecrits() -> void:
 	_recorder.record_rider_eliminated(1, 2, 30.4)
 	_recorder.record_link_lost("500 ms sans trame")
 	_recorder.record_tick_rejected(1, "piste 2 : 14 ticks en 10 ms, 1811 km/h")
-	_recorder.record_abort("arret operateur")
+	_recorder.record_abort("arrêt opérateur")
 
 	var text := "\n".join(Array(_read_csv_lines()))
 	for event: String in Recorder.EVENTS:
@@ -431,7 +431,7 @@ func test_rejeu_d_une_course_interrompue_rend_le_classement_partiel() -> void:
 		engine.on_progress(ticks, ms)
 		_recorder.record_sample(engine.race_state().ticks, ms)
 
-	engine.abort("arret operateur")
+	engine.abort("arrêt opérateur")
 	var original := engine.result()
 	assert_not_null(original, "l'abandon produit un resultat partiel")
 	assert_false(_recorder.finish_race(original).is_empty())
@@ -441,7 +441,7 @@ func test_rejeu_d_une_course_interrompue_rend_le_classement_partiel() -> void:
 	var replayed := Replay.replay(loaded)
 	assert_not_null(replayed, "une course interrompue se rejoue aussi")
 	assert_true(replayed.interrupted, "et se declare interrompue")
-	assert_string_contains(replayed.interruption_note, "operateur")
+	assert_string_contains(replayed.interruption_note, "opérateur")
 	assert_eq(replayed.ranking, original.ranking, "meme classement partiel")
 	assert_almost_eq(replayed.distance_m[0], original.distance_m[0], 0.01)
 	assert_almost_eq(replayed.distance_m[1], original.distance_m[1], 0.01)

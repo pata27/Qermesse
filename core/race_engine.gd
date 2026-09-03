@@ -193,7 +193,7 @@ func on_false_start(rider: int) -> void:
 
 	match _config.false_start_policy:
 		RaceConfig.FalseStartPolicy.RESTART:
-			abort("faux depart piste %d" % rider)
+			abort("faux départ piste %d" % rider)
 		RaceConfig.FalseStartPolicy.PENALTY:
 			# Handicap : le rider fautif demarre `P` metres en arriere.
 			_race_state.handicap_m[rider] = -_config.false_start_penalty_m
@@ -224,7 +224,7 @@ func abort(note: String) -> void:
 	_interruption_note = note
 	# UNE COURSE QUI A COURU GARDE SON RESULTAT PARTIEL. C'est lui qui porte
 	# la trace au disque : sans lui, les trames deja recues etaient jetees et
-	# l'incident — lien perdu, arret operateur — devenait le seul cas
+	# l'incident — lien perdu, arrêt opérateur — devenait le seul cas
 	# NON rejouable, alors que c'est celui qu'on veut debriefer.
 	#
 	# Interrompue pendant l'armement ou le decompte, elle n'a rien a raconter.
@@ -243,7 +243,7 @@ func abort(note: String) -> void:
 ## Le lien est perdu au-dela du delai de grace — docs/01 §6.2.
 func on_link_lost_beyond_grace() -> void:
 	if _state == State.RUNNING or _state == State.COUNTDOWN:
-		abort("lien perdu au-dela du delai de grace")
+		abort("lien perdu au-delà du délai de grâce")
 
 
 ## Passe de FINISHED a RESULTS : l'operateur a vu le classement.
@@ -329,7 +329,7 @@ func _finish(reason: RaceRule.EndReason) -> void:
 	_result.interrupted = _interrupted or _is_safety_cap(reason)
 	_result.interruption_note = _interruption_note
 	if _is_safety_cap(reason) and _result.interruption_note.is_empty():
-		_result.interruption_note = "plafond de securite atteint : %s" % _result.end_reason_name()
+		_result.interruption_note = "plafond de sécurité atteint : %s" % _result.end_reason_name()
 	_set_state(State.FINISHED)
 	race_finished.emit(_result)
 

@@ -177,7 +177,8 @@ Puis, sur une nouvelle course, débrancher et attendre **plus de cinq secondes**
 Régler la politique sur **Avertissement**, lancer une course, et faire tourner un rouleau **pendant
 le décompte**.
 
-- [ ] `FAUX DEPART piste N` s'affiche.
+- [ ] `FAUX DÉPART — PISTE N` s'affiche sur l'écran spectacle (`FAUX DEPART piste N` dans
+      `ss_monitor`, qui écrit dans un terminal et reste en ASCII).
 - [ ] La course part quand même.
 - [ ] La ligne `FALSE_START` figure dans le CSV.
 

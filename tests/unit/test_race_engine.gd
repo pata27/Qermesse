@@ -401,12 +401,12 @@ func test_poursuite_le_temps_avant_decision_est_visible_a_l_ecran() -> void:
 	assert_almost_eq(RulePursuit.seconds_before_decision(state), 90.0, 0.1)
 	# 10 s a 45 km/h = 125 m : il en reste 4875 avant le plafond de distance.
 	assert_almost_eq(RulePursuit.metres_before_decision(state), 4875.0, 2.0)
-	assert_eq(RulePursuit.decision_text(state), "decision dans 1:30")
+	assert_eq(RulePursuit.decision_text(state), "décision dans 1:30")
 
 	# Quand c'est la distance qui tranchera en premier, c'est elle qu'on montre.
 	# (Le moteur travaille sur SA copie de la configuration.)
 	state.config.pursuit_distance_cap_m = 200.0
-	assert_eq(RulePursuit.decision_text(state), "decision a 75 m")
+	assert_eq(RulePursuit.decision_text(state), "décision à 75 m")
 
 
 func test_poursuite_la_tension_mesure_la_progression_vers_la_decision() -> void:
@@ -555,7 +555,7 @@ func test_un_abandon_operateur_coupe_la_course_et_envoie_s() -> void:
 	_engine.arm(_config(RaceConfig.Mode.DISTANCE, [0, 1]), 0)
 	_countdown()
 	_commands.clear()
-	_engine.abort("arret operateur")
+	_engine.abort("arrêt opérateur")
 	assert_eq(_engine.state(), RaceEngine.State.IDLE)
 	assert_has(_commands, "s")
 

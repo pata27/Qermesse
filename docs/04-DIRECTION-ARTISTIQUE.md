@@ -40,6 +40,13 @@ grotesque neutre pour le reste. Chiffres **tabulaires obligatoires** : sans ça,
 compteurs de vitesse « dansent » à chaque changement de chiffre, ce qui est très visible en projection.
 Polices libres, embarquées dans le dépôt, licence vérifiée et notée dans `art/FONTS.md`.
 
+**Le français projeté est accentué.** Tout ce qui s'affiche sur l'écran spectacle est écrit
+correctement : `FAUX DÉPART`, `PISTE 3 ÉLIMINÉE`, `décision dans 1:30`, `tous arrivés`. Rien ne
+l'imposait, et les chaînes ont dérivé selon l'époque du fichier qui les portait — le podium
+affichait « éliminé » à trois lignes de « tous arrives ». En capitales de soixante points sur un
+mur, devant un public, une lettre manquante est la faute la plus visible qui soit. Les majuscules
+accentuées comprises : `É`, `À`, `È`.
+
 ## 4. Scène 3D
 
 **Composition.** Vue 3/4 arrière légèrement surélevée, deux à quatre couloirs parallèles sur une

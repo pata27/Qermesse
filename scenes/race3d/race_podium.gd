@@ -136,7 +136,7 @@ func show_result(result: RaceResult, objective: String) -> void:
 	# UNE COURSE DECIDEE AU PLAFOND N'EST PAS UNE COURSE ARRETEE. docs/02 §3 :
 	# au plafond de securite, « celui qui mene gagne » — c'est une fin
 	# legitime, avec un vainqueur, et l'annoncer INTERROMPUE en gros devant le
-	# public dit le contraire. Seul un abandon — arret operateur, lien perdu,
+	# public dit le contraire. Seul un abandon — arrêt opérateur, lien perdu,
 	# fermeture — n'a pas de vainqueur. C'est la regle deja appliquee a la
 	# liste des courses du jour, et jamais reportee ici.
 	_title.text = "INTERROMPUE" if result.was_stopped() else "ARRIVÉE"

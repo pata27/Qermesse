@@ -700,7 +700,7 @@ func _refresh_objective() -> void:
 		RaceConfig.Mode.TIME:
 			_objective_label.text = "%.0f s" % config.duration_s
 		RaceConfig.Mode.PURSUIT:
-			_objective_label.text = "ecart %.0f m" % config.gap_m
+			_objective_label.text = "écart %.0f m" % config.gap_m
 	# L'ECART N'APPARAIT QU'AU DEPART. Avant, tout le monde est sur la ligne :
 	# « 0.0 m » et une barre vide ne disent rien, et viennent concurrencer le
 	# chiffre du decompte — le moment le plus regarde de la soiree. En mode
@@ -819,7 +819,7 @@ func _on_progress(state: RaceState) -> void:
 				var behind := state.distance_m[leader] - done
 				(card["distance"] as Label).text = (
 					"%.0f m parcourus   —   %s"
-					% [done, "en tete" if lane == leader else "a %.1f m" % behind]
+					% [done, "en tête" if lane == leader else "à %.1f m" % behind]
 				)
 				(card["bar"] as ProgressBar).value = (
 					clampf(1.0 - behind / maxf(1.0, config.gap_m), 0.0, 1.0) * 100.0
@@ -863,7 +863,7 @@ func _on_progress(state: RaceState) -> void:
 
 
 func _on_eliminated(rider: int, rank: int, _gap_m: float) -> void:
-	_notice.text = "PISTE %d ELIMINEE — rang %d" % [rider + 1, rank]
+	_notice.text = "PISTE %d ÉLIMINÉE — rang %d" % [rider + 1, rank]
 	_covered_notice = ""
 
 
@@ -881,11 +881,11 @@ func _on_false_start(rider: int, policy: int) -> void:
 		# Sans un mot, le public voit un coureur inexplicablement distancé dès
 		# le départ — et croit à un bug plutôt qu'à une sanction.
 		_notice.text = (
-			"PISTE %d PENALISEE — DEPART %.0f m EN ARRIERE"
+			"PISTE %d PÉNALISÉE — DÉPART %.0f m EN ARRIÈRE"
 			% [rider + 1, _controller.settings.false_start_penalty_m]
 		)
 	else:
-		_notice.text = "FAUX DEPART — PISTE %d" % (rider + 1)
+		_notice.text = "FAUX DÉPART — PISTE %d" % (rider + 1)
 	_covered_notice = ""
 
 

@@ -20,7 +20,7 @@ func test_le_faux_depart_s_affiche_en_alerte_sur_l_ecran_public() -> void:
 	# docs/02 §4, AVERTISSEMENT : « bandeau + son, la course continue ».
 	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
 	_controller.false_start_detected.emit(2, RaceConfig.FalseStartPolicy.WARN)
-	assert_string_contains(_hud.notice_text(), "FAUX DEPART")
+	assert_string_contains(_hud.notice_text(), "FAUX DÉPART")
 	assert_string_contains(_hud.notice_text(), "PISTE 3")
 	assert_eq(_hud.notice_color(), RaceHud.ALERT)
 
@@ -132,7 +132,7 @@ func test_le_lien_perdu_n_efface_pas_une_elimination_au_retour() -> void:
 	_controller.link_state_changed.emit(Protocol.State.LINK_LOST)
 	_controller.link_state_changed.emit(Protocol.State.IDENTIFIED)
 	# Le retour du lien ne rend que ce qu'il avait recouvert.
-	assert_string_contains(_hud.notice_text(), "ELIMINEE")
+	assert_string_contains(_hud.notice_text(), "ÉLIMINÉE")
 
 
 func _podium_apres(result: RaceResult) -> String:
@@ -157,7 +157,7 @@ func test_une_poursuite_decidee_au_plafond_n_est_pas_annoncee_interrompue() -> v
 	capped.ranking = [0, 1]
 	capped.interrupted = true
 	capped.end_reason = RaceRule.EndReason.TIME_CAP
-	capped.interruption_note = "plafond de securite atteint : plafond de duree"
+	capped.interruption_note = "plafond de sécurité atteint : plafond de durée"
 	capped.rider_names = {0: "Alice", 1: "Bob"}
 
 	var shown := _podium_apres(capped)
@@ -194,12 +194,12 @@ func test_une_course_arretee_est_bien_annoncee_interrompue() -> void:
 	stopped.ranking = [0, 1]
 	stopped.interrupted = true
 	stopped.end_reason = RaceRule.EndReason.NONE
-	stopped.interruption_note = "arret operateur"
+	stopped.interruption_note = "arrêt opérateur"
 	stopped.rider_names = {0: "Alice", 1: "Bob"}
 
 	var shown := _podium_apres(stopped)
 	assert_string_contains(shown, "INTERROMPUE", "la, personne n'a gagne")
-	assert_string_contains(shown, "arret operateur")
+	assert_string_contains(shown, "arrêt opérateur")
 
 
 func test_l_ecart_ne_s_affiche_pas_avant_le_depart() -> void:
@@ -227,7 +227,7 @@ func test_la_jauge_de_decision_se_tait_une_fois_la_poursuite_decidee() -> void:
 	var state := RaceState.new(config)
 	state.elapsed_ms = 10000
 	_controller.progress_updated.emit(state)
-	assert_string_contains(_hud.decision_text(), "decision dans")
+	assert_string_contains(_hud.decision_text(), "décision dans")
 	_controller.race_state_changed.emit(RaceEngine.State.RUNNING, RaceEngine.State.FINISHED)
 	assert_eq(_hud.decision_text(), "", "la decision est prise")
 
