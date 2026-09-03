@@ -155,6 +155,10 @@ purement informatif. En v3, comportement paramétrable en réglages, **défaut :
 | `RELANCE` | `s` immédiat, retour `IDLE`, message « faux départ rider N », relance manuelle |
 | `PENALITE` | la course part, le rider fautif démarre avec un handicap de `P` mètres (défaut 10 m) |
 
+Le handicap se paie **en ticks** : le fautif doit couvrir `D + P` mètres pour franchir la ligne. Il
+n'est pas seulement dessiné en arrière — une pénalité qui ne coûterait rien à l'arrivée n'en serait
+pas une. Sa distance au tableau reste celle de l'épreuve ; c'est son temps qui porte le prix.
+
 Le défaut est `AVERTISSEMENT` : en événementiel, relancer une course pour un rider qui a bougé
 énerve le public. `RELANCE` existe pour les usages compétitifs.
 

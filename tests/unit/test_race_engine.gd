@@ -794,3 +794,45 @@ func test_aucun_etat_de_la_fsm_n_est_mort() -> void:
 			seen, state,
 			"l'etat %s n'est atteint par aucun scenario" % RaceEngine.State.keys()[state]
 		)
+
+
+func test_un_faux_depart_penalise_coute_vraiment_ses_metres() -> void:
+	# docs/02 §4 : « PENALITE — le rider fautif demarre avec un handicap de P
+	# metres ». Le handicap etait purement decoratif : il decalait la position
+	# affichee et le coureur dans la scene, mais la condition d'arrivee comparait
+	# des TICKS BRUTS. Le fautif franchissait donc la ligne au meme compteur que
+	# les autres, sans avoir couvert un metre de plus. Une penalite qui ne coute
+	# rien n'est pas une penalite.
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.DISTANCE
+	config.distance_m = 100.0
+	config.active_riders = [0, 1] as Array[int]
+	var state := RaceState.new(config)
+	state.handicap_m[1] = -10.0
+
+	var rule := RuleDistance.new()
+	rule.begin(state)
+	var physics := state.physics
+	var honest := physics.metres_to_ticks(100.0)
+	state.apply_sample([honest, honest, 0, 0], 9000)
+	var crossed := _crossed(rule.evaluate(state))
+	assert_true(crossed.has(0), "le coureur regulier a franchi")
+	assert_false(crossed.has(1), "le penalise n'y est pas encore")
+
+	# Il lui faut les dix metres de handicap en plus.
+	var handicapped := physics.metres_to_ticks(110.0)
+	state.apply_sample([honest, handicapped, 0, 0], 10000)
+	assert_true(
+		_crossed(rule.evaluate(state)).has(1), "et il franchit dix metres plus loin"
+	)
+	assert_almost_eq(
+		state.distance_m[1], 100.0, 0.5, "sa distance de course reste celle de l'epreuve"
+	)
+
+
+## Pistes ayant franchi la ligne sur cette trame.
+func _crossed(verdict: RaceRule.Verdict) -> Array[int]:
+	var lanes: Array[int] = []
+	for entry: Dictionary in verdict.newly_finished:
+		lanes.append(int(entry["rider"]))
+	return lanes

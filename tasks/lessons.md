@@ -836,3 +836,20 @@ sous le pas ne réécrit rien ». C'est faux : l'hystérésis compare au dernier
 la dernière variation, si bien que de petites variations accumulées finissent par franchir le pas.
 Le contrat réel est « à écart stable, plus une seule réécriture » — et c'est celui-là qui empêche
 le scintillement.
+
+## Une règle appliquée à l'affichage seulement n'est pas appliquée
+
+`docs/02` §4 : « PÉNALITÉ — le rider fautif démarre avec un handicap de P mètres. » Le handicap
+décalait sa position affichée, le décalait dans la scène 3D, et faisait annoncer au bandeau
+« PISTE 2 PÉNALISÉE — DÉPART 10 m EN ARRIÈRE ». Mais la condition d'arrivée du mode distance
+comparait des ticks BRUTS : le fautif franchissait la ligne au même compteur que les autres. Trois
+manifestations visibles, aucune conséquence. Mesuré avant : 11 ms d'écart au lieu de 825.
+
+**Leçon** : quand une règle a un effet visuel évident, il est facile de croire qu'elle est
+implémentée — l'image la montre. Vérifier qu'elle touche aussi la DÉCISION, et pas seulement le
+rendu. La question à se poser : « qu'est-ce que cela change au classement ? »
+
+**Comment elle a été trouvée** : trois sondes visuelles de suite n'avaient rien donné — trois
+coureurs, deuxième course, célébration, tout correct. J'ai arrêté de parcourir et j'ai choisi une
+règle précise à éprouver de bout en bout, en mesurant son effet chiffré plutôt qu'en regardant si
+« ça a l'air bon ».

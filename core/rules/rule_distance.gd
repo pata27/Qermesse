@@ -27,6 +27,23 @@ func begin(state: RaceState) -> void:
 	_target_ticks = state.physics.metres_to_ticks(state.config.distance_m)
 
 
+## Cible d'un rider, HANDICAP COMPRIS — docs/02 §4.
+##
+## « PENALITE : le rider fautif demarre avec un handicap de P metres. » Le
+## handicap etait purement decoratif : il decalait la position affichee et le
+## coureur dans la scene, mais la condition d'arrivee comparait des ticks
+## BRUTS. Le fautif franchissait donc au meme compteur que les autres, sans
+## avoir couvert un metre de plus. Une penalite qui ne coute rien n'en est pas
+## une.
+##
+## `handicap_m` est negatif — il part en arriere —, d'ou la soustraction : il a
+## `distance + P` metres a couvrir.
+func _target_for(state: RaceState, rider: int) -> int:
+	if is_zero_approx(state.handicap_m[rider]):
+		return _target_ticks
+	return state.physics.metres_to_ticks(state.config.distance_m - state.handicap_m[rider])
+
+
 ## LE DERNIER TICK N'ARRIVE JAMAIS, et ce n'est pas un defaut de l'emulateur.
 ##
 ## `ss_basic.ino` (`checkDistanceBased`, l. 285-307) met `raceStarted = false`
@@ -52,11 +69,16 @@ func note_hardware_finish(state: RaceState, rider: int) -> bool:
 		return false
 	if not state.config.active_riders.has(rider):
 		return false
-	var missing := _target_ticks - state.ticks[rider]
+	var target := _target_for(state, rider)
+	var missing := target - state.ticks[rider]
 	if missing <= 0 or missing > TRAILING_TOLERANCE_TICKS:
 		return false
-	state.ticks[rider] = _target_ticks
-	state.distance_m[rider] = state.physics.ticks_to_metres(_target_ticks)
+	state.ticks[rider] = target
+	# La distance AFFICHEE reste celle de l'epreuve : le handicap est le prix
+	# paye en ticks, pas une course plus longue au tableau.
+	state.distance_m[rider] = (
+		state.physics.ticks_to_metres(target) + state.handicap_m[rider]
+	)
 	return true
 
 
@@ -66,7 +88,7 @@ func evaluate(state: RaceState) -> Verdict:
 	for rider: int in state.config.active_riders:
 		if state.finished_ms[rider] != 0:
 			continue
-		if state.ticks[rider] >= _target_ticks:
+		if state.ticks[rider] >= _target_for(state, rider):
 			verdict.newly_finished.append({"rider": rider, "elapsed_ms": state.elapsed_ms})
 
 	# Condition de fin : TOUS les riders actifs, et eux seuls.
