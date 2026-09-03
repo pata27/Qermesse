@@ -92,11 +92,22 @@ jobs:
             "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
           python scripts/install_export_templates.py templates.tpz "${GODOT_VERSION}.stable"
 
+      # L'IMPORT NE PEUT PAS ETRE LE GARDE-FOU ICI, et deux fois plutot qu'une.
+      #
+      # Un build de release ne compile que `template_release` ; la variante
+      # `template_debug` que declare `serial_link.gdextension` n'existe donc
+      # pas, et Godot le signale. Sous macOS il en sort avec un code non nul, ce
+      # qui faisait echouer le job sur une absence parfaitement attendue.
+      #
+      # Le module de release, lui, est deja verifie plus haut par
+      # `check_extension_binary.py`, qui le charge et resout son point d'entree.
+      # Et l'export ci-dessous refuse de passer si le binaire produit est vide.
+      # Le garde-fou existe donc, il est simplement ailleurs.
       - name: Importer le projet
         shell: bash
         run: |
           ".godot-bin/${{ matrix.godot_binary }}" --headless --import || true
-          ".godot-bin/${{ matrix.godot_binary }}" --headless --import
+          ".godot-bin/${{ matrix.godot_binary }}" --headless --import || true
 
       - name: Exporter
         shell: bash

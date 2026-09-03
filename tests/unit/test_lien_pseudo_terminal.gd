@@ -194,6 +194,16 @@ func test_hors_course_la_disparition_du_boitier_ne_crie_pas_lien_perdu() -> void
 	if not missing.is_empty():
 		pending("saute : %s" % missing)
 		return
+	# LE SCENARIO N'EST PAS REPRODUCTIBLE SUR macOS, et il faut le dire plutot
+	# que de laisser le test rougir la-bas. Sous Linux, le noeud d'un
+	# pseudo-terminal vit dans `devpts` et DISPARAIT quand son maitre se ferme —
+	# c'est ce que le pilote constate. Sous macOS les `/dev/ttys00N` sont
+	# pre-crees et permanents : le fichier reste, donc l'absence ne se constate
+	# pas. Sur du vrai materiel le noeud disparait bien des deux cotes, mais
+	# c'est un cable qu'il faudrait debrancher, et aucun test ne le peut.
+	if OS.get_name() == "macOS":
+		pending("un pseudo-terminal macOS ne disparaît pas quand son maître se ferme")
+		return
 
 	var path := _start_emulator("egaux")
 	await _let_emulator_settle()

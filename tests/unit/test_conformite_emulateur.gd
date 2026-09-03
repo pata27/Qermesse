@@ -29,17 +29,38 @@ func _emulator_binary() -> String:
 	return path if FileAccess.file_exists(path) else ""
 
 
+## `timeout`, ou son nom sur cette machine. Vide si aucun n'existe.
+##
+## L'emulateur ne se termine pas sur la fin de l'entree — comme un vrai port
+## serie, il attend toujours. Il faut donc le borner de l'exterieur, et l'outil
+## qui fait cela ne porte pas le meme nom partout.
+func _timeout_command() -> String:
+	for name: String in ["timeout", "gtimeout"]:
+		var output: Array = []
+		if OS.execute("bash", ["-c", "command -v %s" % name], output, true) == 0:
+			return name
+	return ""
+
+
 ## Fait courir `ss_emu` sur le scénario et rend ses lignes.
 ##
 ## L'émulateur ne se termine pas sur la fin de l'entrée — comme un vrai port
 ## série, il attend toujours — d'où `timeout`. Sa sortie d'erreur est son
 ## tableau de bord, qu'on jette.
 func _run_emulator(binary: String) -> PackedStringArray:
+	# `timeout` N'EXISTE PAS PARTOUT. C'est un outil GNU : macOS ne le fournit
+	# pas, et coreutils l'y installe sous le nom `gtimeout`. Le test passait
+	# donc sur Linux et lisait trois lignes vides sur macOS, ou l'emulateur
+	# n'avait tout simplement jamais demarre — un echec qui accusait la
+	# conformite des trames alors que rien n'avait couru.
+	var runner := _timeout_command()
+	if runner.is_empty():
+		return PackedStringArray()
 	var script := (
 		"( printf 'v\\n'; sleep 0.4; printf 'd\\n'; sleep 0.1; printf 'l%d\\n'; sleep 0.1; "
-		+ "printf 'g\\n'; sleep 1.6 ) | timeout 5 %s --stdio --seed %d --riders %d "
+		+ "printf 'g\\n'; sleep 1.6 ) | %s 5 %s --stdio --seed %d --riders %d "
 		+ "--profile egaux --speed 20 2>/dev/null"
-	) % [LENGTH_TICKS, binary, SEED, RIDERS]
+	) % [LENGTH_TICKS, runner, binary, SEED, RIDERS]
 	var output: Array = []
 	OS.execute("bash", ["-c", script], output, true)
 	return (output[0] as String).split("\n", false)
@@ -139,6 +160,9 @@ func test_link_sim_produit_la_meme_suite_de_trames_que_ss_emu() -> void:
 	var binary := _emulator_binary()
 	if binary.is_empty():
 		pending("ss_emu n'est pas construit ici — vérifié là où il l'est (CI POSIX)")
+		return
+	if _timeout_command().is_empty():
+		pending("ni `timeout` ni `gtimeout` sur cette machine — rien ne peut borner l'émulateur")
 		return
 
 	var emu := _run_emulator(binary)
