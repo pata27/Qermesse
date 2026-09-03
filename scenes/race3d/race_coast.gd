@@ -75,9 +75,17 @@ func advance(delta: float, state: RaceState, positions: Dictionary, lanes: Array
 			finished.append(lane)
 		elif not state.eliminated[lane]:
 			everyone_done = false
-	finished.sort_custom(
-		func(a: int, b: int) -> bool: return state.finished_ms[a] < state.finished_ms[b]
-	)
+	# ORDRE D'ARRIVEE, ET A INSTANT EGAL LE PLUS AVANCE D'ABORD.
+	#
+	# Au gong du mode temps, TOUS les coureurs finissent au meme instant : la
+	# chaine se retrouvait ordonnee arbitrairement, alors que chacun y est
+	# contraint de rester derriere le precedent. Un coureur genuinement devant
+	# etait donc repousse derriere un autre — mesure a 59 m de recul en un
+	# cinquieme de seconde, en pleine celebration.
+	finished.sort_custom(func(a: int, b: int) -> bool:
+		if state.finished_ms[a] != state.finished_ms[b]:
+			return state.finished_ms[a] < state.finished_ms[b]
+		return float(positions[a]) > float(positions[b]))
 
 	var order: Array[int] = finished.duplicate()
 	for lane: int in lanes:

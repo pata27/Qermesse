@@ -93,6 +93,31 @@ func test_le_regroupement_n_a_pas_lieu_tant_qu_un_coureur_court() -> void:
 	assert_gt(positions[0] - positions[1], 25.0, "les deux arrives roulent chacun pour soi")
 
 
+func test_en_mode_temps_personne_n_est_repousse_en_arriere() -> void:
+	# Au gong, tous les coureurs finissent au MEME instant : la chaine du
+	# regroupement, ordonnee par instant d'arrivee, se retrouvait arbitraire.
+	# Chacun etant contraint de rester derriere le precedent, un coureur
+	# genuinement devant pouvait etre repousse de plusieurs dizaines de metres
+	# — un saut en arriere en pleine celebration.
+	var coast := RaceCoast.new()
+	var state := _state([20000, 20000, 20000], [false, false, false], [42.0, 48.0, 45.0])
+	# La piste 1 mene, la piste 0 est derniere : l'ordre des couloirs et celui
+	# de la course ne coincident pas.
+	var base := {0: 200.0, 1: 260.0, 2: 230.0}
+	var positions := _run(coast, state, base, 0.2)
+
+	for lane: int in LANES:
+		assert_gt(
+			positions[lane], base[lane] - 0.01,
+			"la piste %d ne doit pas reculer (%.1f -> %.1f)" % [lane + 1, base[lane], positions[lane]]
+		)
+
+	# Et le regroupement respecte l'ordre REEL, pas celui des couloirs.
+	positions = _run(coast, state, base, 5.0)
+	assert_gt(positions[1], positions[2], "le meneur reste devant")
+	assert_gt(positions[2], positions[0], "et le deuxieme devant le dernier")
+
+
 func test_une_nouvelle_course_repart_de_zero() -> void:
 	# Jamais remise, la roue libre ajoutait d'un coup au passage de la ligne
 	# les metres accumules a la course precedente.

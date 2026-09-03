@@ -467,3 +467,8 @@
   bandeaux, un tableau et le CSV — et n'était juste que dans un seul. Corrigé écran par écran trois
   fois avant que je pense à le NOMMER dans `RaceResult`. Quand une même question se repose ailleurs,
   lui donner un nom au lieu de recopier sa réponse.
+* **Un tri sans départage attend une coïncidence pour devenir un bug.** Quatre tris comparaient sans
+  cas d'égalité ; trois étaient inoffensifs, le quatrième téléportait le vainqueur 59 m en arrière —
+  mais seulement en mode temps, où tous finissent au même instant, et seulement si l'ordre des
+  couloirs différait de l'ordre d'arrivée. Mes captures utilisaient des profils où les deux
+  coïncidaient. Chercher les tris sans `if égalité` vaut mieux qu'attendre la coïncidence.
