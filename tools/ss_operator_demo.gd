@@ -8,8 +8,6 @@
 ## imprime le CSV.
 extends SceneTree
 
-const STEPS := ["configure", "countdown", "course", "resultats"]
-
 var _controller: AppController
 var _panel: OperatorPanel
 var _capture_dir := ""

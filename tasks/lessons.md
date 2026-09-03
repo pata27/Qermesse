@@ -802,3 +802,19 @@ permanente serait du bruit sur une arrivée ordinaire, ce qu'un second test tien
 **Le piège d'accent, dans l'autre sens** : mon assertion cherchait « elimin » sans accent, sur un
 écran que j'ai moi-même accentué il y a trois tours. La légende était bien présente ; c'est le test
 qui la manquait. Une chaîne cherchée doit être copiée depuis la source, pas retapée.
+
+## Un test peut se désarmer lui-même en citant ce qu'il cherche
+
+La garde des constantes mortes compte les occurrences d'un nom dans tout le code. Sa propre
+documentation citait `TARGET_FPS` et `REFRESH_S` en exemple — et ces deux noms suffisaient à les
+faire passer pour lues. Le test passait au vert sur les défauts qu'il décrivait.
+
+**Leçon** : un test qui compte des occurrences doit exclure les commentaires, et se relire en se
+demandant si ses propres mots entrent dans son décompte. Corrigé en retirant les commentaires du
+corpus avant de compter — ce qui est de toute façon la bonne définition : nommer une constante dans
+une phrase ne la rend pas lue.
+
+**Et une constante morte se traite au cas par cas, pas en lot** : sur cinq, deux méritaient d'être
+branchées — `REFRESH_S` économise quatre-vingt kilo-octets de sortie, `TARGET_FPS` fait dire au
+rapport de perf la cible qu'il juge — et trois n'avaient plus de raison d'être. Un sweep mécanique
+les aurait toutes supprimées, en perdant deux intentions justes.

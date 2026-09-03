@@ -12,7 +12,6 @@ extends Node3D
 
 signal quality_changed(level_name: String)
 
-const TRACK_SEGMENT_M := TrackBuilder.SEGMENT_LENGTH_M
 ## Constante de temps de la roue libre après l'arrivée. Une seconde et demie :
 ## assez pour que le geste se lise, assez court pour ne pas faire attendre.
 ## Un coureur arrivé ne s'arrête pas : il décélère vers une vitesse de

@@ -7,6 +7,9 @@
 3. **Un seul thread mute l'état.** Le thread série écrit dans un ring buffer, point final.
 4. **Pas d'état mort.** Tout état de la FSM est atteint par au moins un test.
 5. **Pas d'asset orphelin.** Un fichier non référencé est supprimé, pas laissé « au cas où ».
+   Cela vaut aussi pour une **constante** : `TARGET_FPS := 60.0` qui n'est lu par rien annonce un
+   budget que personne n'applique, et `REFRESH_S` un rafraîchissement que personne ne respecte.
+   Chacune est soit lue, soit supprimée — un test le vérifie, commentaires exclus du décompte.
 6. **Le protocole série est documenté avant d'être codé**, et `docs/01` reste la source de vérité.
 7. **Aucune tâche cochée sans preuve** : sortie de test, capture, ou vidéo.
 

@@ -14,7 +14,6 @@ signal state_changed(state: int)
 ## Pas de simulation fixe : le comportement ne doit pas dependre du framerate.
 const STEP_S := 0.001
 const UPDATE_INTERVAL_MS := 10  ## throttle firmware, docs/01 §1
-const FALSE_START_TICKS := 4
 
 ## Profils de docs/07 §5, en km/h de croisiere par piste.
 const PROFILES := {

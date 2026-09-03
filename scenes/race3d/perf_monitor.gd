@@ -85,13 +85,22 @@ func budget_met() -> bool:
 
 
 func report() -> String:
+	# LA CIBLE EST DITE, pas seulement le verdict. `TARGET_FPS` portait le
+	# budget de `docs/04` §4 et n'etait lu par rien : le rapport jugeait contre
+	# `TRIGGER_FPS`, la marge de bruit, sans jamais nommer les 60 fps qu'on
+	# vise. Un « NON TENU » sans reperes ne dit pas de combien on est loin.
 	return (
-		"%d images — moyenne %.1f fps, 1%% bas %.1f, minimum %.1f — budget %s"
+		(
+			"%d images — moyenne %.1f fps, 1%% bas %.1f, minimum %.1f"
+			+ " — cible %.0f fps, seuil %.0f — budget %s"
+		)
 		% [
 			_samples.size(),
 			average_fps(),
 			percentile_fps(0.01),
 			min_fps(),
+			TARGET_FPS,
+			TRIGGER_FPS,
 			"TENU" if budget_met() else "NON TENU",
 		]
 	)

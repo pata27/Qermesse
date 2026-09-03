@@ -90,3 +90,66 @@ func test_aucun_asset_n_est_orphelin() -> void:
 		if not named:
 			orphans.append(path)
 	assert_eq(Array(orphans), [], "assets que plus rien ne nomme — docs/06 §1, regle 5")
+
+
+## Constantes declarees et jamais lues — regle 5 de `docs/06` §1, dans l'esprit.
+##
+## « Un fichier non reference est supprime, pas laisse au cas ou. » Une CONSTANTE
+## que rien ne lit est le meme genre de promesse non tenue, en plus discret : le
+## `TARGET_FPS := 60.0` du moniteur annoncait le budget de `docs/04` et ne
+## servait a rien, le `EVENTS` de l'enregistreur listait les huit evenements du
+## CSV sans que rien ne s'y refere, et le `REFRESH_S` de `ss_monitor` promettait
+## un rafraichissement a 10 Hz que personne n'appliquait.
+##
+## Chaque constante doit etre lue quelque part — dans son fichier ou ailleurs.
+func test_aucune_constante_n_est_declaree_pour_rien() -> void:
+	var texts: Dictionary = {}
+	for root: String in SCANNED:
+		var files := PackedStringArray()
+		_walk(root, files)
+		for path: String in files:
+			if path.get_extension() != "gd":
+				continue
+			var file := FileAccess.open(path, FileAccess.READ)
+			if file != null:
+				texts[path] = file.get_as_text()
+
+	# LES COMMENTAIRES NE COMPTENT PAS. Nommer une constante dans une phrase ne
+	# la rend pas lue — et ce test s'etait lui-meme desarme en citant deux noms
+	# dans sa propre documentation.
+	var corpus := ""
+	for text: Variant in texts.values():
+		corpus += _without_comments(str(text))
+
+	var dead: Array[String] = []
+	var declaration := RegEx.create_from_string("(?m)^const ([A-Z][A-Z0-9_]*)")
+	for path: Variant in texts.keys():
+		for found: RegExMatch in declaration.search_all(str(texts[path])):
+			var name := found.get_string(1)
+			var uses := RegEx.create_from_string("\\b%s\\b" % name).search_all(corpus).size()
+			if uses <= 1:
+				dead.append("%s : %s" % [str(path).get_file(), name])
+	assert_eq(dead, [] as Array[String], "des constantes que rien ne lit")
+
+
+## Retire les commentaires d'une source. Une ligne qui commence par `#` saute
+## entierement ; un `#` en fin de ligne coupe le reste, sauf s'il est dans une
+## chaine — les couleurs `"#0B0E14"` en sont pleines, d'ou le compte de
+## guillemets.
+static func _without_comments(source: String) -> String:
+	var out := ""
+	for line: String in source.split("\n"):
+		var trimmed := line.strip_edges()
+		if trimmed.begins_with("#"):
+			continue
+		var quotes := 0
+		var kept := ""
+		for index: int in range(line.length()):
+			var glyph := line[index]
+			if glyph == "\"":
+				quotes += 1
+			elif glyph == "#" and quotes % 2 == 0:
+				break
+			kept += glyph
+		out += kept + "\n"
+	return out

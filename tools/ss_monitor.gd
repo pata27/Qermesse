@@ -19,6 +19,7 @@ var _duration := 0.0
 var _use_sim := false
 var _distance_m := 0.0
 var _elapsed := 0.0
+var _since_refresh := 0.0
 var _ticks := [0, 0, 0, 0]
 var _elapsed_ms := 0
 var _events: Array[String] = []
@@ -182,6 +183,7 @@ func _note(text: String) -> void:
 
 func _process(delta: float) -> bool:
 	_elapsed += delta
+	_since_refresh += delta
 	# La ligne d'etat n'a pas de retour a la ligne : sans effacement prealable,
 	# chaque evenement viendrait s'y coller et deviendrait illisible. Piege deja
 	# rencontre sur tools/ss_probe.py — voir tasks/lessons.md.
@@ -190,11 +192,17 @@ func _process(delta: float) -> bool:
 		while not _events.is_empty():
 			print(_events.pop_front())
 
-	var circumference := Protocol.circumference_mm(_roller_mm)
-	var line := "  %6.2f s " % (_elapsed_ms / 1000.0)
-	for i: int in range(Protocol.MAX_RIDERS):
-		line += "P%d:%5d t %7.1f m   " % [i, _ticks[i], _ticks[i] * circumference / 1000.0]
-	printraw("\r" + line)
+	# LA LIGNE D'ETAT EST LIMITEE A `REFRESH_S`. La constante existait et
+	# n'etait pas appliquee : la ligne se repeignait a CHAQUE image, ce qui la
+	# fait scintiller sur un terminal et produit quatre-vingt-dix kilo-octets
+	# pour six secondes de course des que la sortie part dans un fichier.
+	if _since_refresh >= REFRESH_S:
+		_since_refresh = 0.0
+		var circumference := Protocol.circumference_mm(_roller_mm)
+		var line := "  %6.2f s " % (_elapsed_ms / 1000.0)
+		for i: int in range(Protocol.MAX_RIDERS):
+			line += "P%d:%5d t %7.1f m   " % [i, _ticks[i], _ticks[i] * circumference / 1000.0]
+		printraw("\r" + line)
 
 	if _duration > 0.0 and _elapsed >= _duration:
 		_finish()
