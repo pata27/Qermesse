@@ -1272,3 +1272,24 @@ La règle d'avant tenait : « un accesseur sans appelant est parfois un test qui
 manque ». Elle se précise ici — le test qui manquait n'était pas celui de
 l'accesseur, mais celui du composant qu'il donnait. Une fois `SplitScreen`
 éprouvé directement, l'accesseur n'avait plus de raison d'être et il est parti.
+
+## Un raccourci dans un test cache les défauts du geste qu'il abrège
+
+`_type_into` posait le texte d'un bloc et émettait un seul `text_changed`.
+Aucun opérateur ne tape ainsi. Rendu fidèle — lettre par lettre — le helper a
+fait tomber les tests existants sur `ecilA` et `boB` : chaque frappe rebouclait
+sur un `refresh()` qui réécrivait `LineEdit.text`, ce qui remet le curseur en
+tête. Les noms saisis au clavier partaient à l'envers sur l'écran public, au
+podium et dans le CSV, depuis toujours.
+
+Deux enseignements. D'abord, un helper de test qui abrège un geste humain
+choisit AUSSI ce qu'il ne pourra jamais attraper : la fidélité du helper est
+une hypothèse de test, pas un détail de confort. Ensuite, la boucle
+signal → rafraîchissement → réécriture du contrôle est un piège de toolkit :
+poser une valeur identique n'est pas neutre, elle porte des effets de bord —
+ici le curseur. La règle qui en sort : **un rafraîchissement ne réécrit pas un
+champ déjà juste**.
+
+Le défaut n'était visible qu'au clavier, jamais sur une capture ni dans un
+journal : le nom enregistré était bien celui du champ, c'est le champ qui
+mentait.

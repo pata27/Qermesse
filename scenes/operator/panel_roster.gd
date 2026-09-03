@@ -78,12 +78,21 @@ func _build() -> void:
 	_refresh_warning()
 
 
+## Remet les champs en accord avec le roster.
+##
+## ON NE REECRIT PAS UN CHAMP DEJA JUSTE. Poser `LineEdit.text` remet le curseur
+## en tete, meme quand la valeur posee est celle qui s'y trouve deja. Or chaque
+## frappe dans un nom emet `roster_changed`, que le panneau renvoie ici : le
+## curseur repartait a zero apres CHAQUE lettre, et l'operateur qui tapait
+## « Alice » obtenait « ecilA » — sur l'ecran public, au podium et dans le CSV.
 func refresh() -> void:
 	for lane: int in range(Protocol.MAX_RIDERS):
 		var rider := _controller.roster.rider(lane)
 		_checks[lane].set_pressed_no_signal(rider.active)
-		_names[lane].text = rider.name
-		_dossards[lane].text = rider.dossard
+		if _names[lane].text != rider.name:
+			_names[lane].text = rider.name
+		if _dossards[lane].text != rider.dossard:
+			_dossards[lane].text = rider.dossard
 	_refresh_warning()
 
 

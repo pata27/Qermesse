@@ -680,3 +680,23 @@ func test_la_ligne_par_piste_dit_l_etat_de_chaque_coureur() -> void:
 	assert_string_contains(
 		race_panel.lane_text(0), "ARRIVÉ", "et la ligne dit que le coureur a franchi"
 	)
+
+
+func test_un_nom_tape_au_clavier_s_ecrit_dans_l_ordre() -> void:
+	# Chaque frappe dans un nom emet `roster_changed`, que le panneau renvoie
+	# en `refresh()`. Tant que `refresh()` reecrivait `LineEdit.text`, le
+	# curseur repartait en tete apres CHAQUE lettre : « Alice » devenait
+	# « ecilA », et ce nom retourne partait sur l'ecran public, au podium et
+	# dans le CSV. Le defaut ne se voyait pas parce que le test posait le texte
+	# d'un bloc — un geste qu'aucun operateur ne fait.
+	var field := _panel.roster_panel().name_field(0)
+	_type_into(field, "Alice")
+	assert_eq(field.text, "Alice", "le nom s'ecrit dans l'ordre de la frappe")
+	assert_eq(_controller.roster.rider(0).name, "Alice", "et le roster le retient tel quel")
+	# Le curseur reste en fin de champ : l'operateur peut continuer a taper.
+	assert_eq(field.caret_column, 5, "le curseur suit la frappe")
+
+	# Une valeur venue d'AILLEURS, elle, doit bien s'imposer au champ.
+	_controller.roster.rider(0).name = "Zoé"
+	_panel.roster_panel().refresh()
+	assert_eq(field.text, "Zoé", "un roster change hors du champ se voit quand meme")

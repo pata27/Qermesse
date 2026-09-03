@@ -57,9 +57,19 @@ func _await_identified() -> bool:
 
 
 ## Saisit un texte comme le ferait un operateur : la valeur ET le signal.
+## Frappe dans un champ, LETTRE PAR LETTRE, comme un operateur au clavier.
+##
+## La premiere version posait le texte d'un bloc et emettait un seul
+## `text_changed`. Aucun humain ne saisit ainsi, et ce raccourci cachait un
+## defaut serieux : chaque frappe rebouclait sur un `refresh()` qui reecrivait
+## `LineEdit.text`, ce qui remet le curseur en tete. Saisi d'un bloc, le nom
+## sortait juste ; saisi au clavier, il sortait a l'envers.
 func _type_into(field: LineEdit, text: String) -> void:
-	field.text = text
-	field.text_changed.emit(text)
+	field.clear()
+	for glyph: String in text:
+		field.insert_text_at_caret(glyph)
+		# `insert_text_at_caret` n'emet rien de lui-meme ; le vrai clavier, si.
+		field.text_changed.emit(field.text)
 
 
 func _select_option(button: OptionButton, id: int) -> void:
