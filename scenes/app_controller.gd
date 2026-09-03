@@ -447,7 +447,27 @@ func _on_frame(kind: int, payload: Dictionary) -> void:
 					raw[i] = int(ticks[i]) if i < ticks.size() else 0
 				sensor_activity.emit(raw)
 				return
+			# LA TRACE PORTE LA TRAME BRUTE, avant filtrage et avant le gel
+			# d'un rider arrive. `docs/02` §5 promet « la trace complète des
+			# trames R: » ; elle portait les valeurs RETENUES par le filtre, si
+			# bien qu'un tick rejeté — ce que `DEPANNAGE` fait précisément
+			# diagnostiquer en envoyant ce fichier — disparaissait du fichier
+			# envoyé. Le symptôme était au CSV, la preuve nulle part.
+			#
+			# Enregistrée APRÈS l'appel : c'est cette trame-là qui fait passer
+			# le moteur de COUNTDOWN à RUNNING, et la sauter perdrait la
+			# première ligne de la course.
+			var live := (
+				engine.state() == RaceEngine.State.COUNTDOWN
+				or engine.state() == RaceEngine.State.RUNNING
+			)
 			engine.on_progress(ticks, elapsed_ms)
+			if live:
+				var raw_ticks := PackedInt32Array()
+				raw_ticks.resize(Protocol.MAX_RIDERS)
+				for i: int in range(Protocol.MAX_RIDERS):
+					raw_ticks[i] = int(ticks[i]) if i < ticks.size() else 0
+				recorder.record_sample(raw_ticks, elapsed_ms)
 		Protocol.Frame.COUNTDOWN:
 			engine.on_countdown(int(payload.get("value", 0)))
 		Protocol.Frame.FALSE_START:
@@ -503,7 +523,6 @@ func _check_length_ack(ticks: int) -> void:
 
 
 func _on_progress_updated(state: RaceState) -> void:
-	recorder.record_sample(state.ticks, state.elapsed_ms)
 	_warn_silent_lanes(state)
 	progress_updated.emit(state)
 

@@ -534,3 +534,59 @@ func test_les_trames_kiosque_sont_comptees_et_dites_au_panneau_materiel() -> voi
 	assert_eq(_controller.kiosk_frames(), 2, "comptees")
 	_panel.hardware_panel().refresh()
 	assert_string_contains(_panel.hardware_panel().stats_text(), "kiosque")
+
+
+func test_la_trace_est_le_flux_recu_trame_pour_trame() -> void:
+	# `docs/02` §5 : le JSON porte « la trace COMPLETE des trames R: ». Elle
+	# portait en fait `state.ticks` — c'est-a-dire les valeurs APRES le filtre et
+	# APRES le gel d'un rider arrive. Un tick rejete, ou la valeur que le boitier
+	# a reellement envoyee apres une arrivee, n'y figurait pas : le fichier que
+	# `DEPANNAGE` fait envoyer au developpeur avait deja perdu ce qu'on lui
+	# demande de diagnostiquer.
+	#
+	# Le contrat se verifie sans mise en scene : ce que la trace contient doit
+	# etre, trame pour trame, ce que le lien a livre.
+	assert_true(await _await_identified())
+	var received: Array = []
+	_controller.get_node("Link").frame_received.connect(
+		func(kind: int, payload: Dictionary) -> void:
+			if kind == Protocol.Frame.PROGRESS:
+				var ticks: Array = payload.get("ticks", [])
+				received.append([
+					int(ticks[0]), int(ticks[1]), int(ticks[2]), int(ticks[3]),
+					int(payload.get("elapsed_ms", 0)),
+				])
+	)
+	_controller.settings.distance_m = 100.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+	var finished: Array[RaceResult] = []
+	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
+	for i: int in range(2500):
+		await wait_frames(1)
+		if not finished.is_empty():
+			break
+	assert_false(finished.is_empty(), "la course se termine")
+
+	var loaded := Replay.load_file(_controller.recorder.json_path(finished[0].uuid))
+	assert_true(loaded.ok, "le fichier se relit")
+	assert_gt(loaded.samples.size(), 100, "la trace n'est pas vide")
+
+	# Chaque trame enregistree doit exister telle quelle dans le flux recu. Une
+	# valeur filtree ou gelee n'y serait pas.
+	var stream: Dictionary = {}
+	for row: Variant in received:
+		stream[str(row)] = true
+	var altered := 0
+	for sample: Variant in loaded.samples:
+		var row: Array = sample
+		var key := str([int(row[0]), int(row[1]), int(row[2]), int(row[3]), int(row[4])])
+		if not stream.has(key):
+			altered += 1
+	assert_eq(altered, 0, "aucune trame de la trace n'a ete retouchee avant d'etre ecrite")
+
+	# Et elle se rejoue toujours au meme classement.
+	assert_eq(
+		Replay.replay(loaded).ranking, finished[0].ranking,
+		"le rejeu de la trace brute redonne le meme classement"
+	)

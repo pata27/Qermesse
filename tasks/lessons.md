@@ -936,3 +936,21 @@ pas ma question de départ, qui portait le défaut.
 **Et le test s'est trompé avant le code** : la note contient une virgule, donc le champ est entouré
 de guillemets. Mon découpage naïf sur les virgules la coupait en deux. Corrigé en lisant avec un
 vrai parseur CSV — ce qui prouve du même coup que l'échappement fonctionne.
+
+## Chercher un scénario spectaculaire quand un test simple suffit
+
+J'ai voulu prouver que la trace enregistrée n'était pas brute en injectant une rafale de ticks
+fantômes. Une heure de sondes pour rien : à la cadence du simulateur, l'injection ne déclenche
+aucun rejet, et j'ai en chemin accusé le moteur de ne pas terminer une course — c'était un piège de
+lambda GDScript, `done = true` écrivant dans une copie capturée par valeur.
+
+Le contrat, lui, se vérifie sans mise en scène : **ce que la trace contient doit être, trame pour
+trame, ce que le lien a livré**. Ce test-là est court, il ne dépend d'aucun timing, et il a montré
+que deux trames par course étaient retouchées avant d'être écrites.
+
+**Leçon** : quand une propriété se formule comme une égalité entre deux flux, la comparer
+directement plutôt que de fabriquer l'anomalie qui la révélerait. La mise en scène coûte cher et
+introduit ses propres défauts.
+
+**Et un flag capturé par une lambda est une copie** : pour observer un signal depuis un test ou une
+sonde, muter un tableau, jamais réaffecter un booléen local.

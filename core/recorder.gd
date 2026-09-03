@@ -98,8 +98,11 @@ func begin_race(config: RaceConfig, roster: Dictionary = {}) -> String:
 	return _uuid
 
 
-## Trame `R:` retenue. Stockee telle quelle : ticks absolus + horloge firmware,
-## exactement ce qu'il faut pour rejouer la course a l'identique.
+## Trame `R:` BRUTE, telle que le boitier l'a envoyee — avant le filtre et avant
+## le gel d'un rider arrive. Ticks absolus et horloge firmware : de quoi rejouer
+## la course a l'identique, ET de quoi voir ce que le filtre a refuse. Stocker
+## les valeurs retenues faisait disparaitre le tick rejete du fichier meme que
+## `DEPANNAGE` fait envoyer pour diagnostiquer ce rejet.
 func record_sample(ticks: PackedInt32Array, elapsed_ms: int) -> void:
 	_samples.append([ticks[0], ticks[1], ticks[2], ticks[3], elapsed_ms])
 

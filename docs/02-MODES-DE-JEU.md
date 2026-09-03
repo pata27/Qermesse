@@ -223,7 +223,11 @@ interrompue** dès lors qu'elle a couru : arrêt opérateur, lien perdu au-delà
 résultat partiel porte `interrupted` et `interruption_note`, et sa trace est celle qu'on veut
 justement rejouer après un incident. Une course interrompue pendant l'armement ou le décompte n'a
 rien à raconter et n'écrit rien. Le fichier contient en plus
-**la trace complète des trames `R:`** (ticks + elapsedMs). Le résultat y est porté par rider :
+**la trace complète des trames `R:`** (ticks + elapsedMs), **telles que le boîtier les a
+envoyées** : avant le filtre du `01` §6.3, et avant le gel d'un rider arrivé. La trace portait
+auparavant les valeurs retenues par le moteur — deux trames par course y étaient donc retouchées,
+et un tick rejeté n'y laissait aucune trace, dans le fichier même que `DEPANNAGE` fait envoyer au
+développeur pour diagnostiquer ce rejet. Le rejeu rejoue le filtre, il ne le suppose pas. Le résultat y est porté par rider :
 `finished_ms`, `eliminated_ms` (0 tant que le rider court), `distance_m`, `avg_kph`, `max_kph`,
 `eliminated`, `false_started`, avec les mêmes conventions que le CSV. La trace comprend aussi
 `hardware_finishes` — les trames `<idx>F:` du boîtier, `[rider, elapsed_ms]` : le rejeu les rejoue à
