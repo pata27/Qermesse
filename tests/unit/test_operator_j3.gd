@@ -599,3 +599,33 @@ func test_le_panneau_course_affiche_le_libelle_et_non_l_enum() -> void:
 	var race_panel := _panel.race_panel()
 	assert_string_contains(race_panel.state_text(), RaceEngine.state_label(RaceEngine.State.IDLE))
 	assert_false(race_panel.state_text().contains("IDLE"), "aucun nom de code a l'ecran")
+
+
+func test_apres_une_arrivee_le_panneau_dit_que_le_resultat_attend_l_acquittement() -> void:
+	# docs/02 §1 : `RUNNING ─▶ FINISHED ─▶ RESULTS`. RESULTS est « resultat
+	# consultable, en attente d'acquittement » — un etat ou l'on SEJOURNE, le
+	# temps que l'operateur regarde le classement. L'application le traversait
+	# en une microseconde, au depart de la course SUIVANTE : le moteur restait
+	# a FINISHED pendant toute la duree ou le podium etait a l'ecran, et l'etape
+	# que le diagramme decrit n'existait nulle part.
+	assert_true(await _await_identified())
+	var race_panel := _panel.race_panel()
+	_controller.settings.distance_m = 100.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+
+	var finished: Array[RaceResult] = []
+	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
+	for i: int in range(900):
+		await wait_frames(1)
+		if not finished.is_empty():
+			break
+	assert_false(finished.is_empty(), "la course se termine")
+
+	race_panel.refresh()
+	assert_string_contains(race_panel.state_text(), "acquitter")
+	assert_false(race_panel.start_button().disabled, "la suivante peut partir")
+
+	# Et le depart suivant acquitte : on repasse par IDLE avant d'armer.
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la seconde course part")

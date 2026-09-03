@@ -759,3 +759,38 @@ func test_un_refus_d_armement_nomme_l_etat_en_francais() -> void:
 		engine.last_error().contains("ARMING"), "pas de nom de code dans un message d'erreur"
 	)
 	assert_string_contains(engine.last_error(), RaceEngine.state_label(engine.state()))
+
+
+func test_aucun_etat_de_la_fsm_n_est_mort() -> void:
+	# docs/06 §1, regle 4. Le lien serie avait ce test depuis longtemps
+	# (`test_link_sim.gd`) ; la FSM de course, qui est pourtant celle qui arbitre
+	# les classements, ne l'avait pas. Un scenario complet doit les traverser
+	# tous les six.
+	var seen: Array[int] = []
+	var engine := RaceEngine.new()
+	engine.state_changed.connect(
+		func(_previous: int, current: int) -> void:
+			if not seen.has(current):
+				seen.append(current)
+	)
+	var config := RaceConfig.new()
+	config.distance_m = 50.0
+	assert_true(engine.arm(config, 0), "armement")
+	engine.on_countdown(3)
+	engine.on_countdown(0)
+	var ticks := 0
+	for step: int in range(400):
+		ticks += 6
+		engine.on_progress([ticks, ticks - 2, 0, 0], step * 100)
+		if engine.state() == RaceEngine.State.FINISHED:
+			break
+	assert_eq(engine.state(), RaceEngine.State.FINISHED, "la course se termine")
+	engine.show_results()
+	engine.acknowledge_results()
+
+	seen.append(RaceEngine.State.IDLE)  # l'etat de depart, jamais « change vers »
+	for state: int in RaceEngine.State.values():
+		assert_has(
+			seen, state,
+			"l'etat %s n'est atteint par aucun scenario" % RaceEngine.State.keys()[state]
+		)

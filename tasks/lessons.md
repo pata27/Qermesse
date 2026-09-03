@@ -589,3 +589,20 @@ celles-là qui ont dérivé. Une règle tenue à la main est tenue jusqu'au jour
 **Et une garde se prouve dans les deux sens.** J'ai fabriqué un `.uid` fantôme et un shader que
 personne ne nomme : les deux tests échouent sur eux, puis repassent au vert une fois supprimés.
 Un garde-fou qu'on n'a vu que vert ne prouve rien.
+
+## Un état traversé n'est pas un état atteint
+
+`docs/06` §1 règle 4 : « tout état de la FSM est atteint par au moins un test ». RESULTS l'était,
+formellement — un test appelait `show_results()` puis `acknowledge_results()` l'un derrière
+l'autre. L'application faisait exactement pareil, au départ de la course SUIVANTE : la FSM entrait
+et sortait de RESULTS dans le même appel. Pendant toute la durée où le podium était à l'écran, le
+moteur restait à FINISHED, et l'étape que le diagramme de `docs/02` §1 décrit — « résultat
+consultable, en attente d'acquittement » — n'existait à aucun instant observable.
+
+**Leçon** : pour un état où l'on est censé SÉJOURNER, la bonne assertion n'est pas « la transition
+a eu lieu » mais « après tel événement, l'état COURANT est celui-là ». La première est satisfaite
+par un passage instantané ; seule la seconde dit que l'état existe.
+
+**Comment il a été trouvé** : en cherchant, parmi les sept règles non négociables, celles que rien
+ne contrôle. La règle 4 était tenue pour le lien série (`test_link_sim.gd`) mais pas pour la FSM de
+course — celle qui arbitre les classements.

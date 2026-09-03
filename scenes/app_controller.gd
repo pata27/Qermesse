@@ -248,6 +248,7 @@ func start_race() -> bool:
 	# NEW RACE : la course precedente, terminee, est acquittee. Elle reste a
 	# l'ecran public jusqu'au decompte suivant — c'est le HUD qui decide.
 	acknowledge_results()
+
 	var config := current_config()
 	recorder.begin_race(config, roster.to_recorder_map())
 	if not engine.arm(config, Time.get_ticks_msec()):
@@ -272,6 +273,10 @@ func restart_race() -> bool:
 	return start_race()
 
 
+## Referme l'ecran de resultats. `show_results()` reste appele en premier : le
+## moteur y est deja passe a la fin de la course, mais si un chemin l'avait
+## laisse a FINISHED, l'armement suivant serait refuse — et un depart bloque
+## en pleine soiree coute plus cher qu'un appel sans effet.
 func acknowledge_results() -> void:
 	engine.show_results()
 	engine.acknowledge_results()
@@ -477,6 +482,14 @@ func _on_race_finished(result: RaceResult) -> void:
 	if not recorder.problems().is_empty():
 		notice.emit("ENREGISTREMENT : %s" % recorder.problems()[recorder.problems().size() - 1])
 	save_preferences()
+	# LE RESULTAT EST A L'ECRAN : la FSM le dit. `docs/02` §1 fait suivre
+	# FINISHED de RESULTS, « resultat consultable, en attente d'acquittement » ;
+	# c'est un etat ou l'on sejourne, le temps que l'operateur regarde le
+	# classement. Il etait traverse en une microseconde au depart de la course
+	# SUIVANTE, si bien que le moteur restait a FINISHED tout le temps ou le
+	# podium etait affiche, et que l'etape decrite par le diagramme n'existait
+	# nulle part. On y entre ici, apres avoir prevenu tout le monde.
+	engine.show_results()
 
 
 func startup_problems() -> Array[String]:
