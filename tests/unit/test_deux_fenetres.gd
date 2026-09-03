@@ -181,14 +181,13 @@ func test_aucun_reglage_de_profil_n_est_lettre_morte() -> void:
 	# LE DEFAUT DE CLASSE. Un reglage declare dans `PROFILES` que rien ne lit est
 	# une promesse non tenue : le document annonce trois niveaux de qualite, et
 	# l'un des leviers ne bougeait rien. Chaque cle doit etre lue quelque part.
+	# TOUT LE DOSSIER, pas une liste de fichiers. La liste figée a accusé
+	# `volumetric_fog`, `shadows` et `ssao` le jour où ces trois réglages sont
+	# passés dans `race_ambience.gd`, extrait de la scène : la garde regardait
+	# encore les anciens fichiers. Une garde qui dépend d'une liste à tenir à
+	# jour finit par accuser un déménagement.
 	var sources := ""
-	for path: String in [
-		"res://scenes/race3d/race_scene.gd",
-		"res://scenes/race3d/split_screen.gd",
-		"res://scenes/race3d/render_quality.gd",
-		"res://scenes/race3d/rider_rig.gd",
-		"res://scenes/race3d/crowd.gd",
-	]:
+	for path: String in _scripts_under("res://scenes/race3d"):
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file != null:
 			sources += file.get_as_text()
@@ -214,3 +213,47 @@ func test_le_curseur_de_volume_reste_manoeuvrable_son_coupe() -> void:
 		panel.volume_slider().editable,
 		"le volume se regle meme son coupe : c'est un reglage, pas une sortie"
 	)
+
+
+func test_l_ecran_public_ouvert_en_pleine_course_rattrape_l_etat() -> void:
+	# LE CAS DU TERRAIN. Un operateur ouvre le videoprojecteur en retard — c'est
+	# frequent. La scene se montait alors sans avoir vu la transition ARMING :
+	# pas de portique d'arrivee en mode distance, et surtout, en poursuite, ni
+	# chiffre d'ecart ni barre de tension, c'est-a-dire le SUJET du mode
+	# (docs/04 §5). L'ecran public restait ampute pour toute la course.
+	var controller: AppController = _main.controller
+	controller.set_simulation_speed(10.0)
+	for i: int in range(600):
+		await wait_physics_frames(1)
+		if controller.link_state() == Protocol.State.IDENTIFIED:
+			break
+	assert_eq(controller.link_state(), Protocol.State.IDENTIFIED, "le simulateur repond")
+
+	controller.settings.mode = RaceConfig.Mode.PURSUIT
+	controller.settings.gap_m = 50.0
+	assert_true(controller.start_race(), "la poursuite part")
+	for i: int in range(900):
+		await wait_physics_frames(1)
+		if controller.engine.state() == RaceEngine.State.RUNNING:
+			break
+	assert_eq(controller.engine.state(), RaceEngine.State.RUNNING, "elle court")
+
+	# L'operateur ouvre l'ecran public MAINTENANT.
+	_main.open_spectacle()
+	await wait_physics_frames(4)
+	var scene: RaceScene = _main.spectacle.scene
+	assert_true(scene.hud().gap_visible(), "l'ecart de la poursuite est a l'ecran")
+
+
+## Tous les scripts d'un dossier, sous-dossiers compris.
+func _scripts_under(path: String) -> PackedStringArray:
+	var found := PackedStringArray()
+	var dir := DirAccess.open(path)
+	if dir == null:
+		return found
+	for file: String in DirAccess.get_files_at(path):
+		if file.get_extension() == "gd":
+			found.append(path.path_join(file))
+	for sub: String in DirAccess.get_directories_at(path):
+		found.append_array(_scripts_under(path.path_join(sub)))
+	return found

@@ -555,6 +555,13 @@ func _refresh_objective() -> void:
 	_notice.position.x = centre - 420.0
 
 
+## Rejoue une transition d'etat, pour une scene montee en pleine course. Voir
+## `RaceScene._catch_up_if_running` : sans cela, l'ecran public ouvert en retard
+## reste ampute du sujet de son mode jusqu'a la course suivante.
+func replay_state(previous: int, current: int) -> void:
+	_on_state(previous, current)
+
+
 func _on_state(_previous: int, current: int) -> void:
 	if current == RaceEngine.State.RUNNING:
 		_under_way = true

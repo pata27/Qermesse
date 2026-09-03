@@ -42,7 +42,8 @@ var _rails: Node3D
 var _track_material: ShaderMaterial
 var _crowd: Crowd
 var _finish_gate: Node3D
-var _environment: WorldEnvironment
+## Environnement et lumieres — voir `RaceAmbience`.
+var _ambience: RaceAmbience
 var _hud: RaceHud
 var _overlay: ColorRect
 var _overlay_material: ShaderMaterial
@@ -56,7 +57,6 @@ var _lane_count := 2
 var _lane_glow: Dictionary = {}
 var _anchor_m := 0.0
 var _last_shape := ""
-var _key_light: DirectionalLight3D
 var _anchor_primed := false
 var _slow_motion := 1.0
 var _coast := RaceCoast.new()
@@ -77,7 +77,10 @@ func setup(controller: AppController, level: int = -1) -> void:
 	# le niveau en cours de route, et elle doit valoir au lancement aussi.
 	_auto_degrade = level < 0
 
-	_build_environment()
+	_ambience = RaceAmbience.new()
+	_ambience.name = "Ambience"
+	add_child(_ambience)
+	_ambience.build(quality)
 	_build_track()
 	_build_camera()
 	_build_post_process()
@@ -95,6 +98,7 @@ func setup(controller: AppController, level: int = -1) -> void:
 	_controller.countdown_tick.connect(_on_countdown)
 
 	rebuild_riders()
+	_catch_up_if_running()
 
 
 ## Reconstruit les riders d'après le roster. Appelée à chaque armement : le
@@ -122,105 +126,6 @@ func rebuild_riders() -> void:
 	_rebuild_track_material()
 	_crowd.build(int(quality.option("crowd_count")), float(_lane_count) * TrackBuilder.LANE_WIDTH_M)
 	_reposition_riders(0.0)
-
-
-func _build_environment() -> void:
-	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	# Anthracite de docs/04 §2 : le fond ne doit jamais concurrencer les néons.
-	env.background_color = Color("#0B0E14")
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color("#1A2030")
-	# Ambiante réduite : trop d'ambiante écrase les ombres et rend tout plat.
-	env.ambient_light_energy = 0.22
-
-	env.glow_enabled = bool(quality.option("glow"))
-	# Bloom modéré : un halo trop généreux ramène toutes les couleurs vers le
-	# blanc et annule la distinction entre les couloirs.
-	env.glow_intensity = 0.6
-	env.glow_bloom = 0.12
-	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
-	env.glow_hdr_threshold = 0.85
-
-	# VOLUMÉTRIQUE LÉGER — et « léger » se mesure (docs/04 §4).
-	#
-	# À 0,012 de densité avec une albédo blanche par défaut, la brume diffusait
-	# les projecteurs de salle dans tout le volume : le fond anthracite montait
-	# à une luminance de 75 contre 33 sans elle, les gradins lointains
-	# disparaissaient dans un lait gris et les néons perdaient le contraste qui
-	# les fait exister (docs/04 §1). Le niveau de qualité le plus coûteux
-	# donnait donc l'image la moins conforme.
-	#
-	# C'EST L'ALBÉDO, PAS LA DENSITÉ. J'ai commencé par diviser la densité par
-	# trois : le fond retombait à 32, mais la brume ne se voyait plus du tout —
-	# on payait un effet devenu invisible. La mesure a tranché : à albédo
-	# sombre, faire varier la densité de 0,004 à 0,012 déplace le fond de 31 à
-	# 31,9. L'albédo décide de ce que la brume renvoie des lampes, et blanche
-	# par défaut, elle renvoyait tout. Elle passe donc à un bleu de salle et la
-	# densité reste entière : la brume enveloppe les gradins sans les effacer,
-	# fond mesuré à 35,8 contre 32,9 sans elle.
-	#
-	# `sky_affect` réduit épargne en plus le fond, qui n'est pas un volume à
-	# traverser mais une couleur derrière tout.
-	if bool(quality.option("volumetric_fog")):
-		env.volumetric_fog_enabled = true
-		env.volumetric_fog_density = 0.012
-		env.volumetric_fog_albedo = Color("#4A5F80")
-		env.volumetric_fog_emission = Color("#101828")
-		# Diffusion vers l'avant : la brume se voit autour des lampes plutôt
-		# qu'uniformément, ce qui est la façon dont une salle embrumée se lit.
-		env.volumetric_fog_anisotropy = 0.35
-		env.volumetric_fog_sky_affect = 0.3
-	env.fog_enabled = true
-	# Légèrement plus claire que le fond : la brume donne de la profondeur et
-	# empêche le haut de l'image de tomber dans un noir absolu.
-	env.fog_light_color = Color("#141A26")
-	env.fog_density = 0.008
-
-	if bool(quality.option("ssao")):
-		env.ssao_enabled = true
-
-	_environment = WorldEnvironment.new()
-	_environment.environment = env
-	add_child(_environment)
-
-	# Deux lumières, et c'est le minimum : un corps ne prend du volume que s'il
-	# est ÉCLAIRÉ. Avec une seule source rasante et beaucoup d'ambiante, les
-	# cyclistes ressortaient plats.
-	var key := DirectionalLight3D.new()
-	_key_light = key
-	key.name = "KeyLight"
-	key.light_energy = 0.62
-	key.light_color = Color("#CFE0FF")
-	key.rotation_degrees = Vector3(-38.0, 42.0, 0.0)
-	key.shadow_enabled = bool(quality.option("shadows"))
-	# DEUX CASCADES, PAS QUATRE. Le décor tient dans un couloir d'une
-	# cinquantaine de mètres ; les quatre cascades par défaut redessinaient
-	# chaque projeteur quatre fois pour une précision que cette profondeur de
-	# champ ne réclame pas.
-	key.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
-	key.directional_shadow_max_distance = 55.0
-	add_child(key)
-
-	# Contre-jour froid depuis l'arrière : il détache les silhouettes du fond
-	# anthracite sans éclaircir la piste.
-	var fill := DirectionalLight3D.new()
-	fill.name = "FillLight"
-	fill.light_energy = 0.30
-	fill.light_color = Color("#5A82C4")
-	fill.rotation_degrees = Vector3(-12.0, -155.0, 0.0)
-	fill.shadow_enabled = false
-	add_child(fill)
-
-	# Contre-jour rasant venant de l'avant : il dessine le bord supérieur des
-	# cyclistes, qui sans lui se fondaient dans le parquet.
-	var rim := DirectionalLight3D.new()
-	rim.name = "RimLight"
-	rim.light_energy = 0.55
-	rim.light_color = Color("#BFD4FF")
-	rim.rotation_degrees = Vector3(-8.0, 12.0, 0.0)
-	rim.shadow_enabled = false
-	add_child(rim)
 
 
 func _build_track() -> void:
@@ -348,6 +253,13 @@ func _build_hud() -> void:
 	_hud.setup(_controller)
 
 
+## L'habillage de cette scène — pour les tests, qui vérifient ce que le public
+## voit. Supprimé un temps comme accesseur sans appelant, puis rétabli le jour
+## où il a fallu prouver qu'un écran ouvert en pleine course rattrape son état.
+func hud() -> RaceHud:
+	return _hud
+
+
 ## Écran scindé : au-delà d'une dizaine de mètres d'écart, cadrer tout le monde
 ## est impossible. La vue du poursuivant vient alors se poser dans l'image.
 func _build_split() -> void:
@@ -363,12 +275,24 @@ func _build_split() -> void:
 	get_viewport().size_changed.connect(_on_viewport_resized)
 
 
-func split_screen() -> SplitScreen:
-	return _split
-
-
 func camera() -> Camera3D:
 	return _camera_rig.camera
+
+
+## Rattrape une course DEJA EN COURS au moment ou la scène se monte.
+##
+## Un opérateur ouvre souvent l'écran public en retard. La scène se montait
+## alors sans avoir vu la transition ARMING : pas de portique d'arrivée en mode
+## distance, et en poursuite ni chiffre d'écart ni barre de tension — le SUJET
+## du mode (docs/04 §5). L'écran restait amputé pour toute la course, et rien ne
+## le rétablissait avant la suivante.
+func _catch_up_if_running() -> void:
+	var state := _controller.engine.state()
+	if state != RaceEngine.State.RUNNING and state != RaceEngine.State.COUNTDOWN:
+		return
+	_on_race_state_changed(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	if state == RaceEngine.State.RUNNING:
+		_hud.replay_state(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
 
 
 func _on_race_state_changed(_previous: int, current: int) -> void:
@@ -810,13 +734,7 @@ func _relieve_for_panes(panes: int) -> void:
 	_effect_relief = 0.0 if crowded else 1.0
 	if _crowd != null:
 		_crowd.visible = crowded
-	if _environment != null and _environment.environment != null:
-		var env := _environment.environment
-		env.glow_enabled = bool(quality.option("glow")) and full
-		env.volumetric_fog_enabled = bool(quality.option("volumetric_fog")) and full
-		env.ssao_enabled = bool(quality.option("ssao")) and full
-	if _key_light != null:
-		_key_light.shadow_enabled = bool(quality.option("shadows")) and full
+	_ambience.relieve(quality, full)
 
 
 ## Rapport d'image de l'ÉCRAN — pas celui d'une vue de volet, qui n'en couvre
@@ -960,10 +878,7 @@ func _update_effects(delta: float) -> void:
 
 ## Réapplique le profil courant — après une dégradation, ou un choix manuel.
 func apply_quality() -> void:
-	var env := _environment.environment
-	env.glow_enabled = bool(quality.option("glow"))
-	env.volumetric_fog_enabled = bool(quality.option("volumetric_fog"))
-	env.ssao_enabled = bool(quality.option("ssao"))
+	_ambience.apply(quality)
 	_apply_msaa()
 	_crowd.build(int(quality.option("crowd_count")), float(_lane_count) * TrackBuilder.LANE_WIDTH_M)
 	_track_material.set_shader_parameter("glow_boost", 1.0 if quality.option("glow") else 0.6)

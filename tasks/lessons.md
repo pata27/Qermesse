@@ -1241,3 +1241,34 @@ demande doit survivre jusqu'au décompte. Un test existant l'a dit tout de suite
 **Deux vérifications négatives** : les autres injections — tick fantôme, perte et retour de lien,
 trames perdues — agissent immédiatement et n'ont rien à consommer. Et `begin_race` remet bien à
 zéro tout ce qui doit l'être ; une longue soirée n'accumule rien.
+
+## Une garde peut être bâillonnée par une chaîne de caractères
+
+`RaceScene.split_screen()` n'avait aucun appelant depuis toujours. La garde des
+fonctions mortes ne l'a jamais dit : elle compte les occurrences du nom dans le
+corpus, et un autre test contenait le chemin littéral
+`"res://scenes/race3d/split_screen.gd"` dans une liste de fichiers écrite en
+dur. La chaîne comptait comme un usage. Le jour où cette liste a été remplacée
+par un parcours de dossier, la garde a parlé.
+
+Deux leçons. La première : une garde qui cherche un identifiant dans du texte
+compte aussi les chemins, les messages et les clés de dictionnaire — elle
+sous-estime toujours, jamais l'inverse, donc son silence ne prouve rien. La
+seconde : une liste de fichiers écrite en dur dans un test est une dette à deux
+têtes — elle accuse à tort après un déménagement (`volumetric_fog` accusé le
+jour où le réglage est passé dans `race_ambience.gd`) et elle bâillonne à tort
+tant qu'elle est là. Parcourir le dossier coûte dix lignes et n'a aucun des
+deux défauts.
+
+## Ce que l'accesseur mort désignait
+
+`split_screen()` n'était pas du code mort à supprimer : c'était le seul test
+manquant d'une fonction annoncée en première page du README. L'écran scindé —
+hystérésis asymétrique, plafond à quatre volets, renumérotation des cassures à
+chaque arrivée — n'avait pas une seule assertion. Rien de tout cela ne se voit
+sur une capture : ce sont des DÉCISIONS, pas des pixels.
+
+La règle d'avant tenait : « un accesseur sans appelant est parfois un test qui
+manque ». Elle se précise ici — le test qui manquait n'était pas celui de
+l'accesseur, mais celui du composant qu'il donnait. Une fois `SplitScreen`
+éprouvé directement, l'accesseur n'avait plus de raison d'être et il est parti.
