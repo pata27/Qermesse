@@ -424,6 +424,10 @@ func set_simulator_profile(name: String) -> bool:
 	return _link.set_simulator_profile(name)
 
 
+func simulation_speed() -> float:
+	return _link.simulation_speed()
+
+
 ## Ce que le simulateur porte en ce moment — la vitrine l'emprunte et le rend.
 func simulator_profile() -> String:
 	return _link.simulator_profile()

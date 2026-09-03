@@ -27,6 +27,9 @@ func before_each() -> void:
 	_main.recorder_logs_dir = _logs
 	_main.recorder_races_dir = _races
 	add_child_autofree(_main)
+	# La suite ne peut pas attendre trois manches reelles : en production la
+	# vitrine tourne a vitesse normale, c'est tout son interet.
+	_main.attract.speed_scale = 8.0
 
 
 func after_each() -> void:
@@ -115,6 +118,7 @@ func test_la_vitrine_rend_tout_ce_qu_elle_emprunte() -> void:
 	assert_eq(controller.roster.active_lanes(), [0] as Array[int], "les pistes actives aussi")
 	assert_eq(controller.simulator_profile(), "deux-groupes", "le profil du simulateur")
 	assert_eq(controller.simulator_riders(), 3, "et ses capteurs cables")
+	assert_almost_eq(controller.simulation_speed(), 1.0, 0.01, "et la vitesse du simulateur")
 
 
 func test_la_vitrine_ne_coupe_jamais_une_vraie_course() -> void:
@@ -164,6 +168,19 @@ func test_la_vitrine_enchaine_des_scenarios_differents() -> void:
 		if not distinct.has(mode):
 			distinct.append(mode)
 	assert_gte(distinct.size(), 2, "et pas toujours le meme mode")
+
+
+func test_la_vitrine_tourne_a_vitesse_reelle() -> void:
+	# Elle a d'abord accelere le simulateur trois fois, sur l'idee qu'une
+	# demonstration n'a pas a durer ce que dure une course. C'etait une faute :
+	# des coureurs qui pedalent en accelere se lisent comme un defaut, pas comme
+	# un resume. Le reglage par defaut est donc le temps reel, et l'ecart n'est
+	# qu'une couture de test.
+	var fresh := AttractMode.new()
+	autofree(fresh)
+	assert_almost_eq(
+		fresh.speed_scale, 1.0, 0.001, "la vitrine ne fait pas courir en accelere"
+	)
 
 
 func test_la_camera_monte_quand_elle_tourne() -> void:

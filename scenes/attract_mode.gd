@@ -58,16 +58,23 @@ const SCENARIOS := [
 	},
 ]
 
-## Temps simulé accéléré. Une vitrine n'a pas à durer ce que dure une vraie
-## course : trois fois plus vite, une manche passe en sept secondes et le
-## passant en voit plusieurs.
-const SPEED := 3.0
 ## Repos entre deux manches, le temps que le podium se lise.
 const BREATH_S := 6.0
 ## Délai d'un enchaînement bloqué. Si le lien ne répond pas ou qu'une course
 ## reste coincée, on repart sur le scénario suivant plutôt que de figer l'écran
 ## — une vitrine gelée est pire qu'une vitrine absente.
 const STUCK_S := 90.0
+
+## LA VITRINE TOURNE EN TEMPS RÉEL. Elle a d'abord accéléré le simulateur trois
+## fois, sur l'idée qu'une démonstration n'a pas à durer ce que dure une course
+## — et c'était une faute. Un passant doit voir une course CRÉDIBLE ; des
+## coureurs qui pédalent en accéléré et un décompte qui défile se lisent comme
+## un défaut, pas comme un résumé. Une manche de 250 m dure vingt secondes, et
+## c'est très bien : c'est le temps qu'il faut pour s'arrêter et regarder.
+##
+## Couture de test, uniquement : la suite ne peut pas attendre trois manches
+## réelles.
+var speed_scale := 1.0
 
 var _controller: AppController
 var _root: Node
@@ -108,7 +115,7 @@ func start() -> bool:
 	# afficherait quatre pistes muettes, puis l'alerte « aucun tick depuis le
 	# départ ». Le backend est rendu à l'arrêt.
 	_controller.apply_backend(true)
-	_controller.set_simulation_speed(SPEED)
+	_controller.set_simulation_speed(speed_scale)
 	_apply_cinematic(1.0)
 	_next_race()
 	changed.emit()
@@ -216,6 +223,7 @@ func _remember() -> void:
 		"simulated": _controller.is_simulated(),
 		"profile": _controller.simulator_profile(),
 		"simulator_riders": _controller.simulator_riders(),
+		"speed": _controller.simulation_speed(),
 	}
 
 
@@ -232,7 +240,9 @@ func _restore() -> void:
 		_controller.roster.set_active(lane, bool(lanes[lane]))
 	_controller.set_simulator_riders(int(_saved["simulator_riders"]))
 	_controller.set_simulator_profile(str(_saved["profile"]))
-	_controller.set_simulation_speed(1.0)
+	# CE QU'IL Y AVAIT, pas une valeur par defaut. Remettre 1,0 en dur ecrasait
+	# une acceleration que l'operateur — ou un outil — avait posee lui-meme.
+	_controller.set_simulation_speed(float(_saved["speed"]))
 	# EN DERNIER. Rebasculer sur le matériel referme le simulateur : les
 	# réglages qu'on vient de lui rendre doivent être posés AVANT, sinon ils
 	# tombent dans le vide et l'opérateur retrouve un simulateur par défaut le

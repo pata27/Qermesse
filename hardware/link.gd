@@ -144,6 +144,10 @@ func set_simulator_profile(name: String) -> bool:
 ## REELLEMENT poses. La vitrine les ecrase le temps de sa demonstration et doit
 ## pouvoir les rendre exactement : sans lecture, elle ne saurait pas quoi rendre
 ## et remettrait des valeurs par defaut a la place de celles de l'operateur.
+func simulation_speed() -> float:
+	return float(_impl.time_scale) if "time_scale" in _impl else 1.0
+
+
 func simulator_profile() -> String:
 	return str(_impl.profile) if "profile" in _impl else ""
 
