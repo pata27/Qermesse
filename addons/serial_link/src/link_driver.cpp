@@ -318,6 +318,36 @@ std::size_t LinkDriver::pump_reads(std::uint32_t now_ms) {
     return produced;
 }
 
+// Constate qu'un boitier a quitte le systeme, meme sans erreur de lecture.
+//
+// LE CAS HORS COURSE. Le watchdog n'est arme que pendant une course (docs/01
+// §6.2) et `read()` ne signale pas toujours un raccrochage — sur un
+// pseudo-terminal il rend 0, un silence indistinguable d'un port au repos. Un
+// boitier debranche au branchement laissait donc le panneau afficher
+// `Lien : IDENTIFIED`, la version du firmware, et START actif : le depart
+// partait dans le vide. `MANUEL-OPERATEUR` §2.5 demandait justement ce geste.
+//
+// Interroge a la cadence du scan, pas a chaque image : c'est un appel systeme.
+bool LinkDriver::port_vanished(std::uint32_t now_ms) {
+    if (!port_->is_open()) {
+        return false;
+    }
+    if (last_presence_ms_ != 0 && now_ms - last_presence_ms_ < cfg_.scan_interval_ms) {
+        return false;
+    }
+    last_presence_ms_ = now_ms;
+    if (port_->still_present()) {
+        return false;
+    }
+    // Meme verdict qu'une erreur de lecture : en course c'est une urgence,
+    // hors course une simple deconnexion.
+    close_port(now_ms);
+    enter(race_active_.load(std::memory_order_acquire) ? LinkState::LinkLost
+                                                       : LinkState::Disconnected,
+          now_ms);
+    return true;
+}
+
 void LinkDriver::tick(std::uint32_t now_ms) {
     if (!running_.load(std::memory_order_acquire)) {
         if (port_->is_open()) {
@@ -342,6 +372,10 @@ void LinkDriver::tick(std::uint32_t now_ms) {
         now_ms - lost_since_ms_ > cfg_.reconnect_grace_ms) {
         st_interrupted_.fetch_add(1, std::memory_order_relaxed);
         interrupted_reported_ = true;
+    }
+
+    if (port_vanished(now_ms)) {
+        return;
     }
 
     switch (state()) {

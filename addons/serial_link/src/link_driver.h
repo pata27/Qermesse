@@ -157,6 +157,8 @@ class LinkDriver {
     void begin_handshake(std::uint32_t now_ms, bool send_stop);
     void pump_commands();
     std::size_t pump_reads(std::uint32_t now_ms);
+    // Referme et redescend d'etat si le boitier a disparu du systeme.
+    bool port_vanished(std::uint32_t now_ms);
     void on_frame(const Frame& f, std::uint32_t now_ms);
     void close_port(std::uint32_t now_ms);
     void note_failure(const std::string& path);
@@ -183,6 +185,7 @@ class LinkDriver {
     int handshake_attempt_ = 0;
     std::uint32_t handshake_deadline_ = 0;
     std::uint32_t last_scan_ms_ = 0;
+    std::uint32_t last_presence_ms_ = 0;
     std::uint32_t last_progress_ms_ = 0;
     std::uint32_t lost_since_ms_ = 0;
     // Instant ou la course a ete declaree active. Tant qu'aucune trame R:

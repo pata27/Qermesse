@@ -36,6 +36,7 @@ class PosixSerialPort : public SerialPort {
     bool open(const std::string& path, std::string& err) override {
         close();
         fd_ = ::open(path.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
+        path_ = path;
         if (fd_ < 0) {
             err = std::string("open(") + path + ") : " + std::strerror(errno);
             return false;
@@ -74,6 +75,16 @@ class PosixSerialPort : public SerialPort {
 
     bool is_open() const override { return fd_ >= 0; }
 
+    // `access` suit les liens symboliques : un lien reste apres la mort d'un
+    // pseudo-terminal, mais il pend dans le vide et la reponse est bien
+    // « absent ». Un /dev/ttyACM0 arrache disparait de la meme facon.
+    bool still_present() const override {
+        if (fd_ < 0) {
+            return true;  // rien d'ouvert : rien a constater
+        }
+        return ::access(path_.c_str(), F_OK) == 0;
+    }
+
     std::size_t read(std::uint8_t* buf, std::size_t n) override {
         if (fd_ < 0) {
             return kReadError;
@@ -85,7 +96,8 @@ class PosixSerialPort : public SerialPort {
         if (r == 0) {
             // Rien a lire. Sur un pseudo-terminal dont le maitre s'est ferme,
             // c'est aussi ce que rend read() : le raccrochage se manifeste donc
-            // par un silence, que le watchdog de link_driver rattrape.
+            // par un silence. En course le watchdog le rattrape ; hors course
+            // c'est `still_present` qui s'en charge, sans quoi rien ne le voit.
             return 0;
         }
         if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
@@ -117,6 +129,7 @@ class PosixSerialPort : public SerialPort {
 
   private:
     int fd_ = -1;
+    std::string path_;
 };
 
 #if defined(__linux__)

@@ -400,3 +400,31 @@ func test_aucun_texte_ne_nomme_une_piste_par_son_indice() -> void:
 				if not window.contains("+ 1"):
 					offenders.append("%s:%d" % [str(path).get_file(), index + 1])
 	assert_eq(offenders, [] as Array[String], "des pistes nommees par leur indice")
+
+
+## La table du MANUEL dit MOT POUR MOT ce que l'operateur lit sous les boutons.
+##
+## `RaceEngine.state_label` affirme dans sa docstring « voir la table du MANUEL,
+## qui est la meme » — une egalite declaree que rien ne tenait. Elle avait
+## d'ailleurs deja glisse : cinq des six lignes du manuel etaient ecrites sans
+## accents, quand l'ecran en porte. Un operateur qui cherche dans le manuel la
+## ligne qu'il a sous les yeux la cherche AU MOT PRES ; deux redactions qui
+## divergent lentement, c'est un manuel qu'on cesse d'ouvrir.
+func test_le_manuel_reprend_mot_pour_mot_les_lignes_d_etat() -> void:
+	var file := FileAccess.open("res://docs/MANUEL-OPERATEUR.md", FileAccess.READ)
+	assert_not_null(file, "le manuel est la")
+	var manual := file.get_as_text()
+	var missing: Array[String] = []
+	for state: RaceEngine.State in [
+		RaceEngine.State.IDLE,
+		RaceEngine.State.ARMING,
+		RaceEngine.State.COUNTDOWN,
+		RaceEngine.State.RUNNING,
+		RaceEngine.State.FINISHED,
+		RaceEngine.State.RESULTS,
+	]:
+		# La ligne du tableau, bornee par ses barres : « décompte » seul se
+		# trouverait dans n'importe quelle phrase du manuel.
+		if not manual.contains("| %s |" % RaceEngine.state_label(state)):
+			missing.append(RaceEngine.state_label(state))
+	assert_eq(missing, [] as Array[String], "des lignes d'etat absentes de la table du manuel")

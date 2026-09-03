@@ -38,6 +38,19 @@ class SerialPort {
     virtual std::size_t read(std::uint8_t* buf, std::size_t n) = 0;
 
     virtual bool write(const std::uint8_t* buf, std::size_t n) = 0;
+
+    // Le peripherique est-il toujours la ? DISTINCT de `is_open()`.
+    //
+    // Un descripteur reste parfaitement valide apres le raccrochage : sur un
+    // pseudo-terminal dont le maitre est parti, `read()` rend 0 — un silence,
+    // pas une erreur. Hors course aucun watchdog ne veille, si bien qu'un
+    // boitier debranche au branchement restait IDENTIFIED indefiniment, START
+    // actif, firmware affiche. Constater l'absence du chemin est le seul
+    // signal disponible dans ce cas.
+    //
+    // Vrai par defaut : une implementation qui ne sait pas repondre ne doit
+    // jamais faire croire a une disparition.
+    virtual bool still_present() const { return true; }
 };
 
 // Implementation propre a l'OS.

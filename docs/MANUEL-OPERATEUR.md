@@ -33,8 +33,11 @@ décrit le déroulé normal d'une soirée.
    blanc, que le logiciel n'arbitre pas. Attendre **~4 s** (son décompte), puis faire tourner chaque
    rouleau à la main. Chaque piste doit s'animer dans l'ordre attendu. Ré-appuyer pour arrêter. Une piste qui reste à zéro, ou qui bouge quand on tourne le rouleau d'à côté,
    c'est un câblage à reprendre **avant** la première course — pas pendant.
-5. Débrancher puis rebrancher l'USB une fois : le bandeau **LIEN PERDU** doit apparaître en moins
-   d'une seconde, puis disparaître à la reconnexion.
+5. Débrancher puis rebrancher l'USB une fois. **Hors course**, ce n'est pas le bandeau rouge
+   qu'on attend — il ne viendra pas : la ligne du panneau **Matériel** passe à
+   `Lien : DISCONNECTED` en moins d'une seconde, le firmware redevient *inconnu* et START se
+   grise. Au rebranchement, tout revient seul, sans rien cliquer. Le bandeau `LIEN PERDU`, lui,
+   est un signal **de course** : il se vérifie une course lancée, `RECETTE.md` §6.
 
 ## 3. Calibration
 
@@ -43,7 +46,7 @@ décrit le déroulé normal d'une soirée.
   ici : le panneau affiche en direct la circonférence et le nombre de ticks pour 100 m, plus le
   repère qui compte dans le mode choisi — la distance de course en distance, l'écart décisif en
   poursuite, rien de plus en temps.
-* **Développement (m / tour de manivelle)** — ne sert **qu'à** afficher la cadence sur l'écran
+* **Développement (m/tour de manivelle)** — ne sert **qu'à** afficher la cadence sur l'écran
   public. Le capteur ne connaît pas le braquet ; 7 m est un développement de piste courant.
   Ni les distances, ni les temps, ni le classement n'en dépendent.
 
@@ -78,12 +81,12 @@ Sous les boutons, une ligne dit **où en est la course**, en toutes lettres :
 
 | Ligne | Ce que ça veut dire |
 |---|---|
-| au repos — pret a lancer | rien en cours ; START est disponible |
-| armement — le boitier doit repondre | les commandes sont parties, on attend le premier `CD:` |
-| decompte | 3 · 2 · 1, piloté par le boîtier |
+| au repos — prêt à lancer | rien en cours ; START est disponible |
+| armement — le boîtier doit répondre | les commandes sont parties, on attend le premier `CD:` |
+| décompte | 3 · 2 · 1, piloté par le boîtier |
 | course en cours | les coureurs roulent, l'arbitrage tourne |
-| arrivee — classement fige | le PC a tranché, plus rien ne peut changer le résultat |
-| resultat affiche — a acquitter | le podium est à l'écran public jusqu'au prochain départ |
+| arrivée — classement figé | le PC a tranché, plus rien ne peut changer le résultat |
+| résultat affiché — à acquitter | le podium est à l'écran public jusqu'au prochain départ |
 
 Sous les boutons, le panneau **Course** tient un court journal : les cinq derniers messages, le plus
 récent en tête, effacé au départ de la course suivante. C'est là qu'apparaissent les alertes — piste

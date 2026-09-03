@@ -19,6 +19,7 @@ class FakePort : public SerialPort {
     // Scenario pilote par les tests.
     bool open_should_fail = false;
     bool read_should_error = false;
+    bool present = true;  // false : le peripherique a quitte le systeme
     bool answers_version = true;   // false : port ouvert mais muet -> handshake echoue
     std::string written;           // tout ce que le PC a emis
     std::string to_read;           // ce que le firmware repondra
@@ -36,6 +37,8 @@ class FakePort : public SerialPort {
         open_ = true;
         return true;
     }
+
+    bool still_present() const override { return present; }
 
     void close() override {
         if (open_) {
@@ -501,5 +504,41 @@ TEST_CASE("le watchdog ne tombe pas pendant le decompte, meme arme des le START"
     rig.port->emit("R:0,0,0,0,0\r\n");
     rig.run_ms(20);
     rig.run_ms(600);
+    CHECK(rig.drv->state() == LinkState::LinkLost);
+}
+
+TEST_CASE("hors course, un boitier qui quitte le systeme est vu sans erreur de lecture") {
+    // Le cas que rien ne rattrapait. Le watchdog n'est arme qu'en course, et
+    // un raccrochage ne provoque pas toujours d'erreur de lecture : sur un
+    // pseudo-terminal, `read()` rend 0 — le meme silence qu'un port au repos.
+    // Le boitier debranche AU BRANCHEMENT laissait donc l'etat a IDENTIFIED,
+    // START actif, et le depart partait dans le vide.
+    Rig rig;
+    rig.run_ms(40);
+    REQUIRE(rig.drv->state() == LinkState::Identified);
+    const int closes = rig.port->close_count;
+
+    // Le peripherique s'en va. Aucune erreur de lecture, aucun octet — et il
+    // ne se rouvre pas : ce qui a quitte le systeme ne s'ouvre plus.
+    rig.port->present = false;
+    rig.port->open_should_fail = true;
+    rig.run_ms(1200);
+
+    CHECK(rig.drv->state() == LinkState::Disconnected);
+    CHECK(rig.port->close_count == closes + 1);
+}
+
+TEST_CASE("en course, le meme depart de peripherique est une urgence") {
+    // Meme constat, verdict different : pendant une course, un boitier qui
+    // disparait donne LINK_LOST — c'est lui qui leve le bandeau rouge.
+    Rig rig;
+    rig.run_ms(40);
+    REQUIRE(rig.drv->state() == LinkState::Identified);
+
+    rig.drv->set_race_active(true);
+    rig.port->present = false;
+    rig.port->open_should_fail = true;
+    rig.run_ms(1200);
+
     CHECK(rig.drv->state() == LinkState::LinkLost);
 }

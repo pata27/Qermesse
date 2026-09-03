@@ -178,3 +178,43 @@ func test_le_lien_coupe_est_vu_quand_le_boitier_disparait_en_course() -> void:
 			seen = true
 			break
 	assert_true(seen, "la disparition du boitier en pleine course se voit")
+
+
+func test_hors_course_la_disparition_du_boitier_ne_crie_pas_lien_perdu() -> void:
+	# `MANUEL-OPERATEUR` §2.5 demandait de debrancher l'USB AU BRANCHEMENT —
+	# donc hors course — et d'attendre le bandeau rouge `LIEN PERDU`. Il ne
+	# vient jamais : hors course, un port qui disparait rend DISCONNECTED, et
+	# c'est LINK_LOST seul qui leve le bandeau (`app_controller._on_link_state`).
+	# L'operateur aurait cherche une panne inexistante avant sa soiree.
+	#
+	# La distinction est voulue (docs/01 §6.2) : hors course le silence est
+	# normal, c'est pendant la course qu'il est une urgence. Ce test la fige,
+	# des deux cotes — l'etat rendu, et le retour tout seul au rebranchement.
+	var missing := _missing_decor()
+	if not missing.is_empty():
+		pending("saute : %s" % missing)
+		return
+
+	var path := _start_emulator("egaux")
+	await _let_emulator_settle()
+	_link = Link.new()
+	add_child_autofree(_link)
+	assert_true(_link.use_serial(), "le module natif prend la main")
+	_link.set_preferred_port(path)
+	_link.start()
+	assert_true(await _await_state(Protocol.State.IDENTIFIED), "identifie d'abord")
+	# PAS de `set_race_active(true)` : on est au branchement, avant la soiree.
+
+	OS.kill(_pid)
+	_pid = -1
+	var seen := Protocol.State.IDENTIFIED
+	for i: int in range(1800):
+		await wait_physics_frames(1)
+		seen = _link.get_link_state()
+		if seen != Protocol.State.IDENTIFIED:
+			break
+	assert_eq(
+		seen, Protocol.State.DISCONNECTED,
+		"hors course, un boitier debranche est DECONNECTE, pas LIEN PERDU"
+	)
+	assert_false(_link.can_start_race(), "et le depart redevient interdit")

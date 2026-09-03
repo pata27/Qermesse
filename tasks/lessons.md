@@ -1293,3 +1293,35 @@ champ déjà juste**.
 Le défaut n'était visible qu'au clavier, jamais sur une capture ni dans un
 journal : le nom enregistré était bien celui du champ, c'est le champ qui
 mentait.
+
+## Un `read()` qui rend zéro n'est pas un port qui va bien
+
+Le pilote natif ne voyait pas partir un boîtier **hors course**. Le watchdog
+n'est armé que pendant une course (docs/01 §6.2), et le raccrochage ne
+provoque pas toujours d'erreur de lecture : sur un pseudo-terminal dont le
+maître est mort, `read()` rend 0 — exactement ce que rend un port au repos. Le
+descripteur, lui, reste valide. Résultat : USB débranché au branchement, le
+panneau affichait encore `Lien : IDENTIFIED`, la version du firmware, et START
+restait actif ; le départ partait dans le vide.
+
+`is_open()` répond « ai-je un descripteur », pas « le boîtier est-il là ». Il
+fallait la seconde question, d'où `SerialPort::still_present()` — l'absence du
+chemin, interrogée à la cadence du scan. Vraie par défaut : une implémentation
+qui ne sait pas répondre ne doit jamais faire croire à une disparition.
+
+Ce qui a mené jusque-là mérite d'être noté : **c'est le manuel qui a dénoncé le
+code**. `MANUEL-OPERATEUR` §2.5 demandait de débrancher l'USB au branchement et
+d'attendre le bandeau `LIEN PERDU`. En écrivant le test qui devait prouver que
+le manuel se trompait — le bandeau est un signal de course — le lien est resté
+IDENTIFIED trente secondes. Le manuel avait tort sur le signal attendu, et
+raison sur le fond : il fallait bien que quelque chose se passe.
+
+## Une égalité déclarée dans un commentaire n'est pas tenue
+
+`RaceEngine.state_label` disait « voir la table du MANUEL, qui est la même ».
+Elle ne l'était plus : cinq des six lignes du manuel avaient perdu leurs
+accents. Personne ne l'avait vu parce que rien ne comparait. L'opérateur, lui,
+cherche dans le manuel la ligne qu'il a sous les yeux, au mot près.
+
+Règle : quand un commentaire affirme que deux listes sont identiques, cette
+affirmation est un test qui n'a pas encore été écrit.
