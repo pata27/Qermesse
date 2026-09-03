@@ -635,3 +635,41 @@ func test_une_piste_qui_se_tait_en_pleine_course_est_signalee() -> void:
 			text.contains("PISTE 1 : plus un seul tick"), "la piste 1 roule, on ne l'accuse pas"
 		)
 	_controller.engine.abort("fin du test")
+
+
+func test_relancer_en_pleine_course_abandonne_puis_repart() -> void:
+	# Le versant inverse du grisage : « Relancer » est propose EXACTEMENT tant
+	# qu'il y a quelque chose a interrompre. En course il est actif, et il fait
+	# ce que son nom dit — un abandon suivi d'un depart, donc une ligne
+	# INTERROMPUE dans Courses du jour, avec sa trace. C'est le geste du faux
+	# depart qu'on refait tout de suite, et `MANUEL-OPERATEUR` §4.5 previent
+	# desormais de ce qu'il laisse au journal.
+	assert_true(await _await_identified())
+	var race_panel := _panel.race_panel()
+	var aborted: Array[String] = []
+	_controller.race_aborted.connect(func(note: String) -> void: aborted.append(note))
+	var finished: Array[RaceResult] = []
+	_controller.race_finished.connect(func(r: RaceResult) -> void: finished.append(r))
+
+	_controller.settings.distance_m = 100.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running(), "la course doit partir")
+	await wait_physics_frames(10)
+
+	race_panel.refresh()
+	assert_false(race_panel.restart_button().disabled, "Relancer est actif en course")
+	assert_string_contains(race_panel.restart_button().tooltip_text, "réarmer")
+
+	race_panel.restart_button().pressed.emit()
+	assert_eq(aborted.size(), 1, "la course en cours est bien abandonnee")
+	assert_true(await _await_running(), "et une nouvelle repart aussitot")
+	for i: int in range(900):
+		await wait_physics_frames(1)
+		if not finished.is_empty():
+			break
+	assert_false(finished.is_empty(), "la seconde va au bout")
+
+	var events := _csv_events()
+	assert_has(events, "RACE_ABORTED", "l'abandon laisse sa trace")
+	assert_eq(events.count("RACE_START"), 2, "deux departs")
+	assert_has(events, "RACE_FINISH")

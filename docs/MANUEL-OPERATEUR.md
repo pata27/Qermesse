@@ -69,8 +69,13 @@ décrit le déroulé normal d'une soirée.
 4. **START**. Le décompte `3 · 2 · 1 · PARTEZ` est piloté par le boîtier : les LED et l'écran
    sont d'accord. Ne pas compter à haute voix sur une autre cadence.
 5. **STOP** interrompt une course en cours ; **Relancer** l'interrompt et réarme la même
-   configuration. Après une arrivée, il n'y a rien à interrompre : START comme Relancer lancent
-   simplement la suivante, le podium reste à l'écran public jusqu'au décompte.
+   configuration — c'est le geste du faux départ qu'on refait tout de suite. Les deux ne sont
+   proposés que tant qu'il y a quelque chose à interrompre : **après une arrivée, ils sont
+   grisés**, et c'est START qui lance la suivante. Le podium reste à l'écran public jusqu'au
+   décompte.
+   *Attention : Relancer sur une course lancée écrit une ligne **INTERROMPUE** dans Courses du
+   jour, avec sa trace — c'est un abandon suivi d'un départ. Relancer avant le `PARTEZ`, non :
+   une course interrompue à l'armement ou au décompte n'a rien à raconter.*
 6. À l'arrivée : célébration, puis podium sur l'écran public. Le panneau **Résultats** montre le
    même classement, et la course entre dans **Courses du jour**. Le CSV est écrit au fil de l'eau.
    Cette liste survit à un redémarrage : elle est relue depuis les fichiers de course au lancement.

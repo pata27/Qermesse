@@ -305,15 +305,25 @@ func test_la_deuxieme_course_de_la_soiree_part_au_bouton_start_sans_rien_interro
 	assert_eq(finished.size(), 2, "deuxieme course terminee")
 	assert_true(aborted.is_empty(), "rien n'a ete interrompu")
 
-	# Et « Relancer » apres une arrivee n'interrompt rien non plus.
+	# Et « Relancer » n'est meme plus PROPOSE apres une arrivee : il n'y a rien
+	# a interrompre, il ne resterait que le START du bouton d'a cote. Emettre
+	# `pressed` sur un bouton grise passerait outre — c'est l'etat du bouton
+	# qu'on lit, comme l'operateur.
 	await wait_physics_frames(2)
-	race_panel.restart_button().pressed.emit()
+	race_panel.refresh()
+	assert_true(race_panel.restart_button().disabled, "Relancer est grise apres une arrivee")
+	assert_true(race_panel.stop_button().disabled, "STOP aussi")
+	assert_string_contains(
+		race_panel.restart_button().tooltip_text, "Rien à relancer", "et il dit pourquoi"
+	)
+
+	race_panel.start_button().pressed.emit()
 	for i: int in range(900):
 		await wait_physics_frames(1)
 		if finished.size() >= 3:
 			break
-	assert_eq(finished.size(), 3, "troisieme course, relancee")
-	assert_true(aborted.is_empty(), "relancer apres une arrivee n'est pas un abandon")
+	assert_eq(finished.size(), 3, "troisieme course, lancee par START")
+	assert_true(aborted.is_empty(), "aucun abandon dans toute la sequence")
 	var events := _csv_events()
 	assert_eq(events.count("RACE_START"), 3)
 	assert_does_not_have(events, "RACE_ABORTED")

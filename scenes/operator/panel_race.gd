@@ -100,9 +100,19 @@ func refresh() -> void:
 	# UNE COURSE TERMINEE N'EST PAS EN COURS. STOP ne doit etre propose que
 	# tant qu'il y a quelque chose a arreter : sinon c'est un bouton qui invite
 	# au clic et ne fait rien.
+	# UNE COURSE TERMINEE NE SE RELANCE PAS NON PLUS. « Relancer » est un STOP
+	# suivi d'un START ; sans course en cours son STOP ne fait rien et il ne
+	# reste que le START, que le bouton d'a cote fait deja. Deux boutons pour
+	# un meme geste, dont l'un porte un nom qui promet autre chose, invitent a
+	# croire qu'ils different — la question a d'ailleurs ete posee.
 	var running := _controller.race_in_progress()
 	_stop.disabled = not running
-	_restart.disabled = not running and not can_start
+	_restart.disabled = not running
+	_restart.tooltip_text = (
+		"Arrêter la course en cours et réarmer la même configuration"
+		if running
+		else "Rien à relancer : aucune course en cours. START lance la suivante."
+	)
 	_state_label.text = "État : %s" % RaceEngine.state_label(_controller.engine.state())
 	_refresh_lanes()
 
