@@ -117,8 +117,7 @@ func final_ranking(state: RaceState) -> Array[int]:
 		if not state.eliminated[rider]:
 			survivors.append(rider)
 	# En cas de plafond de securite, plusieurs survivants : celui qui mene gagne.
-	survivors.sort_custom(func(a: int, b: int) -> bool:
-		return state.distance_m[a] > state.distance_m[b])
+	survivors = state.by_distance(survivors)
 	ranking.append_array(survivors)
 
 	var eliminated := _elimination_order.duplicate()

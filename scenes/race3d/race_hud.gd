@@ -744,8 +744,7 @@ func _on_progress(state: RaceState) -> void:
 		for lane: int in state.config.active_riders:
 			if not state.eliminated[lane]:
 				racing.append(lane)
-		racing.sort_custom(func(a: int, b: int) -> bool:
-			return state.distance_m[a] > state.distance_m[b])
+		racing = state.by_distance(racing)
 		if racing.size() >= 2:
 			var head: int = racing[0]
 			var last: int = racing[racing.size() - 1]

@@ -109,8 +109,7 @@ func final_ranking(state: RaceState) -> Array[int]:
 		if state.finished_ms[a] != state.finished_ms[b]:
 			return state.finished_ms[a] < state.finished_ms[b]
 		return a < b)
-	unfinished.sort_custom(func(a: int, b: int) -> bool:
-		return state.distance_m[a] > state.distance_m[b])
+	unfinished = state.by_distance(unfinished)
 
 	var ranking: Array[int] = []
 	ranking.append_array(finished)

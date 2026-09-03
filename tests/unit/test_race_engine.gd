@@ -233,6 +233,23 @@ func test_mode_temps_le_pc_seul_decide_de_la_fin() -> void:
 	assert_between(_result.elapsed_ms, 10000, 10100)
 
 
+func test_le_classement_par_distance_est_deterministe_a_egalite() -> void:
+	# « Le plus avance d'abord » etait recopie dans trois fichiers, sans
+	# departage. Le tri de Godot n'est pas stable : a distance egale, la regle
+	# et l'ecran pouvaient designer des meneurs DIFFERENTS — au plafond de
+	# securite, c'est le vainqueur qui change.
+	var config := _config(RaceConfig.Mode.PURSUIT, [0, 1, 2])
+	var state := RaceState.new(config)
+	state.distance_m[0] = 120.0
+	state.distance_m[1] = 200.0
+	state.distance_m[2] = 200.0
+
+	var order: Array[int] = state.by_distance([0, 1, 2])
+	assert_eq(order, [1, 2, 0], "le plus avance d'abord, la piste departage l'egalite")
+	assert_eq(state.by_distance([2, 1, 0]), order, "et l'ordre d'entree n'y change rien")
+	assert_eq(state.leader(), 1, "le meneur est celui que le classement met en tete")
+
+
 func test_mode_temps_ex_aequo_departage_par_vitesse_de_pointe() -> void:
 	var config := _config(RaceConfig.Mode.TIME, [0, 1])
 	config.duration_s = 10.0

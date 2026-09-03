@@ -137,6 +137,28 @@ func racing_riders() -> Array[int]:
 
 
 ## Rider le plus avance parmi ceux encore en course. -1 si aucun.
+## Les couloirs donnes, classes par distance parcourue — LE PLUS AVANCE
+## D'ABORD, la piste departageant une egalite.
+##
+## Ce tri etait recopie a l'identique dans la regle de distance, celle de
+## poursuite et l'habillage, et aucun n'avait de departage. `sort_custom` n'est
+## pas stable : a distance egale, la regle et l'ecran pouvaient designer des
+## meneurs DIFFERENTS — au plafond de securite, c'est le vainqueur qui change.
+func by_distance(lanes: Array) -> Array[int]:
+	var out: Array[int] = []
+	for lane: Variant in lanes:
+		out.append(int(lane))
+	out.sort_custom(func(a: int, b: int) -> bool:
+		if not is_equal_approx(distance_m[a], distance_m[b]):
+			return distance_m[a] > distance_m[b]
+		return a < b)
+	return out
+
+
+## MEME REGLE QUE `by_distance` : a distance egale, le couloir le plus petit
+## l'emporte — la comparaison stricte garde le premier vu, et `racing_riders`
+## rend les couloirs dans l'ordre. Les deux doivent rester d'accord : le
+## meneur affiche a l'ecran est celui que le classement met en tete.
 func leader() -> int:
 	var best := -1
 	for rider: int in racing_riders():
