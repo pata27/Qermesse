@@ -787,3 +787,18 @@ dit pas où.
 positions : ils sont restés verts la fois où le podium extrait s'était empilé en haut à gauche,
 faute d'avoir été dimensionné avant d'entrer dans l'arbre. Capture de poursuite à quatre coureurs
 faite, barre signée et bornes en place.
+
+## Ce qui est expliqué à l'opérateur doit l'être au public, pas l'inverse
+
+Le tableau de résultats de l'opérateur légende sa marque depuis toujours : « x = éliminé à cet
+instant ». Le podium projeté portait la même croix, nue. L'asymétrie était à l'envers de ce qu'elle
+devrait être — l'écran public est vu par cent personnes qui n'ont pas le manuel, celui de
+l'opérateur par une qui l'a.
+
+**Leçon** : quand deux surfaces montrent la même donnée, comparer ce que chacune EXPLIQUE, pas
+seulement ce que chacune affiche. Et la légende n'apparaît que si la marque est là : une légende
+permanente serait du bruit sur une arrivée ordinaire, ce qu'un second test tient.
+
+**Le piège d'accent, dans l'autre sens** : mon assertion cherchait « elimin » sans accent, sur un
+écran que j'ai moi-même accentué il y a trois tours. La légende était bien présente ; c'est le test
+qui la manquait. Une chaîne cherchée doit être copiée depuis la source, pas retapée.

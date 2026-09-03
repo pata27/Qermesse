@@ -133,7 +133,10 @@ fixe le plafond.
 * **Poursuite** — l'écart occupe le centre de l'écran, avec la barre de tension entre `−G` et `+G`.
 * **Décompte** — plein écran, `3 / 2 / 1 / GO`, synchronisé sur les trames `CD:` du firmware
   (jamais sur une horloge PC : les LED physiques et l'écran doivent être d'accord).
-* **Arrivée** — ralenti, podium, temps, vitesse moyenne et vitesse de pointe par rider. Un rider
+* **Arrivée** — ralenti, podium, temps, vitesse moyenne et vitesse de pointe par rider. **Toute
+  marque portée par une ligne est légendée sous le tableau** — la croix d'un éliminé, par exemple —
+  et seulement quand elle est présente : l'écran public est vu par cent personnes qui n'ont pas le
+  manuel, là où le tableau de l'opérateur est vu par une qui l'a. Un rider
   arrivé ne s'arrête pas : il décélère vers une allure de croisière et continue de rouler sous la
   célébration et le podium — le sol défile. Une fois tout le monde arrivé, les suivants accélèrent
   pour revenir se placer derrière le premier, dans l'ordre d'arrivée, à quelques mètres — jamais

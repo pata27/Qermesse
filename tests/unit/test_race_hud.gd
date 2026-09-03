@@ -354,3 +354,33 @@ func test_les_cartes_annoncent_la_duree_en_mode_temps() -> void:
 	_controller.settings.duration_s = 60.0
 	_hud.rebuild_cards()
 	assert_string_contains(_hud.card_detail_text(0), "60.0 s", "le temps a courir")
+
+
+func test_le_podium_public_explique_la_marque_des_elimines() -> void:
+	# CE QUE LE PUBLIC LIT. Un elimine porte « 14.16 s ✕ » — et rien, nulle
+	# part, ne dit ce que cette croix signifie. Le tableau de l'operateur, lui,
+	# l'explique depuis toujours : « x = elimine a cet instant ». L'ecran public
+	# est vu par cent personnes, celui de l'operateur par une.
+	var result := RaceResult.new()
+	result.mode = "poursuite"
+	result.ranking = [0, 1] as Array[int]
+	result.finished_ms = [15540, 0, 0, 0] as Array[int]
+	result.eliminated_ms = [0, 14160, 0, 0] as Array[int]
+	result.eliminated = [false, true, false, false] as Array[bool]
+	result.end_reason = RaceRule.EndReason.LAST_ONE_STANDING
+	var text := _podium_apres(result)
+	assert_string_contains(text, "✕", "la marque est bien la")
+	assert_string_contains(text, "✕ = éliminé", "et elle est expliquee")
+
+
+func test_le_podium_n_explique_pas_une_marque_absente() -> void:
+	# Une legende permanente serait du bruit : sur une arrivee ordinaire, il n'y
+	# a aucune croix a expliquer.
+	var result := RaceResult.new()
+	result.mode = "distance"
+	result.ranking = [0, 1] as Array[int]
+	result.finished_ms = [15540, 16000, 0, 0] as Array[int]
+	result.end_reason = RaceRule.EndReason.ALL_FINISHED
+	var text := _podium_apres(result)
+	assert_false(text.contains("✕"), "aucune croix")
+	assert_false(text.contains("= éliminé"), "donc aucune legende")

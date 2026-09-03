@@ -144,7 +144,22 @@ func show_result(result: RaceResult, objective: String) -> void:
 		result.interruption_note if result.interrupted
 		else "%s — %s" % [objective, result.end_reason_name()]
 	)
+	# LA MARQUE S'EXPLIQUE, SUR L'ÉCRAN QUI LA PORTE. Le tableau de l'opérateur
+	# légende son « x » depuis toujours ; le podium public affichait la croix
+	# nue. C'est pourtant lui qui est vu par cent personnes, et l'opérateur par
+	# une. Ajoutée seulement s'il y a une croix : une légende permanente serait
+	# du bruit sur une arrivée ordinaire.
+	if _has_eliminated(result):
+		_note.text += "\n✕ = éliminé à cet instant ; distance et moyenne arrêtées là"
 	visible = true
+
+
+## Un coureur au moins porte-t-il la marque d'élimination ?
+static func _has_eliminated(result: RaceResult) -> bool:
+	for rider: int in result.ranking:
+		if result.eliminated[rider] and result.eliminated_ms[rider] > 0:
+			return true
+	return false
 
 
 ## Tout le texte du podium, TITRE ET MOTIF COMPRIS : c'est le contenu qui est
