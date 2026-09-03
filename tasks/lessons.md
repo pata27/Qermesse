@@ -987,3 +987,21 @@ quelque chose, chaque dossier de code doit y figurer.
 d'un arbre ASCII et accusait `rules/`, `operator/`, `race3d/` ; puis il exigeait des fichiers
 DIRECTEMENT dans le dossier et accusait `art/`, qui n'a que des sous-dossiers. Une garde qui
 accuse à tort se désarme d'elle-même, parce qu'on finit par la croire fausse.
+
+## Un commentaire qui décrit une capacité ne la donne pas
+
+`tools/ss_emu/CMakeLists.txt` s'ouvrait sur « se construit aussi bien seul que depuis la racine »,
+et le README documentait la commande. Elle échouait : sans `cmake_minimum_required` ni `project()`,
+CMake refuse de configurer un dossier pris comme racine. Le drapeau `SS_EMU_STANDALONE` existait
+même déjà — l'intention était écrite deux fois, implémentée zéro.
+
+Deuxième couche du même défaut : une fois la configuration réparée, `ctest` répondait « No tests
+were found ». `add_test` n'a d'effet que si `enable_testing()` a été appelé au niveau racine, ce
+que faisait le CMakeLists parent et personne d'autre.
+
+**Leçon** : une capacité annoncée dans un commentaire ou un README se vérifie en la lançant. Ici
+deux commandes de dix secondes suffisaient, et le chemin d'entrée du projet était cassé depuis
+sa création.
+
+**Mis sous garde** : la CI construit désormais l'émulateur seul et lance ses tests, exactement
+comme le README le dit. Un chemin documenté que rien ne garde finit toujours par ne plus marcher.

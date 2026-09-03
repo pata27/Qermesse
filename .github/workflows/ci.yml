@@ -57,6 +57,17 @@ jobs:
       - name: Tester
         run: ctest --test-dir build --build-config RelWithDebInfo --output-on-failure
 
+      # L'EMULATEUR SE CONSTRUIT AUSSI SEUL, et le README documente cette
+      # commande-la. Elle etait cassee : `tools/ss_emu/CMakeLists.txt` n'avait
+      # ni `cmake_minimum_required` ni `project()`, si bien que CMake refusait
+      # de le configurer comme racine. Un chemin documente que rien ne garde
+      # finit toujours par ne plus marcher.
+      - name: Emulateur construit seul, comme le dit le README
+        run: |
+          cmake -S tools/ss_emu -B tools/ss_emu/build
+          cmake --build tools/ss_emu/build --config RelWithDebInfo -j 2
+          ctest --test-dir tools/ss_emu/build --build-config RelWithDebInfo --output-on-failure
+
   gdextension:
     name: GDExtension (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
