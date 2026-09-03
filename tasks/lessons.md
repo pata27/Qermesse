@@ -1225,3 +1225,19 @@ supprimer fait même mieux que gagner du temps : le chemin de rescan du pilote s
 **Chiffre consigné** : la suite tourne en 57 s, dont 15 pour les deux tests sur pseudo-terminal, et
 41 s sans l'émulateur construit. `docs/06` §2 le note comme repère — un ralentissement futur se
 remarquera au lieu de s'installer.
+
+## Une injection ponctuelle qui ne se consommait pas
+
+`inject_false_start` décrit un événement unique : « le rider pédale pendant le décompte ». Le
+simulateur remettait à zéro, à chaque armement, le drapeau « déjà émis » — mais gardait la demande
+en attente. Le même faux départ repartait donc à toutes les courses suivantes, indéfiniment. Un
+opérateur qui répète au simulateur aurait vu un faux départ fantôme à chaque course.
+
+**Leçon** : une demande d'injection se consomme À L'ÉMISSION, jamais à l'armement. Ma première
+correction l'effaçait à l'armement et cassait l'usage normal — on injecte AVANT le `g`, et la
+demande doit survivre jusqu'au décompte. Un test existant l'a dit tout de suite : c'est exactement
+à cela que sert une suite qu'on fait tourner en entier après chaque correctif.
+
+**Deux vérifications négatives** : les autres injections — tick fantôme, perte et retour de lien,
+trames perdues — agissent immédiatement et n'ont rien à consommer. Et `begin_race` remet bien à
+zéro tout ce qui doit l'être ; une longue soirée n'accumule rien.

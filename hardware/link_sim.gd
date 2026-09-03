@@ -106,7 +106,6 @@ var _distance_mm := [0.0, 0.0, 0.0, 0.0]
 var _false_start_emitted := [false, false, false, false]
 
 var _pending_false_start := []
-var _pending_faults := []
 var _last_error := ""
 
 
@@ -155,10 +154,22 @@ func _step_countdown() -> void:
 		_emit(Protocol.Frame.COUNTDOWN, {"value": _last_countdown})
 
 	# Faux depart : >= 4 fronts pendant le decompte.
+	#
+	# LA DEMANDE EST CONSOMMEE A L'EMISSION. Elle restait en attente, tandis que
+	# le drapeau « deja emis » repartait a zero a chaque armement : le meme faux
+	# depart repartait donc a toutes les courses suivantes, indefiniment. Un
+	# operateur qui repete au simulateur aurait vu un faux depart fantome a
+	# chaque course. L'effacer a l'armement, en revanche, casserait l'usage
+	# normal — on injecte AVANT le `g`, et la demande doit survivre jusqu'au
+	# decompte.
+	var fired: Array = []
 	for rider: int in _pending_false_start:
 		if not _false_start_emitted[rider]:
 			_false_start_emitted[rider] = true
 			_emit(Protocol.Frame.FALSE_START, {"rider": rider})
+			fired.append(rider)
+	for rider: int in fired:
+		_pending_false_start.erase(rider)
 
 	if _last_countdown == 0:
 		_start_race()

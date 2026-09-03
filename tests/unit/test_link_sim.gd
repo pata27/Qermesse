@@ -328,3 +328,35 @@ func test_chaque_etat_du_lien_est_atteint() -> void:
 	assert_has(_states, Protocol.State.IDENTIFIED)
 	assert_has(_states, Protocol.State.LINK_LOST)
 	assert_has(_states, Protocol.State.DISCONNECTED)
+
+
+func test_un_faux_depart_injecte_ne_se_rejoue_pas_a_la_course_suivante() -> void:
+	# `inject_false_start` decrit un evenement PONCTUEL : « le rider pedale
+	# pendant le decompte ». A l'armement, le simulateur remettait a zero le
+	# drapeau « deja emis » mais gardait la demande en attente : la meme
+	# injection repartait donc a chaque course suivante, indefiniment. Un
+	# operateur qui repete au simulateur aurait vu un faux depart fantome a
+	# toutes ses courses.
+	var faults: Array[int] = []
+	_sim.frame_received.connect(
+		func(kind: int, payload: Dictionary) -> void:
+			if kind == Protocol.Frame.FALSE_START:
+				faults.append(int(payload.get("rider", -1)))
+	)
+	_sim.start()
+	_advance(0.5)
+
+	_sim.send_command("d")
+	_sim.send_command("l278")
+	_sim.send_command("g")
+	_sim.inject_false_start(1)
+	_advance(5.0)
+	assert_eq(faults, [1] as Array[int], "le faux depart demande a bien lieu")
+
+	# Deuxieme course, sans rien demander.
+	_sim.send_command("s")
+	_sim.send_command("d")
+	_sim.send_command("l278")
+	_sim.send_command("g")
+	_advance(5.0)
+	assert_eq(faults, [1] as Array[int], "et il ne se rejoue pas tout seul")

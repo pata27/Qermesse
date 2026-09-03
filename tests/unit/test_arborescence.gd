@@ -122,14 +122,26 @@ func test_aucune_constante_n_est_declaree_pour_rien() -> void:
 		corpus += _without_comments(str(text))
 
 	var dead: Array[String] = []
-	var declaration := RegEx.create_from_string("(?m)^const ([A-Z][A-Z0-9_]*)")
+	# Les VARIABLES PRIVEES entrent dans le meme compte. Une `var _x` que rien
+	# ne relit est morte au meme titre qu'une constante — `link_sim.gd` en
+	# gardait une, `_pending_faults`, jamais lue depuis sa declaration. GDScript
+	# n'y donne pas acces de l'exterieur : une seule occurrence suffit a
+	# conclure.
+	var declaration := RegEx.create_from_string(
+		"(?m)^(?:const ([A-Z][A-Z0-9_]*)|var (_[a-z][a-z0-9_]*))"
+	)
 	for path: Variant in texts.keys():
 		for found: RegExMatch in declaration.search_all(str(texts[path])):
 			var name := found.get_string(1)
-			var uses := RegEx.create_from_string("\\b%s\\b" % name).search_all(corpus).size()
+			var private := name.is_empty()
+			if private:
+				name = found.get_string(2)
+			# Une constante peut etre lue d'ailleurs ; une variable privee, non.
+			var haystack: String = str(texts[path]) if private else corpus
+			var uses := RegEx.create_from_string("\\b%s\\b" % name).search_all(haystack).size()
 			if uses <= 1:
 				dead.append("%s : %s" % [str(path).get_file(), name])
-	assert_eq(dead, [] as Array[String], "des constantes que rien ne lit")
+	assert_eq(dead, [] as Array[String], "des declarations que rien ne relit")
 
 
 ## Retire les commentaires d'une source. Une ligne qui commence par `#` saute
