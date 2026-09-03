@@ -414,3 +414,52 @@ func test_le_chiffre_d_ecart_ne_bat_pas_a_ecart_stable() -> void:
 	for step: int in range(240):
 		tension.advance(1.0 / 60.0)
 	assert_ne(tension.gap_text(), settled, "un ecart qui change vraiment se voit")
+
+
+func test_le_bandeau_d_abandon_tient_dans_l_ecran_et_s_y_centre() -> void:
+	# Vu a l'image, pas au test : « COURSE INTERROMPUE — arrêt opérateur »
+	# mesure 895 px pour une boite de 840 et sortait par la droite. Le pire cas
+	# est bien plus long encore, et rien ne l'aurait signale — les assertions
+	# lisent du texte, pas des largeurs.
+	#
+	# L'abandon prend maintenant tout l'ecran, au milieu : la course est finie,
+	# et ce sont les coureurs qu'il faut atteindre, sur leurs rouleaux.
+	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	for note: String in [
+		"arrêt opérateur",
+		"lien perdu au-delà du délai de grâce",
+		"fermeture du logiciel",
+		"",
+	]:
+		_controller.race_aborted.emit(note)
+		var metrics := _hud.notice_metrics()
+		var rect: Rect2 = metrics["rect"]
+		var width: float = metrics["text_width"]
+		assert_lt(width, rect.size.x, "« %s » tient dans sa boite" % note)
+		assert_gt(rect.position.x, 0.0, "la boite commence dans l'ecran")
+		assert_lt(rect.position.x + rect.size.x, 1920.0, "et finit dedans")
+		assert_almost_eq(
+			rect.position.x + rect.size.x * 0.5, 960.0, 1.0, "centree sur l'ecran"
+		)
+
+	# Rien ne doit rester SOUS les cartes des coureurs : a quatre pistes elles
+	# descendent jusqu'au milieu de l'ecran, et le bandeau y passait dessous.
+	# Il monte donc sur la couche superieure, la scene s'assombrit, et les
+	# cartes s'effacent — ce qu'elles montrent n'a plus cours.
+	var big := _hud.notice_metrics()
+	assert_true(big["above_cards"], "le bandeau d'abandon passe au-dessus des cartes")
+	assert_true(big["veil"], "et la scene s'assombrit derriere lui")
+
+	# La course suivante remet tout en place.
+	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	var back := _hud.notice_metrics()
+	assert_false(back["veil"], "le voile s'en va au reamement")
+	assert_false(back["above_cards"], "et le bandeau redescend a sa place")
+
+	# Les autres bandeaux, eux, restent a leur place sous la bande : la course
+	# continue et ils ne doivent pas masquer ce qu'elle montre.
+	_controller.link_state_changed.emit(Protocol.State.LINK_LOST)
+	var small: Rect2 = _hud.notice_metrics()["rect"]
+	assert_lt(small.size.x, RaceHud.NOTICE_BIG_WIDTH, "le lien perdu ne prend pas tout l'ecran")
+	assert_lt(small.position.y, 300.0, "il reste sous la bande")

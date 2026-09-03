@@ -1356,3 +1356,42 @@ s'est simplement arrêté.
 Le logiciel ne voyait que la première, alors que la seconde est la plus
 probable : un capteur lâche pendant l'effort, pas avant. Écrire un seul message
 pour les deux aurait envoyé l'opérateur vérifier un câblage qui marchait.
+
+## Une boîte fixe pour un texte variable
+
+Le bandeau d'alerte de l'écran public tenait dans 840 px depuis toujours. Les
+messages, eux, n'ont jamais eu de longueur fixe : « COURSE INTERROMPUE — arrêt
+opérateur » mesure 895 px, et « … lien perdu au-delà du délai de grâce » 1323.
+Le texte sortait de l'écran par la droite. Aucun test ne pouvait le voir : ils
+lisent `notice_text()`, une chaîne, et une chaîne tronquée à l'écran reste
+entière en mémoire.
+
+Deux mesures en sont sorties. La police RÉTRÉCIT jusqu'à ce que le texte tienne
+— un bandeau plus petit vaut mieux qu'un bandeau qui donne un mot pour un
+autre. Et le test lit désormais des LARGEURS, pas seulement du texte :
+`notice_metrics()` rend la boîte et la largeur réellement occupée.
+
+## Un z-order se voit à l'image, jamais dans une assertion
+
+Mis en grand au milieu, le bandeau d'abandon passait sous les cartes des
+coureurs : elles sont construites à chaque armement, donc après lui, et un
+`CanvasLayer` dessine dans l'ordre de ses enfants. À quatre pistes elles
+descendent jusqu'au milieu de l'écran et coupaient le message en deux. Tous les
+tests restaient verts.
+
+Le monter sur la couche supérieure ne suffisait pas non plus : le texte posait
+alors SUR une carte, deux messages superposés n'en font aucun. Il a fallu les
+trois gestes ensemble — couche supérieure, voile qui assombrit la scène,
+cartes effacées — et c'est la capture qui l'a dit à chaque étape, pas la suite
+de tests.
+
+## Ne pas se servir de `git checkout` pour prouver un rouge
+
+Pour vérifier qu'un test tombe sans le correctif, j'ai neutralisé le code puis
+fait `git checkout <fichier>` pour revenir. Le fichier est revenu à HEAD —
+c'est-à-dire sans AUCUN des changements du jour, une heure de travail effacée
+sans avertissement. Deux fois de suite.
+
+La bonne manière : copier le fichier de côté avant, le remettre après. Un
+`checkout` restaure depuis le dépôt, pas depuis l'état d'avant la dernière
+commande.

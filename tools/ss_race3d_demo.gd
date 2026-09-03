@@ -60,6 +60,7 @@ var _budget_failed := false
 var _false_start_lane := -1
 ## Instant de course, en secondes, ou couper le lien simule. Negatif : jamais.
 var _link_loss_at_s := -1.0
+var _stop_at_s := -1.0
 ## Politique de faux depart appliquee a la course — voir `--politique`.
 var _policy := RaceConfig.FalseStartPolicy.WARN
 var _quality := -1
@@ -187,6 +188,14 @@ func _parse_args() -> void:
 				# permettait de la produire sans debrancher un vrai cable.
 				i += 1
 				_link_loss_at_s = float(args[i]) if i < args.size() else -1.0
+			"--arret":
+				# Arret OPERATEUR a cet instant de course, en secondes, et
+				# capture du bandeau. C'est le seul bandeau plein ecran du
+				# logiciel — il s'adresse aux coureurs sur leurs rouleaux — et
+				# rien ne permettait de le produire sans cliquer STOP a la
+				# main, donc rien ne le montrait sur une preuve.
+				i += 1
+				_stop_at_s = float(args[i]) if i < args.size() else -1.0
 			"--politique":
 				# Politique de faux depart, pour produire les trois bandeaux
 				# publics que `docs/02` §4 decrit : avertissement, penalite,
@@ -473,6 +482,12 @@ func _capture_stills() -> void:
 		# secondes de grace (docs/01 §6.2) : on coupe, on laisse le bandeau
 		# monter, on photographie, et on rebranche pour que la course reprenne —
 		# c'est exactement le scenario que `docs/RECETTE.md` §6 fait constater.
+		if running and _stop_at_s >= 0.0 and race_s >= _stop_at_s:
+			_stop_at_s = -1.0
+			_controller.stop_race()
+			for _wait: int in range(20):
+				await _step()
+			await _shoot("arret-operateur")
 		if running and _link_loss_at_s >= 0.0 and race_s >= _link_loss_at_s:
 			_link_loss_at_s = -1.0
 			_controller.simulate_link_loss()

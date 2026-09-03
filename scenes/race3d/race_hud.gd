@@ -52,6 +52,17 @@ const PODIUM_DELAY_S := 5.0
 const CLEAR_CENTRE_X := (36.0 + CARD_WIDTH + 1920.0) * 0.5
 ## Milieu de l'écran, pour les modes sans cartes.
 const SCREEN_CENTRE_X := 960.0
+
+## Bandeau d'alerte : boite normale, boite « pleine largeur », et les tailles
+## de police visees. La police RETRECIT si le texte ne rentre pas — voir
+## `_place_notice`. Sans cela « COURSE INTERROMPUE — lien perdu au-delà du
+## délai de grâce » mesure 1323 px pour une boite de 840 et sortait de l'ecran.
+const NOTICE_WIDTH := 840.0
+const NOTICE_BIG_WIDTH := 1848.0
+const NOTICE_BIG_HEIGHT := 240.0
+const NOTICE_FONT := 44
+const NOTICE_BIG_FONT := 96
+const NOTICE_MIN_FONT := 28
 ## Barre de tension : largeur totale, du −G au +G.
 ## Raideur du lissage des barres, en 1/s. Dix : elles suivent un écart qui se
 ## creuse sans traîner, mais ne rendent plus le pas des ticks.
@@ -93,6 +104,9 @@ var _notice: Label
 var _band: ColorRect
 ## Ce que le bandeau « lien perdu » a recouvert, à rendre au retour du lien.
 var _covered_notice := ""
+## Bandeau plein ecran : l'abandon, et lui seul. Voir `_on_aborted`.
+var _notice_big := false
+var _abort_veil: ColorRect
 
 
 func setup(controller: AppController) -> void:
@@ -171,11 +185,24 @@ func _build() -> void:
 
 	# Même place que le bloc poursuite, pour la même raison : centrée sur
 	# l'écran, la bannière passait sur la première carte.
-	_notice = make_label(44, ALERT)
+	# VOILE D'ABANDON. Le bandeau plein ecran passait au travers des cartes des
+	# coureurs — a quatre pistes elles descendent jusqu'au milieu de l'ecran.
+	# Le mettre simplement au-dessus laissait une collision : du rouge sur une
+	# carte, illisible des deux cotes. Assombrir la scene est le langage deja
+	# employe par le decompte et le podium, et il dit la meme chose ici — ce
+	# qui se passait n'a plus cours, c'est ce texte qui compte.
+	_abort_veil = ColorRect.new()
+	_abort_veil.name = "AbortVeil"
+	_abort_veil.color = Color(0.02, 0.03, 0.05, 0.72)
+	_abort_veil.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_abort_veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_abort_veil.visible = false
+	_overlay.add_child(_abort_veil)
+
+	_notice = make_label(NOTICE_FONT, ALERT)
 	_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_notice.position = Vector2(CLEAR_CENTRE_X - 420.0, BAND_HEIGHT + 16)
-	_notice.size.x = 840
 	add_child(_notice)
+	_place_notice()
 
 
 ## Une carte par piste active. Reconstruites à chaque armement : le nombre de
@@ -506,6 +533,60 @@ func band_height() -> float:
 	return float(BAND_HEIGHT_COMPACT if _compact else BAND_HEIGHT)
 
 
+## Place le bandeau d'alerte, et REDUIT sa police jusqu'a ce que le texte tienne
+## dans sa boite.
+##
+## La boite etait fixe — 840 px — mais pas le texte : « COURSE INTERROMPUE —
+## arrêt opérateur » mesure 895 px, et le pire cas 1323. Un bandeau tronque est
+## pire qu'un bandeau plus petit : il donne un mot pour un autre, devant le
+## public.
+##
+## L'ABANDON PREND TOUT L'ECRAN, au milieu. La course est finie, plus rien
+## d'autre ne compte a cet instant, et ce sont les coureurs qu'il faut
+## atteindre — sur leurs rouleaux, a plusieurs metres de l'ecran.
+func _place_notice() -> void:
+	if _notice == null:
+		return
+	# AU-DESSUS DES CARTES QUAND IL PREND TOUT L'ECRAN. Les cartes des coureurs
+	# sont construites a chaque armement, donc APRES la banniere, et un
+	# `CanvasLayer` dessine dans l'ordre de ses enfants : a quatre pistes elles
+	# descendent jusqu'au milieu de l'ecran et coupaient le bandeau d'abandon
+	# en deux. La couche superieure — celle du voile et du podium — regle la
+	# question quel que soit l'ordre de construction. Hors abandon il revient
+	# en dessous : la, il se range dans l'espace libre a cote des cartes, et
+	# passer devant le decompte n'aurait aucune raison d'etre.
+	_abort_veil.visible = _notice_big
+	var wanted: Node = _overlay if _notice_big else self
+	if _notice.is_inside_tree() and _notice.get_parent() != wanted:
+		_notice.reparent(wanted)
+	var width := NOTICE_BIG_WIDTH if _notice_big else NOTICE_WIDTH
+	var font := _notice.get_theme_font("font")
+	var font_size := NOTICE_BIG_FONT if _notice_big else NOTICE_FONT
+	while font_size > NOTICE_MIN_FONT and _notice_width(font, font_size) > width:
+		font_size -= 2
+	_notice.add_theme_font_size_override("font_size", font_size)
+	_notice.size.x = width
+	if _notice_big:
+		_notice.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_notice.size.y = NOTICE_BIG_HEIGHT
+		_notice.position = Vector2(
+			SCREEN_CENTRE_X - width * 0.5, 540.0 - NOTICE_BIG_HEIGHT * 0.5
+		)
+		return
+	_notice.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	_notice.size.y = 0.0
+	# En poursuite les cartes sont absentes : la banniere revient au milieu de
+	# l'ecran. Dans les autres modes elle se centre dans l'espace qu'elles
+	# laissent libre.
+	var pursuit := _controller.current_config().mode == RaceConfig.Mode.PURSUIT
+	var centre := SCREEN_CENTRE_X if pursuit else CLEAR_CENTRE_X
+	_notice.position = Vector2(centre - width * 0.5, band_height() + 16.0)
+
+
+func _notice_width(font: Font, font_size: int) -> float:
+	return font.get_string_size(_notice.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+
+
 ## La bannière suit le mode compact : titres, chrono et bande réduits.
 func _layout_banner() -> void:
 	var height := band_height()
@@ -516,7 +597,7 @@ func _layout_banner() -> void:
 	_objective_label.position = Vector2(36, 32 if _compact else 56)
 	_clock_label.add_theme_font_size_override("font_size", 48 if _compact else 84)
 	_clock_label.position.y = 8 if _compact else 14
-	_notice.position.y = height + 16
+	_place_notice()
 
 
 ## Style commun de tout l'habillage — `RacePodium` s'en sert aussi.
@@ -551,8 +632,7 @@ func _refresh_objective() -> void:
 	# En poursuite les cartes sont absentes : la bannière revient au milieu de
 	# l'écran. Dans les autres modes elle se centre dans l'espace qu'elles
 	# laissent libre.
-	var centre := SCREEN_CENTRE_X if pursuit else CLEAR_CENTRE_X
-	_notice.position.x = centre - 420.0
+	_place_notice()
 
 
 ## Rejoue une transition d'etat, pour une scene montee en pleine course. Voir
@@ -579,7 +659,9 @@ func _on_state(_previous: int, current: int) -> void:
 		_tension.reset()
 		_notice.text = ""
 		_covered_notice = ""
+		_notice_big = false
 		_notice.add_theme_color_override("font_color", ALERT)
+		_place_notice()
 		# Une nouvelle course efface la précédente : le podium ne doit pas
 		# rester par-dessus le décompte suivant — et ce qu'il avait effacé
 		# revient. Les cartes viennent d'être reconstruites ; l'écart et la
@@ -705,6 +787,8 @@ func _on_progress(state: RaceState) -> void:
 func _on_eliminated(rider: int, rank: int, _gap_m: float) -> void:
 	_notice.text = "PISTE %d ÉLIMINÉE — rang %d" % [rider + 1, rank]
 	_covered_notice = ""
+	_notice_big = false
+	_place_notice()
 
 
 ## docs/02 §4 : « bandeau + son ». Quelle que soit la politique — sous
@@ -727,6 +811,8 @@ func _on_false_start(rider: int, policy: int) -> void:
 	else:
 		_notice.text = "FAUX DÉPART — PISTE %d" % (rider + 1)
 	_covered_notice = ""
+	_notice_big = false
+	_place_notice()
 
 
 ## docs/01 §6.2 : la course se fige sur la dernière valeur connue, le bandeau
@@ -738,9 +824,15 @@ func _on_link_state(state: int) -> void:
 			_covered_notice = _notice.text
 		_notice.add_theme_color_override("font_color", ALERT)
 		_notice.text = LINK_LOST_TEXT
+		# Le lien perdu NE PREND PAS tout l'ecran : la course continue, figee
+		# sur sa derniere valeur, et le bandeau ne doit pas masquer ce qu'elle
+		# montre. Seul l'abandon a droit au plein ecran.
+		_notice_big = false
+		_place_notice()
 	elif _notice.text == LINK_LOST_TEXT:
 		_notice.text = _covered_notice
 		_covered_notice = ""
+		_place_notice()
 
 
 func _on_aborted(note: String) -> void:
@@ -750,6 +842,17 @@ func _on_aborted(note: String) -> void:
 	_notice.add_theme_color_override("font_color", ALERT)
 	_notice.text = "COURSE INTERROMPUE" if note.is_empty() else "COURSE INTERROMPUE — %s" % note
 	_covered_notice = ""
+	_notice_big = true
+	# LES CARTES S'EFFACENT, comme au podium. Le voile seul les laissait sous
+	# le texte : a quatre pistes la derniere passe exactement dessous, et deux
+	# messages superposes n'en font aucun. Ce qu'elles montrent — vitesse
+	# instantanee, distance restante — n'a plus cours, la course est finie ;
+	# le classement partiel, lui, est au panneau Resultats. L'armement suivant
+	# les reconstruit.
+	_tension.visible = false
+	for entry: Dictionary in _cards.values():
+		(entry["root"] as Control).visible = false
+	_place_notice()
 
 
 ## LE PODIUM A L'ÉCRAN POUR LUI SEUL. Le voile ne fait qu'assombrir ce qui est
@@ -795,6 +898,20 @@ func decision_text() -> String:
 
 func notice_text() -> String:
 	return _notice.text
+
+
+## La boite du bandeau et la largeur que son texte occupe reellement. Pour les
+## tests, qui verifient qu'il TIENT : un bandeau tronque donne un mot pour un
+## autre, et cela ne se lit dans aucune assertion sur le texte.
+func notice_metrics() -> Dictionary:
+	return {
+		"rect": Rect2(_notice.position, _notice.size),
+		"veil": _abort_veil.visible,
+		"above_cards": _notice.get_parent() == _overlay,
+		"text_width": _notice_width(
+			_notice.get_theme_font("font"), _notice.get_theme_font_size("font_size")
+		),
+	}
 
 
 func notice_color() -> Color:
