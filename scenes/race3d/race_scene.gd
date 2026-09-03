@@ -122,7 +122,6 @@ func rebuild_riders() -> void:
 
 
 func _build_environment() -> void:
-	_environment = WorldEnvironment.new()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
 	# Anthracite de docs/04 §2 : le fond ne doit jamais concurrencer les néons.
@@ -140,10 +139,35 @@ func _build_environment() -> void:
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
 	env.glow_hdr_threshold = 0.85
 
+	# VOLUMÉTRIQUE LÉGER — et « léger » se mesure (docs/04 §4).
+	#
+	# À 0,012 de densité avec une albédo blanche par défaut, la brume diffusait
+	# les projecteurs de salle dans tout le volume : le fond anthracite montait
+	# à une luminance de 75 contre 33 sans elle, les gradins lointains
+	# disparaissaient dans un lait gris et les néons perdaient le contraste qui
+	# les fait exister (docs/04 §1). Le niveau de qualité le plus coûteux
+	# donnait donc l'image la moins conforme.
+	#
+	# C'EST L'ALBÉDO, PAS LA DENSITÉ. J'ai commencé par diviser la densité par
+	# trois : le fond retombait à 32, mais la brume ne se voyait plus du tout —
+	# on payait un effet devenu invisible. La mesure a tranché : à albédo
+	# sombre, faire varier la densité de 0,004 à 0,012 déplace le fond de 31 à
+	# 31,9. L'albédo décide de ce que la brume renvoie des lampes, et blanche
+	# par défaut, elle renvoyait tout. Elle passe donc à un bleu de salle et la
+	# densité reste entière : la brume enveloppe les gradins sans les effacer,
+	# fond mesuré à 35,8 contre 32,9 sans elle.
+	#
+	# `sky_affect` réduit épargne en plus le fond, qui n'est pas un volume à
+	# traverser mais une couleur derrière tout.
 	if bool(quality.option("volumetric_fog")):
 		env.volumetric_fog_enabled = true
 		env.volumetric_fog_density = 0.012
+		env.volumetric_fog_albedo = Color("#4A5F80")
 		env.volumetric_fog_emission = Color("#101828")
+		# Diffusion vers l'avant : la brume se voit autour des lampes plutôt
+		# qu'uniformément, ce qui est la façon dont une salle embrumée se lit.
+		env.volumetric_fog_anisotropy = 0.35
+		env.volumetric_fog_sky_affect = 0.3
 	env.fog_enabled = true
 	# Légèrement plus claire que le fond : la brume donne de la profondeur et
 	# empêche le haut de l'image de tomber dans un noir absolu.

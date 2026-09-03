@@ -523,3 +523,21 @@ pensé à spécifier. Un rendu se relit avec les yeux ; le test vient après, po
 la dernière, coupée par le bord de l'écran. La lame est inclinée, donc le dernier volet est plus
 étroit en haut qu'en bas, là où vivent les cartes. La géométrie qui décide de la place doit être
 celle qui est réellement dessinée, à la hauteur concernée — pas la position de repos de la lame.
+
+## Le réglage coupable n'était pas celui que je soupçonnais
+
+Le brouillard volumétrique laitait tout le vélodrome. Premier réflexe : diviser la densité par
+trois. Le fond redevenait sombre — et la brume disparaissait complètement, effet payé pour rien.
+La mesure a tranché : à albédo sombre, faire varier la densité de 0,004 à 0,012 déplace la
+luminance du fond de 31 à 31,9. C'est l'ALBÉDO, blanche par défaut, qui renvoyait les projecteurs
+de salle dans tout le volume. Seule l'émission était réglée, ce qui ne pouvait rien y faire.
+
+**Leçon** : devant un rendu fautif, ne pas tourner le premier bouton venu jusqu'à ce que le
+symptôme parte. Balayer chaque paramètre séparément et lire les chiffres : le bouton qui fait
+disparaître le symptôme n'est pas forcément celui qui cause le problème, et on peut le tourner
+jusqu'à supprimer l'effet entier.
+
+**Et une propriété de l'image se garde dans l'image.** Aucun test unitaire ne pouvait voir ce
+défaut. `ss_race3d_demo` mesure désormais la luminance du fond sur la capture et sort en erreur
+au-delà du plafond que `docs/04` §4 chiffre. Vérifié dans les deux sens : 35,7 conforme avec le
+correctif, 62,0 et code 4 en remettant l'albédo blanche.

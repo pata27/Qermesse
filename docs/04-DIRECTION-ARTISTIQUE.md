@@ -66,6 +66,13 @@ en virage, maillot coloré par instance. Un seul modèle, quatre matériaux : le
 **Environnement.** Tribunes low-poly, foule en *billboards* animés instanciés, réaction à
 l'accélération et au franchissement de ligne. Volumétrique léger, bloom, vignettage.
 
+**« Léger » se mesure.** Le volumétrique ne doit pas éclaircir le fond de plus d'un quart : la
+luminance moyenne du haut de l'image, gradins compris, reste sous **45 sur 255** — elle vaut 33
+sans brume. Au-delà, la salle vire au lait gris, les gradins lointains disparaissent et les néons
+perdent le contraste qui les fait exister (`§1`) ; le niveau de qualité le plus coûteux donne alors
+l'image la moins conforme. Le levier n'est pas la densité mais **l'albédo** de la brume : blanche,
+elle renvoie les projecteurs de salle dans tout le volume.
+
 **Budget de performance.** 60 fps stables en 1080p sur un GPU intégré Intel Iris Xe ou équivalent.
 C'est la machine réelle d'un événement, pas une station de jeu. Toute fonctionnalité visuelle qui
 fait passer sous 60 fps est coupée ou dégradée. Trois niveaux de qualité (`bas / moyen / élevé`),

@@ -16,6 +16,9 @@
 ## aucune valeur de preuve.
 extends SceneTree
 
+## Plafond de luminance du fond — docs/04 §4, « léger se mesure ». Sans brume
+## le fond vaut 33 ; l'ancien volumétrique le portait à 75.
+const BACKGROUND_LUMINANCE_MAX := 45.0
 const MEASURE_WARMUP_S := 3.0
 const MEASURE_WINDOW_S := 30.0
 
@@ -24,6 +27,9 @@ var _scene: RaceScene
 var _mode := "mesure"
 var _video_dir := ""
 var _riders := 4
+## Une capture trop claire ne fait pas échouer la capture en cours — on veut
+## toutes les images — mais elle fait sortir en erreur à la fin.
+var _luminance_failed := false
 var _quality := -1
 var _speed := 1.0
 ## Dossier de donnees des outils de preuve — JAMAIS celui de l'operateur.
@@ -276,6 +282,12 @@ func _run() -> void:
 			await _capture_stills()
 	else:
 		await _measure()
+	# Une preuve qui montre un fond laiteux n'est pas une preuve : on sort en
+	# erreur, images gardées, pour que l'écart se voie AVANT d'être publié.
+	if _luminance_failed:
+		printerr("fond trop clair : la brume efface les gradins (docs/04 §4)")
+		quit(4)
+		return
 	quit(0)
 
 
@@ -405,6 +417,41 @@ func _shoot(label: String) -> void:
 	var path := _video_dir.path_join("r3d-%d-%s%s.png" % [_riders, label, suffix])
 	image.save_png(path)
 	print("capture : %s" % path)
+	if label == "lancee":
+		_check_background_luminance(image)
+
+
+## Vérifie que la brume ne laisse pas le fond partir au gris — docs/04 §4.
+##
+## Le volumétrique a déjà fait cette faute : à albédo blanche, il diffusait les
+## projecteurs de salle dans tout le volume et la luminance du fond passait de
+## 33 à 75. Aucun test unitaire ne pouvait le voir — c'est une propriété de
+## l'IMAGE, pas du code. Elle se mesure donc ici, sur la capture, à l'endroit
+## où la spec la borne : la bande haute, gradins compris, sous la bannière.
+func _check_background_luminance(image: Image) -> void:
+	var width := image.get_width()
+	var height := image.get_height()
+	var top := int(height * 0.10)
+	var bottom := int(height * 0.35)
+	if width <= 0 or bottom <= top:
+		return
+	var total := 0.0
+	var count := 0
+	# Un pixel sur quatre en x et en y : seize fois moins de lectures pour une
+	# moyenne qui ne bouge pas de plus d'un dixième.
+	for y: int in range(top, bottom, 4):
+		for x: int in range(0, width, 4):
+			var c := image.get_pixel(x, y)
+			total += 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b
+			count += 1
+	var luminance := 255.0 * total / float(maxi(count, 1))
+	var verdict := "CONFORME" if luminance <= BACKGROUND_LUMINANCE_MAX else "TROP CLAIR"
+	print(
+		"fond : luminance %.1f / %d — %s (docs/04 §4)"
+		% [luminance, BACKGROUND_LUMINANCE_MAX, verdict]
+	)
+	if luminance > BACKGROUND_LUMINANCE_MAX:
+		_luminance_failed = true
 
 
 func _record() -> void:
