@@ -71,6 +71,12 @@ func was_stopped() -> bool:
 ## Vrai si un autre rider classe a franchi dans la MEME trame — docs/02 §1 :
 ## ex aequo « photo-finish », que l'interface doit dire.
 func is_dead_heat(rider: int) -> bool:
+	# PAS EN MODE TEMPS. Tout le monde y « arrive » a l'instant du gong
+	# (`rule_time.gd`) : l'egalite des temps est la regle, pas un photo-finish.
+	# Sans cette garde, chaque course en temps marquait TOUS ses coureurs ex
+	# aequo, et le tableau operateur affichait la legende a chaque fois.
+	if mode == "temps":
+		return false
 	if finished_ms[rider] <= 0:
 		return false
 	for other: int in ranking:

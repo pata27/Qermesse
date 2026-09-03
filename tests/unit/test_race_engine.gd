@@ -233,6 +233,37 @@ func test_mode_temps_le_pc_seul_decide_de_la_fin() -> void:
 	assert_between(_result.elapsed_ms, 10000, 10100)
 
 
+func test_en_mode_temps_l_egalite_des_temps_n_est_pas_un_photo_finish() -> void:
+	# Tout le monde « arrive » a l'instant du gong : `finished_ms` est identique
+	# pour tous, par construction. `is_dead_heat` y voyait donc un ex aequo pour
+	# CHAQUE coureur, et le tableau operateur marquait toute la colonne
+	# « photo-finish » a chaque course en temps.
+	var config := _config(RaceConfig.Mode.TIME, [0, 1])
+	config.duration_s = 10.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(11.0, [45.0, 40.0])
+
+	assert_eq(_result.finished_ms[0], _result.finished_ms[1], "meme gong pour tout le monde")
+	assert_false(_result.is_dead_heat(0), "ce n'est pas un photo-finish")
+	assert_false(_result.is_dead_heat(1))
+
+
+func test_le_classement_en_temps_est_deterministe_meme_a_pointe_egale() -> void:
+	# docs/02 §2 departage l'ex aequo par la pointe, et se tait si elle est
+	# egale aussi. Le tri de Godot n'etant pas stable, le classement pouvait
+	# alors changer d'une execution a l'autre.
+	var config := _config(RaceConfig.Mode.TIME, [0, 1, 2])
+	config.duration_s = 10.0
+	_engine.arm(config, 0)
+	_countdown()
+	_run_race(11.0, [45.0, 45.0, 45.0])
+
+	var state := _engine.race_state()
+	assert_eq(state.ticks[0], state.ticks[1], "trois coureurs identiques")
+	assert_eq(_result.ranking, [0, 1, 2], "la piste departage, faute de mieux")
+
+
 func test_le_classement_par_distance_est_deterministe_a_egalite() -> void:
 	# « Le plus avance d'abord » etait recopie dans trois fichiers, sans
 	# departage. Le tri de Godot n'est pas stable : a distance egale, la regle

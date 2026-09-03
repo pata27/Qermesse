@@ -33,13 +33,21 @@ func evaluate(state: RaceState) -> Verdict:
 	return verdict
 
 
-## Decroissant par ticks cumules. Ex aequo departage par vitesse de pointe.
+## Decroissant par ticks cumules. Ex aequo departage par vitesse de pointe —
+## et si elle est egale aussi, par numero de piste.
+##
+## docs/02 §2 s'arretait a la pointe. `sort_custom` n'etant pas stable, deux
+## coureurs identiques — cas courant au simulateur, possible en vrai — se
+## classaient dans un ordre qui pouvait changer d'une execution a l'autre.
+## Arbitraire mais deterministe vaut mieux qu'arbitraire tout court.
 func final_ranking(state: RaceState) -> Array[int]:
 	var ranking: Array[int] = state.config.active_riders.duplicate()
 	ranking.sort_custom(func(a: int, b: int) -> bool:
 		if state.ticks[a] != state.ticks[b]:
 			return state.ticks[a] > state.ticks[b]
-		return state.max_speed_kph[a] > state.max_speed_kph[b])
+		if not is_equal_approx(state.max_speed_kph[a], state.max_speed_kph[b]):
+			return state.max_speed_kph[a] > state.max_speed_kph[b]
+		return a < b)
 	return ranking
 
 

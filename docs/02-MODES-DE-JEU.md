@@ -83,7 +83,10 @@ pas. Recette et démonstration en `01` §5.5. `T` reste entièrement géré par 
 > Quand ils arrivent (T ≤ 32 s), ils sont traités comme une confirmation loggée, jamais comme
 > une condition de fin.
 
-**Classement.** Décroissant par ticks cumulés. Ex æquo → vitesse de pointe la plus élevée.
+**Classement.** Décroissant par ticks cumulés. Ex æquo → vitesse de pointe la plus élevée, et à
+pointe égale → numéro de piste : arbitraire, mais **déterministe**, comme pour l'ex æquo d'arrivée
+du mode distance. Ce mode n'a en revanche **pas de photo-finish** : tout le monde s'arrête à
+l'instant du gong, l'égalité des temps y est la règle et non un fait de course.
 
 ---
 
