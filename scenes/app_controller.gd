@@ -384,6 +384,20 @@ func shutdown() -> void:
 func save_preferences() -> bool:
 	if not preferences_enabled:
 		return true
+	# LA VITRINE N'ECRIT RIEN, et la garde est posee ICI plutot que chez les
+	# appelants. Elle ecrase mode, distance, pistes actives et jusqu'au choix
+	# du backend le temps de sa demonstration, et les rend a l'arret ; toute
+	# sauvegarde entre les deux graverait ses valeurs a la place de celles de
+	# l'operateur.
+	#
+	# Trois appelants, et c'est le troisieme qui l'a montre : la fermeture du
+	# logiciel sauve sans condition. Fermer pendant la vitrine remplacait donc
+	# silencieusement la configuration de la soiree par le dernier scenario de
+	# demonstration — simulateur force compris, si bien qu'au lancement suivant
+	# le vrai boitier n'etait plus utilise. Une garde par appelant, c'est une
+	# garde a oublier ; une seule sur la porte de sortie ne s'oublie pas.
+	if demo_mode:
+		return true
 	var ok := settings.save(settings_path)
 	if not ok:
 		notice.emit("SAUVEGARDE DES REGLAGES : %s" % JsonStore.last_error)
@@ -673,8 +687,7 @@ func _on_race_finished(result: RaceResult) -> void:
 	# doit le savoir maintenant, pas en cherchant le CSV a la fin de la soiree.
 	if not recorder.problems().is_empty():
 		notice.emit("ENREGISTREMENT : %s" % recorder.problems()[recorder.problems().size() - 1])
-	if not demo_mode:
-		save_preferences()
+	save_preferences()
 	# LE RESULTAT EST A L'ECRAN : la FSM le dit. `docs/02` §1 fait suivre
 	# FINISHED de RESULTS, « resultat consultable, en attente d'acquittement » ;
 	# c'est un etat ou l'on sejourne, le temps que l'operateur regarde le
@@ -766,5 +779,4 @@ func _on_race_aborted(note: String) -> void:
 			_history.append(partial)
 	recorder.record_abort(note)
 	race_aborted.emit(note)
-	if not demo_mode:
-		save_preferences()
+	save_preferences()

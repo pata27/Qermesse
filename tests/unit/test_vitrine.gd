@@ -215,3 +215,69 @@ func test_l_orbite_garde_sa_distance_au_sujet() -> void:
 			Vector2(moved.x, moved.z).length(), flat, 0.001,
 			"image %d : meme distance au sujet, vue d'en haut" % step
 		)
+
+
+func test_fermer_pendant_la_vitrine_ne_grave_pas_ses_reglages() -> void:
+	# LE CHEMIN QUE LA RESTITUTION NE COUVRAIT PAS. La vitrine rend tout ce
+	# qu'elle emprunte a l'ARRET — mais la fermeture du logiciel sauvegarde sans
+	# rien demander a personne, et elle passait donc avant. Fermer pendant la
+	# demonstration remplacait silencieusement la configuration de la soiree par
+	# le dernier scenario : distance, pistes actives, et jusqu'au choix du
+	# backend, si bien qu'au lancement suivant le vrai boitier n'etait plus
+	# utilise.
+	var controller: AppController = _main.controller
+	var dir := ProjectSettings.globalize_path(TEST_ROOT)
+	DirAccess.make_dir_recursive_absolute(dir)
+	controller.preferences_enabled = true
+	controller.settings_path = dir.path_join("settings.json")
+	controller.roster_path = dir.path_join("roster.json")
+
+	assert_true(await _await_identified())
+	controller.settings.mode = RaceConfig.Mode.TIME
+	controller.settings.distance_m = 777.0
+	controller.apply_backend(false)
+	for lane: int in range(Protocol.MAX_RIDERS):
+		controller.roster.set_active(lane, lane == 0)
+	assert_true(controller.save_preferences(), "les reglages de l'operateur sont poses")
+
+	_main.open_spectacle()
+	assert_true(_main.attract.start())
+	for i: int in range(600):
+		await wait_physics_frames(1)
+	assert_ne(controller.settings.distance_m, 777.0, "la vitrine a bien pris la main")
+
+	# Fermeture, vitrine en cours.
+	_main.notification(Node.NOTIFICATION_WM_CLOSE_REQUEST)
+	await wait_physics_frames(2)
+
+	var written := Settings.new()
+	written.load_from(controller.settings_path)
+	var roster := Roster.new()
+	roster.load_from(controller.roster_path)
+	assert_eq(written.mode, RaceConfig.Mode.TIME, "le mode de l'operateur est sur le disque")
+	assert_almost_eq(written.distance_m, 777.0, 0.01, "sa distance aussi")
+	assert_false(written.use_simulator, "et son choix de materiel, surtout")
+	assert_eq(roster.active_lanes(), [0] as Array[int], "ses pistes actives aussi")
+	DirAccess.remove_absolute(controller.settings_path)
+	DirAccess.remove_absolute(controller.roster_path)
+
+
+func test_la_sauvegarde_se_refuse_d_elle_meme_pendant_la_vitrine() -> void:
+	# La garde est posee sur `save_preferences` et non chez ses appelants : il y
+	# en a trois, et c'est le troisieme — la fermeture — qui a montre qu'une
+	# garde par appelant est une garde a oublier.
+	var controller: AppController = _main.controller
+	var dir := ProjectSettings.globalize_path(TEST_ROOT)
+	DirAccess.make_dir_recursive_absolute(dir)
+	controller.preferences_enabled = true
+	controller.settings_path = dir.path_join("refus.json")
+	controller.demo_mode = true
+	assert_true(controller.save_preferences(), "elle rend vrai : ce n'est pas un echec")
+	assert_false(
+		FileAccess.file_exists(controller.settings_path),
+		"mais rien n'est ecrit tant que la vitrine tourne"
+	)
+	controller.demo_mode = false
+	assert_true(controller.save_preferences())
+	assert_true(FileAccess.file_exists(controller.settings_path), "et tout revient apres")
+	DirAccess.remove_absolute(controller.settings_path)

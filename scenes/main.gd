@@ -141,4 +141,10 @@ func _notification(what: int) -> void:
 	# riders et les reglages sont persistes : la v1 les perdait a chaque
 	# lancement (docs/02 §5).
 	if what == NOTIFICATION_WM_CLOSE_REQUEST and controller != null:
+		# LA VITRINE REND SES EMPRUNTS AVANT QU'ON SAUVE. Elle ecrase mode,
+		# distance, pistes actives et backend le temps de tourner ; fermer sans
+		# l'arreter d'abord aurait sauve SES valeurs — le contrôleur s'en garde
+		# aussi de son côté, mais c'est ici que la vitrine doit se ranger.
+		if attract != null and attract.is_running():
+			attract.stop()
 		controller.shutdown()
