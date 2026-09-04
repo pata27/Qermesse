@@ -168,9 +168,20 @@ func select_history(index: int) -> void:
 ## source : ajouter au fil de l'eau laissait diverger ce qu'on voyait pendant
 ## la soiree et ce qu'on retrouvait apres un redemarrage.
 func _rebuild_history() -> void:
+	# LE PLUS RECENT EN TETE, comme le journal du panneau Course.
+	#
+	# La liste se remplissait dans l'ordre des courses, si bien que la manche
+	# qu'on venait de courir arrivait EN BAS. Sur une soiree de trente manches,
+	# il fallait derouler pour retrouver celle dont on veut relire le
+	# classement — c'est-a-dire, neuf fois sur dix, la derniere.
+	#
+	# Le journal des alertes pose deja la convention : « les cinq derniers
+	# messages, le plus recent en tete ». Deux listes cote a cote qui se lisent
+	# dans des sens opposes, c'est une hesitation a chaque fois.
 	_history.clear()
-	for result: RaceResult in _controller.history():
-		_add_history_item(result)
+	var results := _controller.history()
+	for index: int in range(results.size() - 1, -1, -1):
+		_add_history_item(results[index])
 
 
 func _add_history_item(result: RaceResult) -> void:
@@ -192,9 +203,19 @@ func _on_race_finished(result: RaceResult) -> void:
 
 
 func _on_history_selected(index: int) -> void:
+	var result := _result_at(index)
+	if result != null:
+		show_result(result)
+
+
+## La course derriere la ligne `index` de la liste. La liste est a l'ENVERS de
+## l'historique — le plus recent en tete — et cette inversion vit ici seule :
+## la poser a chaque appelant, c'est la garantie qu'un jour l'un d'eux lira la
+## mauvaise course.
+func _result_at(index: int) -> RaceResult:
 	var results := _controller.history()
-	if index >= 0 and index < results.size():
-		show_result(results[index])
+	var position := results.size() - 1 - index
+	return null if position < 0 or position >= results.size() else results[position]
 
 
 func _on_export() -> void:

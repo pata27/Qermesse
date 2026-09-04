@@ -85,6 +85,8 @@ décrit le déroulé normal d'une soirée.
    une course interrompue à l'armement ou au décompte n'a rien à raconter.*
 6. À l'arrivée : célébration, puis podium sur l'écran public. Le panneau **Résultats** montre le
    même classement, et la course entre dans **Courses du jour**. Le CSV est écrit au fil de l'eau.
+   **La dernière manche est en tête**, comme le journal des messages juste au-dessus : sur une
+   soirée chargée, c'est presque toujours celle qu'on veut relire.
    Cette liste survit à un redémarrage : elle est relue depuis les fichiers de course au lancement.
    Chaque ligne donne l'heure d'arrivée **en heure locale** (`21:47`), le mode et le vainqueur ;
    les fichiers, eux, sont horodatés en UTC.

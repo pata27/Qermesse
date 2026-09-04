@@ -784,3 +784,46 @@ func test_le_tableau_montre_les_dossards_du_depart_et_seulement_s_il_y_en_a() ->
 	results.show_result(numbered)
 	assert_string_contains(results.table_text(), "42", "toujours le numero du depart")
 	assert_false(results.table_text().contains("99"), "et jamais celui d'apres")
+
+
+func test_courses_du_jour_montre_la_derniere_en_tete() -> void:
+	# La liste se remplissait dans l'ordre des courses : la manche qu'on venait
+	# de courir arrivait EN BAS. Sur une soiree de trente manches, il fallait
+	# derouler pour retrouver celle dont on veut relire le classement —
+	# c'est-a-dire, neuf fois sur dix, la derniere.
+	#
+	# Le journal du panneau Course pose deja la convention : « les cinq
+	# derniers messages, le plus recent en tete ». Deux listes cote a cote qui
+	# se lisent dans des sens opposes, c'est une hesitation a chaque fois.
+	var results := _panel.results_panel()
+	for numero: int in range(1, 4):
+		var race := RaceResult.new()
+		# La course passe par le moteur — c'est le seul chemin qui alimente
+		# « Courses du jour » — donc elle traverse aussi l'enregistrement. Une
+		# vraie course l'ouvre avant de la fermer ; le montage fait de meme,
+		# sans quoi il eprouverait un enchainement qui n'existe pas.
+		race.config = _controller.current_config()
+		# LES NOMS VIENNENT DU ROSTER OUVERT AVEC LA COURSE, pas du resultat :
+		# l'enregistrement les y reprend a la fermeture, et les poser sur le
+		# resultat ne servirait a rien — ils seraient ecrases.
+		_controller.recorder.begin_race(race.config, {
+			0: {"name": "Manche %d" % numero, "dossard": ""},
+			1: {"name": "Bob", "dossard": ""},
+		})
+		race.mode = "distance"
+		race.ranking = [0, 1]
+		race.end_reason = RaceRule.EndReason.ALL_FINISHED
+		race.finished_ms[0] = 20000
+		_controller.engine.race_finished.emit(race)
+
+	assert_eq(results.history_count(), 3, "les trois manches sont listees")
+	assert_string_contains(results.history_text(0), "Manche 3", "la derniere est en tete")
+	assert_string_contains(results.history_text(2), "Manche 1", "la premiere est en bas")
+
+	# ET LA SELECTION SUIT. Inverser l'affichage sans inverser la lecture
+	# aurait montre le classement d'une AUTRE course que celle cliquee — un
+	# defaut bien pire que l'ordre lui-meme, parce qu'il est credible.
+	results.select_history(0)
+	assert_string_contains(results.table_text(), "Manche 3", "cliquer la tete montre la derniere")
+	results.select_history(2)
+	assert_string_contains(results.table_text(), "Manche 1", "et le bas montre la premiere")
