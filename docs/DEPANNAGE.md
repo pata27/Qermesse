@@ -127,10 +127,16 @@ vérifier d'ailleurs que le roster ne contient pas une piste cochée sans cyclis
 
 **Le logiciel le dit lui-même**, et il distingue deux cas — le motif n'est pas le même.
 
-*La piste n'a jamais rien produit.* Dix secondes après le départ, toute piste cochée restée muette
-est signalée dans le panneau **Course** : `PISTE 3 : aucun tick depuis le départ — coureur absent
-ou capteur débranché ? La course attend cette piste.` Personne sur la piste, ou un câble jamais
-branché.
+*La piste n'a jamais rien produit.* Toute piste cochée restée muette est signalée dans le panneau
+**Course** : `PISTE 3 : aucun tick depuis le départ — coureur absent ou capteur débranché ? La
+course attend cette piste.` Personne sur la piste, ou un câble jamais branché.
+
+Le signal tombe au premier de ces deux repères : **dix secondes de course**, ou **le quart de
+l'épreuve** — le quart de la distance en mode distance, du temps en mode temps. Les dix secondes
+seules arrivaient trop tard : une course de 100 m dure huit secondes à 45 km/h, et l'alerte tombait
+donc **après** l'instant où la course aurait dû se terminer. Sur 50 m, plus du double. Mesuré : sur
+100 m avec une piste vide, l'alerte passe de 10,0 s à 2,1 s — huit secondes gagnées, pendant
+lesquelles le public regarde une course qui visiblement aurait dû finir.
 
 *La piste s'est tue en route.* Cinq secondes sans un seul tick alors qu'elle roulait :
 `PISTE 2 : plus un seul tick depuis 5 s alors qu'elle roulait — coureur arrêté ou capteur perdu en
@@ -337,7 +343,7 @@ d'entrée quand on lit un message et qu'on ne sait pas par où commencer.
 | `LONGUEUR : le boîtier a compris N ticks, M demandés` | Le firmware n'a pas retenu la distance envoyée. | Voir la section dédiée plus haut. |
 | `TRAMES PERDUES : la machine ne suit plus le flux du boîtier.` | Le PC n'a pas lu la ligne assez vite. **Le seul cas qui fausse une mesure.** | Fermer les autres applications. Si cela persiste, baisser la qualité de rendu. |
 | `tick rejeté : …` | Un tick incohérent a été écarté par le filtre. | Voir « Le compteur de trames rejetées grimpe ». |
-| `PISTE N : aucun tick depuis le départ — coureur absent ou capteur débranché ?` | Dix secondes de course sans un seul tick sur une piste **cochée**. En mode distance, la course ne peut pas se terminer sans elle. | Décocher la piste et relancer, ou rebrancher le capteur. Voir « Une piste reste à zéro ». |
+| `PISTE N : aucun tick depuis le départ — coureur absent ou capteur débranché ?` | Une piste **cochée** n'a produit aucun tick au bout de dix secondes, ou du quart de l'épreuve — le premier des deux. En mode distance, la course ne peut pas se terminer sans elle. | Décocher la piste et relancer, ou rebrancher le capteur. Voir « Une piste reste à zéro ». |
 | `PISTE N : pointe à X km/h — capteur qui rebondit ou aimant qui passe deux fois par tour ?` | Une pointe humainement invraisemblable. La mesure est **conservée**, pas corrigée. | Voir « Les vitesses affichées sont absurdes ». |
 | `ENREGISTREMENT : …` | Le classement est à l'écran mais n'a pas pu être écrit sur le disque. | Le plus urgent de la soirée : photographier l'écran de résultats, puis voir « Le CSV est introuvable ». |
 | `SAUVEGARDE DES REGLAGES : …` / `SAUVEGARDE DU ROSTER : …` | Les réglages ou les noms n'ont pas pu être écrits. La course, elle, est enregistrée. | Vérifier l'espace disque et les droits sur le dossier de configuration. Les noms seront à ressaisir au prochain lancement. |

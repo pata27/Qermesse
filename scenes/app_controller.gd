@@ -40,6 +40,20 @@ const LINK_GRACE_MS := 3000
 ## debranche — les fait attendre jusqu'au plafond de dix minutes. `DEPANNAGE`
 ## demandait a l'operateur de le verifier lui-meme ; le logiciel le voit.
 const SILENT_LANE_MS := 10000
+## Fraction de l'epreuve au-dela de laquelle une piste muette se signale, meme
+## si les dix secondes ne sont pas ecoulees.
+##
+## LE SEUIL ABSOLU ARRIVE TROP TARD, et c'est le meme piege que la cloche de
+## fin. La distance MINIMALE que la configuration accepte est de 50 m : quatre
+## secondes a 45 km/h. Sur 100 m, huit secondes. L'alerte des dix secondes
+## tombait donc APRES l'instant ou la course aurait du se terminer.
+##
+## Elle finissait par venir — le chrono continue de courir, puisque le PC attend
+## justement la piste manquante — mais huit secondes trop tard, pendant
+## lesquelles le public regarde une course qui visiblement aurait du finir.
+## Mesure sur 100 m avec une piste vide : 10,0 s avant, 2,1 s apres. Un repere
+## absolu se plafonne a une fraction de l'epreuve.
+const SILENT_LANE_SHARE := 0.25
 
 ## Silence tolere APRES des ticks : au-dela, la piste s'est eteinte en route.
 ##
@@ -610,7 +624,7 @@ func _on_progress_updated(state: RaceState) -> void:
 
 ## Signale UNE FOIS par course chaque piste cochee restee muette.
 func _warn_silent_lanes(state: RaceState) -> void:
-	if state.elapsed_ms < SILENT_LANE_MS:
+	if not _silent_lanes_due(state):
 		return
 	for rider: int in state.config.active_riders:
 		if state.ticks[rider] > 0 or _silent_lanes_warned.has(rider):
@@ -621,6 +635,28 @@ func _warn_silent_lanes(state: RaceState) -> void:
 			% (rider + 1)
 			+ " ou capteur débranché ? La course attend cette piste."
 		)
+
+
+## Est-on assez avance dans l'epreuve pour qu'une piste muette soit anormale ?
+##
+## Dix secondes, OU le quart de l'epreuve — le premier des deux. La fraction se
+## mesure sur ce qui DEFINIT le mode : la distance parcourue par le premier en
+## mode distance, le temps ecoule en mode temps. La poursuite s'en tient aux dix
+## secondes : sa fin depend d'un ecart qui se referme, et rien n'y permet de
+## dire ou l'on en est.
+static func _silent_lanes_due(state: RaceState) -> bool:
+	if state.elapsed_ms >= SILENT_LANE_MS:
+		return true
+	match state.config.mode:
+		RaceConfig.Mode.DISTANCE:
+			var leader := 0.0
+			for rider: int in state.config.active_riders:
+				leader = maxf(leader, state.distance_m[rider])
+			return leader >= state.config.distance_m * SILENT_LANE_SHARE
+		RaceConfig.Mode.TIME:
+			var share := state.config.duration_s * 1000.0 * SILENT_LANE_SHARE
+			return float(state.elapsed_ms) >= share
+	return false
 
 
 ## Signale UNE FOIS par course chaque piste qui s'est TUE EN ROUTE.

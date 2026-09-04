@@ -1422,3 +1422,29 @@ C'est la troisième fois qu'une garde de ce projet accuse à tort pour une raiso
 de forme et non de fond — chemins ASCII, prose expliquant la clause qu'elle
 refuse, et maintenant concaténation. Avant de faire passer une garde au vert,
 il faut lui montrer un cas sain qu'elle pourrait mal lire.
+
+## Un seuil absolu et une borne de configuration doivent se regarder
+
+Deuxième fois exactement. La cloche de fin sonnait à cinquante mètres de
+l'arrivée — sur une course de cinquante mètres, elle sonnait au départ.
+Aujourd'hui l'alerte de piste muette tombait à dix secondes de course — sur une
+course de cinquante mètres, qui en dure quatre, elle ne tombait jamais.
+
+Même cause : un repère choisi pour une épreuve typique, confronté à des bornes
+de configuration qui acceptent dix fois moins. Même correction : plafonner à une
+fraction de l'épreuve, et le quart s'est imposé les deux fois.
+
+**Et une leçon dans la leçon.** J'ai d'abord écrit que l'alerte « n'arrivait
+jamais » sur une course courte. C'était faux : le chronomètre continue de
+courir, justement parce que le PC attend la piste manquante, si bien qu'elle
+finissait par tomber à dix secondes. Mesuré, le gain est de 10,0 s à 2,1 s sur
+100 m — réel, et bien plus modeste que ce que j'avais affirmé. La sonde qui a
+révélé l'erreur avait elle-même un défaut : elle n'attendait pas `_ready`, donc
+aucun signal n'était connecté et elle ne mesurait rien du tout. **Un raisonnement
+sur ce que le code devrait faire ne remplace pas une mesure, et une mesure qui
+rend « jamais » mérite qu'on doute de la mesure avant de doute du code.**
+
+La règle : devant toute constante en secondes ou en mètres, aller lire les
+bornes que la configuration accepte, et vérifier le comportement **aux deux
+extrémités**. Le milieu de l'intervalle ne prouve rien — c'est là qu'on a choisi
+la constante.

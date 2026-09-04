@@ -673,3 +673,79 @@ func test_relancer_en_pleine_course_abandonne_puis_repart() -> void:
 	assert_has(events, "RACE_ABORTED", "l'abandon laisse sa trace")
 	assert_eq(events.count("RACE_START"), 2, "deux departs")
 	assert_has(events, "RACE_FINISH")
+
+
+func test_une_piste_vide_est_signalee_meme_sur_une_course_courte() -> void:
+	# LE SEUIL ABSOLU ARRIVAIT TROP TARD. L'alerte tombait a dix secondes de
+	# course, et 100 m durent huit secondes a 45 km/h : elle venait donc APRES
+	# l'instant ou la course aurait du se terminer. Elle finissait par venir —
+	# le chrono continue de courir, puisque le PC attend justement la piste
+	# manquante — mais huit secondes trop tard. Mesure : 10,0 s avant, 2,1 s
+	# apres.
+	#
+	# En distance le PC attend TOUTES les pistes actives : une piste cochee sans
+	# personne dessus fait attendre jusqu'au plafond de dix minutes, devant le
+	# public. Chaque seconde gagnee sur le diagnostic est une seconde de moins.
+	#
+	# Meme piege que la cloche de fin, meme correction : un repere absolu se
+	# plafonne a une fraction de l'epreuve.
+	assert_true(await _await_identified())
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.DISTANCE
+	config.distance_m = 100.0
+	config.active_riders = [0, 1]
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+
+	# La piste 1 roule, la piste 2 est cochee mais vide. Au quart de la course —
+	# 25 m — le doute n'est plus permis.
+	var state := RaceState.new(config)
+	var physics := Physics.new(config.roller_mm)
+	for metres: float in [5.0, 15.0, 26.0]:
+		state.apply_sample([physics.metres_to_ticks(metres), 0, 0, 0], int(metres * 80.0))
+		_controller.engine.progress_updated.emit(state)
+
+	var said := ""
+	for text: String in notices:
+		if text.contains("aucun tick depuis le départ"):
+			said = text
+	assert_false(said.is_empty(), "la piste vide est signalee avant la fin d'une course courte")
+	assert_string_contains(said, "PISTE 2", "et c'est bien la piste vide qui est nommee")
+	# C'EST LE MOMENT QUI COMPTE, pas le fait. Le dernier echantillon est a
+	# 2,1 s de course : l'alerte est donc tombee bien avant le seuil absolu, et
+	# avant les huit secondes que dure cette course. C'est tout le gain.
+	assert_lt(2080, AppController.SILENT_LANE_MS, "l'alerte precede le seuil absolu")
+	# La piste qui ROULE n'est jamais accusee.
+	for text: String in notices:
+		assert_false(text.contains("PISTE 1 : aucun tick"), "la piste 1 roule")
+	_controller.engine.abort("fin du test")
+
+
+func test_une_course_en_temps_courte_signale_aussi_sa_piste_vide() -> void:
+	# La duree MINIMALE acceptee est de dix secondes : le seuil absolu tombait
+	# alors exactement au gong. Une annonce qui arrive avec le resultat ne sert
+	# a rien.
+	assert_true(await _await_identified())
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.TIME
+	config.duration_s = 12.0
+	config.active_riders = [0, 1]
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+
+	var state := RaceState.new(config)
+	var physics := Physics.new(config.roller_mm)
+	# Au quart des douze secondes, soit trois secondes.
+	state.apply_sample([physics.metres_to_ticks(20.0), 0, 0, 0], 3200)
+	_controller.engine.progress_updated.emit(state)
+
+	var said := false
+	for text: String in notices:
+		if text.contains("aucun tick depuis le départ"):
+			said = true
+	assert_true(said, "signalee au quart du temps, pas au gong")
+	_controller.engine.abort("fin du test")
