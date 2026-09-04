@@ -802,3 +802,45 @@ func test_le_csv_dit_qu_un_photo_finish_n_a_pas_pu_etre_departage() -> void:
 	for note: String in notes:
 		assert_string_contains(note, "photo-finish", "l'ex aequo est dit : %s" % note)
 		assert_string_contains(note, "tous arrivés", "sans perdre le motif de fin")
+
+
+func test_un_penalise_n_emporte_jamais_de_distance_negative() -> void:
+	# LA MOITIE DU DEFAUT AVAIT ETE REPAREE. La position d'un penalise est
+	# negative tant qu'il n'a pas remonte son handicap ; la moyenne calculee
+	# dessus donnait `-3272 km/h`, ce qui a ete corrige. La DISTANCE, elle,
+	# etait restee brute — et c'est elle qui part au podium public, au tableau
+	# de l'operateur, au CSV et au JSON.
+	#
+	# Le cas se produit des qu'une course s'arrete avant que le penalise ait
+	# rattrape la ligne : abandon, elimination en poursuite, ou gong d'une
+	# course en temps courte.
+	var config := _config()
+	config.mode = RaceConfig.Mode.TIME
+	config.duration_s = 20.0
+	config.false_start_policy = RaceConfig.FalseStartPolicy.PENALTY
+	config.false_start_penalty_m = 10.0
+
+	var state := RaceState.new(config)
+	state.handicap_m[1] = -config.false_start_penalty_m
+	var physics := Physics.new(config.roller_mm)
+	# La piste 2 n'a roule que quatre metres : elle est encore six metres
+	# DERRIERE la ligne quand la course s'arrete.
+	state.apply_sample(
+		[physics.metres_to_ticks(60.0), physics.metres_to_ticks(4.0), 0, 0], 8000
+	)
+	assert_lt(state.distance_m[1], 0.0, "sa position est bien negative dans l'etat")
+
+	var result := RaceResult.from_state(state, RuleTime.new(), RaceRule.EndReason.TIME_ELAPSED)
+	assert_gte(result.distance_m[1], 0.0, "mais le resultat ne l'emporte pas")
+	assert_gte(result.avg_kph[1], 0.0, "pas plus que la moyenne")
+	# Le classement, lui, est calcule sur l'etat AVANT : le borner ne change
+	# l'ordre de personne.
+	assert_eq(result.ranking[0], 0, "la piste qui mene reste premiere")
+
+	# Et rien de negatif n'atteint le disque, ni le CSV ni le JSON.
+	_recorder.begin_race(config, {0: {"name": "Alice"}, 1: {"name": "Bob"}})
+	_recorder.finish_race(result)
+	var text := "\n".join(Array(_read_csv_lines()))
+	assert_false(text.contains(",-"), "aucun nombre negatif dans le journal")
+	var relu := Recorder.new(_logs, _races).load_day()[0]
+	assert_gte(relu.distance_m[1], 0.0, "ni au rechargement du JSON")

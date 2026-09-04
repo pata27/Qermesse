@@ -214,7 +214,22 @@ static func from_state(state: RaceState, rule: RaceRule, reason: RaceRule.EndRea
 	result.ranking = rule.final_ranking(state)
 	for rider: int in range(Protocol.MAX_RIDERS):
 		result.finished_ms[rider] = state.finished_ms[rider]
-		result.distance_m[rider] = state.distance_m[rider]
+		# JAMAIS DE DISTANCE NEGATIVE AU RESULTAT. La position d'un penalise est
+		# negative tant qu'il n'a pas remonte son handicap ; si la course
+		# s'arrete la — abandon, elimination en poursuite, gong d'une course en
+		# temps trop courte — c'est cette valeur qui partait au PODIUM PUBLIC,
+		# au tableau de l'operateur, au CSV et au JSON.
+		#
+		# La moyenne avait deja ete corrigee pour la meme raison, et le
+		# commentaire juste en dessous raconte le `-3272 km/h` qu'elle donnait.
+		# La distance, elle, etait restee brute : la moitie du defaut avait ete
+		# reparee. Une distance parcourue negative n'a aucun sens, et docs/02
+		# §4 pose deja le principe — le handicap est un decalage de depart, pas
+		# une distance parcourue.
+		#
+		# Le CLASSEMENT n'en depend pas : il est calcule sur l'etat, avant, et
+		# range dans `ranking`. Borner ici ne change donc l'ordre de personne.
+		result.distance_m[rider] = maxf(state.distance_m[rider], 0.0)
 		result.max_kph[rider] = state.max_speed_kph[rider]
 		result.eliminated[rider] = state.eliminated[rider]
 		result.eliminated_ms[rider] = state.eliminated_ms[rider]

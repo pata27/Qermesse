@@ -168,6 +168,13 @@ La **vitesse moyenne** se calcule sur la distance réellement roulée, handicap 
 d'un pénalisé est négative tant qu'il n'a pas remonté son retard, et une moyenne calculée dessus
 donnait `−3272 km/h` au podium et au CSV.
 
+**Aucune distance négative ne sort du résultat**, pour la même raison et parce que la moitié du
+défaut ci-dessus était restée. La position d'un pénalisé est négative tant qu'il n'a pas rattrapé la
+ligne ; si la course s'arrête là — abandon, élimination en poursuite, gong d'une course en temps
+courte — c'est cette valeur qui partait au podium public, au tableau de l'opérateur, au CSV et au
+JSON. Une distance parcourue négative n'a aucun sens : le handicap est un décalage de départ, pas
+une distance. Le classement n'en dépend pas, il est arrêté sur l'état avant d'être rangé.
+
 Le défaut est `AVERTISSEMENT` : en événementiel, relancer une course pour un rider qui a bougé
 énerve le public. `RELANCE` existe pour les usages compétitifs.
 
