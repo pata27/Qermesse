@@ -32,6 +32,11 @@ var false_started: Array[bool] = []
 ## l'historique lisent ceux-la, jamais le roster courant : renommer les pistes
 ## entre deux courses ne reecrit pas l'histoire — docs/02 §5.
 var rider_names: Dictionary = {}
+## Dossards TELS QU'AU DEPART, piste -> dossard. Meme regle que les noms, et
+## pour la meme raison : l'operateur les saisit avant la course et peut les
+## changer entre deux manches. Sans capture, le tableau de resultats
+## reetiquetterait une course passee avec les numeros de la suivante.
+var rider_dossards: Dictionary = {}
 
 
 func _init() -> void:
@@ -106,6 +111,26 @@ func raced_ms(rider: int) -> int:
 
 
 ## Le nom du depart, ou « Piste N » — jamais une ligne vide.
+## Le dossard d'une piste, tel qu'au depart. Vide si l'operateur n'en a pas
+## saisi — la plupart des soirees s'en passent.
+## Un dossard relu d'un fichier, ramene a du texte.
+##
+## LE FICHIER N'EST PAS UNE ENTREE SURE. JSON n'a qu'un type numerique : un
+## dossard ecrit en nombre revient en FLOTTANT, et `str()` en fait « 7.0 » — un
+## numero a virgule sur un tableau de resultats se lit comme une erreur du
+## logiciel. Le roster n'en produit jamais, mais un fichier edite a la main ou
+## venu d'un autre outil, si. Meme raisonnement que la couleur d'une piste, qui
+## est validee a la relecture pour la meme raison.
+static func _as_dossard(value: Variant) -> String:
+	if value is float or value is int:
+		return str(int(value))
+	return str(value)
+
+
+func rider_dossard(rider: int) -> String:
+	return str(rider_dossards.get(rider, ""))
+
+
 func rider_name(rider: int) -> String:
 	var name := str(rider_names.get(rider, ""))
 	return name if not name.is_empty() else "Piste %d" % (rider + 1)
@@ -157,7 +182,12 @@ static func from_json(data: Dictionary) -> RaceResult:
 	# Les cles du roster sont des chaines en JSON.
 	var roster: Dictionary = data.get("roster", {})
 	for lane: Variant in roster:
-		out.rider_names[int(str(lane))] = str((roster[lane] as Dictionary).get("name", ""))
+		var entry: Dictionary = roster[lane]
+		out.rider_names[int(str(lane))] = str(entry.get("name", ""))
+		# LE JSON PORTAIT DEJA LE DOSSARD : le fichier enregistre le roster
+		# entier, on ne le relisait simplement pas. Les courses deja ecrites
+		# retrouvent donc leurs numeros sans changement de format.
+		out.rider_dossards[int(str(lane))] = _as_dossard(entry.get("dossard", ""))
 	for rider: int in range(Protocol.MAX_RIDERS):
 		out.finished_ms[rider] = int(_nth(block.get("finished_ms", []), rider, 0))
 		out.eliminated_ms[rider] = int(_nth(block.get("eliminated_ms", []), rider, 0))

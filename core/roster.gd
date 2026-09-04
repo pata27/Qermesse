@@ -24,7 +24,8 @@ const COLOR_CLASH := 0.25
 ## tableau operateur — a largeur fixe — poussait toute la ligne vers la droite.
 ## La donnee stockee, elle, n'est jamais amputee : c'est l'AFFICHAGE qui borne.
 const MAX_DISPLAY_NAME := 18
-## Un dossard tient en quelques caracteres ; la colonne du tableau en fait cinq.
+## Un dossard tient en quelques caracteres ; la colonne du tableau de resultats
+## en fait six, et n'apparait que si au moins une piste en porte un.
 const MAX_DOSSARD := 6
 
 

@@ -749,3 +749,38 @@ func test_deux_pistes_de_meme_couleur_sont_dites_a_l_operateur() -> void:
 	assert_string_contains(roster_panel.warning_text(), "pistes 1 et 2")
 	assert_string_contains(roster_panel.warning_text(), "se confondront")
 	assert_eq(_controller.roster.rider(1).color, "#00D8F5", "la couleur est prise malgre tout")
+
+
+func test_le_tableau_montre_les_dossards_du_depart_et_seulement_s_il_y_en_a() -> void:
+	# L'operateur saisit un dossard, et ne le revoyait JAMAIS : il partait au
+	# CSV, qu'on ouvre apres la soiree. Une faute de frappe restait donc
+	# invisible jusqu'a ce que le fichier serve — c'est-a-dire trop tard.
+	var results := _panel.results_panel()
+	var plain := RaceResult.new()
+	plain.mode = "distance"
+	plain.ranking = [0, 1]
+	plain.end_reason = RaceRule.EndReason.ALL_FINISHED
+	plain.rider_names = {0: "Alice", 1: "Bob"}
+	results.show_result(plain)
+	assert_false(results.table_text().contains("doss."), "pas de colonne sans dossard")
+
+	# LA COLONNE N'APPARAIT QUE SI ELLE SERT. La plupart des soirees s'en
+	# passent, et une colonne vide en permanence n'est pas une information.
+	var numbered := RaceResult.new()
+	numbered.mode = "distance"
+	numbered.ranking = [0, 1]
+	numbered.end_reason = RaceRule.EndReason.ALL_FINISHED
+	numbered.rider_names = {0: "Alice", 1: "Bob"}
+	numbered.rider_dossards = {0: "42", 1: ""}
+	results.show_result(numbered)
+	assert_string_contains(results.table_text(), "doss.", "la colonne apparait")
+	assert_string_contains(results.table_text(), "42", "et le numero avec")
+
+	# LE DOSSARD DU DEPART, jamais celui du roster courant. Renumeroter les
+	# pistes pour la manche suivante ne doit pas reetiqueter celle qui vient de
+	# courir — la meme faute a ete commise deux fois sur les noms.
+	_panel.roster_panel().name_field(0).text = ""
+	_controller.roster.rider(0).dossard = "99"
+	results.show_result(numbered)
+	assert_string_contains(results.table_text(), "42", "toujours le numero du depart")
+	assert_false(results.table_text().contains("99"), "et jamais celui d'apres")

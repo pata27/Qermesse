@@ -166,7 +166,9 @@ func finish_race(result: RaceResult) -> String:
 	result.started_at_iso = _started_iso
 	result.finished_at_iso = Time.get_datetime_string_from_system(true)
 	for lane: Variant in _roster:
-		result.rider_names[int(lane)] = str((_roster[lane] as Dictionary).get("name", ""))
+		var entry: Dictionary = _roster[lane]
+		result.rider_names[int(lane)] = str(entry.get("name", ""))
+		result.rider_dossards[int(lane)] = str(entry.get("dossard", ""))
 
 	for rider: int in result.ranking:
 		_append_csv(

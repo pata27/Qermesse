@@ -347,7 +347,9 @@ func test_toutes_les_donnees_d_un_resultat_survivent_au_json() -> void:
 	# s'est bien terminee — passerait sans rien prouver.
 	var result := RaceResult.new()
 	# Champs que le recorder possede : il les ecrase a l'enregistrement.
-	var owned := ["uuid", "started_at_iso", "finished_at_iso", "rider_names", "config"]
+	var owned := [
+		"uuid", "started_at_iso", "finished_at_iso", "rider_names", "rider_dossards", "config",
+	]
 	var expected := {}
 	for property: Dictionary in result.get_property_list():
 		if not (int(property["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE):
@@ -641,6 +643,30 @@ func test_le_resultat_porte_les_noms_du_depart_et_les_relit() -> void:
 	var relu := Recorder.new(_logs, _races).load_day()[0]
 	assert_eq(relu.rider_name(0), "Alice", "relu depuis le JSON")
 	assert_eq(relu.rider_name(1), "Bob")
+
+
+func test_le_resultat_porte_les_dossards_du_depart_et_les_relit() -> void:
+	# MEME REGLE QUE LES NOMS, et pour la meme raison : l'operateur les saisit
+	# avant la course et peut les changer entre deux manches. Sans capture, le
+	# tableau reetiquetterait une course passee avec les numeros de la suivante
+	# — une erreur deja commise deux fois sur les noms.
+	#
+	# Le JSON portait DEJA le dossard : le fichier enregistre le roster entier,
+	# on ne le relisait simplement pas. Les courses deja ecrites retrouvent donc
+	# leurs numeros sans changement de format.
+	var result := _run_recorded_race(_config(), [45.0, 43.0])
+	assert_eq(result.rider_dossard(0), "7", "le dossard du depart, porte par le resultat")
+	assert_eq(result.rider_dossard(1), "12")
+	assert_eq(result.rider_dossard(2), "", "une piste sans dossard n'en invente pas")
+
+	var relu := Recorder.new(_logs, _races).load_day()[0]
+	assert_eq(relu.rider_dossard(0), "7", "relu depuis le JSON")
+	assert_eq(relu.rider_dossard(1), "12")
+	# ECRIT EN NOMBRE DANS CE FICHIER — le montage de test le fait, et un
+	# fichier edite a la main le peut aussi. JSON n'a qu'un type numerique :
+	# tout revient en flottant, et un dossard « 7.0 » sur un tableau de
+	# resultats se lit comme une erreur du logiciel.
+	assert_false(relu.rider_dossard(0).contains("."), "jamais de dossard a virgule")
 
 
 func test_seuls_les_fichiers_du_jour_sont_ouverts() -> void:

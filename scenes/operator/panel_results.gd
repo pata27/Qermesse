@@ -82,7 +82,15 @@ func show_result(result: RaceResult) -> void:
 			"  [INTERROMPUE : %s]" % result.interruption_note if result.was_stopped() else "",
 		]
 	)
-	lines.append("rang  piste  nom                distance   temps       moy      max")
+	# LA COLONNE N'APPARAIT QUE SI ELLE SERT. La plupart des soirees se passent
+	# de dossards ; une colonne vide en permanence n'est pas une information,
+	# c'est du bruit qui pousse tout le reste vers la droite.
+	var numbered := _has_dossards(result)
+	lines.append(
+		"rang  piste  doss.   nom                distance   temps       moy      max"
+		if numbered
+		else "rang  piste  nom                distance   temps       moy      max"
+	)
 	for rider: int in result.ranking:
 		# MEME LECTURE QUE LE PODIUM SPECTACLE. Le temps est le temps COURU :
 		# l'arrivee pour un classe, l'elimination — marquee — pour un elimine.
@@ -100,11 +108,17 @@ func show_result(result: RaceResult) -> void:
 			# Survivant d'un plafond ou course interrompue : le temps couru,
 			# marque comme tel.
 			timing = "%6.2f s *" % (result.raced_ms(rider) / 1000.0)
+		# LE DOSSARD DU DEPART, jamais celui du roster courant : renommer ou
+		# renumeroter les pistes entre deux manches ne doit pas reetiqueter une
+		# course deja courue. C'est la meme regle que les noms, et elle a deja
+		# ete enfreinte deux fois sur eux.
+		var number := "%-6s  " % result.rider_dossard(rider) if numbered else ""
 		lines.append(
-			"%4d  %5d  %-18s %7.1f m  %s  %5.1f  %5.1f"
+			"%4d  %5d  %s%-18s %7.1f m  %s  %5.1f  %5.1f"
 			% [
 				result.rank_of(rider),
 				rider + 1,
+				number,
 				# Meme borne que l'ecran public : un nom venu d'un fichier
 				# ecrit a la main desalignerait sinon toute la ligne.
 				result.display_name(rider),
@@ -133,6 +147,15 @@ func show_result(result: RaceResult) -> void:
 	if not json.is_empty():
 		lines_files.append("Course : %s" % json)
 	_csv_label.text = "\n".join(lines_files)
+
+
+## Une seule piste numerotee suffit a montrer la colonne : si l'operateur a pris
+## la peine d'en saisir un, c'est qu'il compte le lire.
+static func _has_dossards(result: RaceResult) -> bool:
+	for rider: int in result.ranking:
+		if not result.rider_dossard(rider).is_empty():
+			return true
+	return false
 
 
 ## Selectionne une course de l'historique, comme un clic dans la liste.
