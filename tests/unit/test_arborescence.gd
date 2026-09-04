@@ -224,15 +224,39 @@ func test_aucune_fonction_n_est_declaree_pour_rien() -> void:
 ## On compare les DEBUTS de message, avant le premier `%` : c'est ce que
 ## l'operateur lit et ce qu'il peut chercher.
 func test_chaque_alerte_de_l_operateur_est_dans_le_depannage() -> void:
-	var source := FileAccess.open("res://scenes/app_controller.gd", FileAccess.READ)
-	assert_not_null(source, "le controleur est lisible")
+	# TOUT CE QUI PEUT ECRIRE DANS LE JOURNAL, pas le seul controleur.
+	#
+	# La garde ne lisait que `app_controller.gd`, et le journal du panneau
+	# Course a deux autres sources : la vitrine, qui passe par le signal du
+	# controleur, et le panneau lui-meme, qui y ecrit directement les faits de
+	# course — faux depart, elimination, arrivee. Quatre messages echappaient
+	# donc a la verification, et la table du guide affirme pourtant lister
+	# « chacun de ceux que le logiciel peut y ecrire ».
+	#
+	# Une garde qui ne regarde qu'un fichier protege ce fichier, pas la
+	# promesse.
 	var guide := FileAccess.open("res://docs/DEPANNAGE.md", FileAccess.READ)
 	assert_not_null(guide, "le guide de depannage est lisible")
 	var text := guide.get_as_text()
 
+	var corpus := ""
+	for path: String in [
+		"res://scenes/app_controller.gd",
+		"res://scenes/attract_mode.gd",
+		"res://scenes/operator/panel_race.gd",
+	]:
+		var source := FileAccess.open(path, FileAccess.READ)
+		assert_not_null(source, "%s est lisible" % path)
+		corpus += _joined_literals(source.get_as_text())
+
 	var undocumented: Array[String] = []
-	var pattern := RegEx.create_from_string('notice\\.emit\\(\\s*"([^"]+)"')
-	for found: RegExMatch in pattern.search_all(source.get_as_text()):
+	# `notice.emit` pour les alertes, `_push_notice` pour ce que le panneau
+	# ecrit de lui-meme : les deux atterrissent au meme endroit sous les yeux de
+	# l'operateur, donc les deux comptent.
+	var pattern := RegEx.create_from_string(
+		'(?:notice\\.emit|_push_notice)\\(\\s*"([^"]+)"'
+	)
+	for found: RegExMatch in pattern.search_all(corpus):
 		# LE PLUS LONG MORCEAU FIXE, pas le debut. Chercher ce qui precede le
 		# premier « % » exemptait en silence toute alerte ouvrant sur la piste
 		# concernee — « PISTE %d : ... » donne « PISTE », cinq lettres, sous le
@@ -240,20 +264,50 @@ func test_chaque_alerte_de_l_operateur_est_dans_le_depannage() -> void:
 		# chance : la garde ne les regardait pas. Un morceau fixe long est un
 		# bien meilleur ancrage qu'un prefixe, et il tombe au milieu de la
 		# phrase, la ou elle dit quelque chose.
+		# AU MOINS UN MORCEAU FIXE dans le guide, pas le plus long.
+		#
+		# Une table d'entree cite ce qui IDENTIFIE un message, pas la phrase
+		# entiere : « LONGUEUR : le boîtier a compris N ticks, M demandés »
+		# s'arrete la ou l'operateur a compris de quoi il s'agit, et laisse la
+		# suite — les consequences, la marche a suivre — a ses autres colonnes.
+		# Exiger le plus long morceau revenait a exiger la phrase entiere, ce
+		# qui accusait des messages parfaitement documentes.
+		#
+		# Ce qu'on veut verifier est plus modeste et plus juste : que le guide
+		# porte de ce message quelque chose d'assez long pour qu'on le
+		# reconnaisse.
 		var message := found.get_string(1)
-		var longest := ""
-		for piece: String in message.split("%"):
+		var pieces := message.split("%")
+		var identifiable := false
+		var candidates := PackedStringArray()
+		for index: int in range(pieces.size()):
 			# Le premier caractere apres un « % » est le format — d, s, f, .1f.
-			var fixed := RegEx.create_from_string("^[0-9.]*[a-zA-Z]").sub(piece, "")
+			# SEULEMENT APRES UN « % » : applique au premier morceau, qui n'en
+			# suit aucun, cette coupe mangeait sa premiere lettre. « Module
+			# natif absent » devenait « odule natif absent », qui se trouvait
+			# quand meme dans le guide — par correspondance partielle, donc par
+			# chance.
+			var fixed: String = pieces[index]
+			if index > 0:
+				fixed = RegEx.create_from_string("^[0-9.]*[a-zA-Z]").sub(fixed, "")
 			fixed = fixed.strip_edges()
-			if fixed.length() > longest.length():
-				longest = fixed
-		# Un message purement variable — « lien : %s » — n'a pas de morceau fixe
+			if fixed.length() < 12:
+				continue
+			# LES TRENTE PREMIERS CARACTERES, pas le morceau entier. Une table
+			# d'entree cite ce qui IDENTIFIE un message et s'arrete la ou
+			# l'operateur a compris de quoi il s'agit ; la suite — consequences,
+			# marche a suivre — vit dans ses autres colonnes. Exiger le morceau
+			# entier revenait a exiger la phrase, ce qui accusait des messages
+			# parfaitement documentes.
+			var probe := fixed.substr(0, 30)
+			candidates.append(probe)
+			if text.contains(probe):
+				identifiable = true
+		# Un message purement variable — « lien : %s » — n'a aucun morceau fixe
 		# a chercher ; c'est l'etat du lien qui est documente, pas le prefixe.
-		if longest.length() < 8:
+		if candidates.is_empty() or identifiable:
 			continue
-		if not text.contains(longest):
-			undocumented.append(longest)
+		undocumented.append(candidates[0])
 	assert_eq(undocumented, [] as Array[String], "des alertes absentes de DEPANNAGE.md")
 
 
@@ -467,6 +521,7 @@ func test_chaque_message_du_depannage_existe_encore_dans_le_code() -> void:
 		"res://hardware/link.gd",
 		"res://scenes/operator/panel_hardware.gd",
 		"res://scenes/operator/panel_race.gd",
+		"res://scenes/attract_mode.gd",
 	]:
 		var file := FileAccess.open(path, FileAccess.READ)
 		if file != null:
@@ -481,19 +536,36 @@ func test_chaque_message_du_depannage_existe_encore_dans_le_code() -> void:
 		var quoted := line.split("`")
 		if quoted.size() < 2:
 			continue
-		# Ce qui precede la premiere partie VARIABLE — le motif qui suit, un
-		# numero de piste, une valeur. C'est le morceau fixe, celui qu'on peut
-		# chercher.
-		var head := quoted[1]
-		for cut: String in ["…", " N ", " X ", "N :"]:
-			if head.contains(cut):
-				head = head.substr(0, head.find(cut))
-		head = head.strip_edges()
-		if head.length() < 10:
+		# LE PLUS LONG MORCEAU ENTRE DEUX MARQUES, pas ce qui precede la
+		# premiere. Tronquer au premier « N » reduisait « FAUX DÉPART piste N »
+		# a lui-meme, faute de marque reconnue, et « PISTE N : aucun tick… » a
+		# « PISTE » — cinq lettres, sous le seuil, donc silencieusement exempte.
+		# C'est le meme bailonnage que la garde symetrique a deja connu : une
+		# regle de decoupe qui rend un morceau trop court exempte au lieu
+		# d'accuser, et personne ne le voit.
+		#
+		# Le guide ecrit ses variables `N`, `R`, `X` la ou le code ecrit `%d` ou
+		# `%s` : on decoupe autour, et on garde le plus long fragment fixe.
+		var longest := ""
+		for fragment: String in _without_placeholders(quoted[1]):
+			if fragment.length() > longest.length():
+				longest = fragment
+		if longest.length() < 10:
 			continue
-		if not corpus.contains(head):
-			phantom.append(head)
+		if not corpus.contains(longest):
+			phantom.append(quoted[1])
 	assert_eq(phantom, [] as Array[String], "des messages documentes que le code n'emet plus")
+
+
+## Decoupe un message du guide autour de ses variables, et rend les morceaux
+## fixes. `N`, `R` et `X` sont les marques que le guide emploie la ou le code
+## ecrit `%d` ou `%s` ; `…` marque un motif libre.
+static func _without_placeholders(message: String) -> PackedStringArray:
+	var cleaned := RegEx.create_from_string("…|\\b[NRX]\\b").sub(message, "\n", true)
+	var out := PackedStringArray()
+	for piece: String in cleaned.split("\n"):
+		out.append(piece.strip_edges())
+	return out
 
 
 ## Recolle les litteraux ADJACENTS avant de chercher dedans.
@@ -503,4 +575,14 @@ func test_chaque_message_du_depannage_existe_encore_dans_le_code() -> void:
 ## Une recherche naive ne le trouvait pas et l'accusait d'avoir disparu — une
 ## garde qui accuse a tort finit ignoree.
 static func _joined_literals(source: String) -> String:
-	return RegEx.create_from_string('"\\s*\\+\\s*"').sub(source, "", true)
+	# Deux formes de couture, et il faut les deux.
+	#
+	# `"a" + "b"` d'abord — le cas simple. Mais le code ecrit aussi
+	# `"a %d" % [x] + "b"` : l'expression de formatage se glisse ENTRE les deux
+	# litteraux, et un recollage qui ne la franchit pas laisse deux morceaux la
+	# ou l'operateur lira une phrase. La garde accusait alors un message
+	# parfaitement present, pour la seule raison qu'il etait long.
+	var joined := RegEx.create_from_string(
+		'"\\s*%\\s*(?:\\[[^\\]]*\\]|\\([^)]*\\))\\s*\\+\\s*"'
+	).sub(source, "", true)
+	return RegEx.create_from_string('"\\s*\\+\\s*"').sub(joined, "", true)

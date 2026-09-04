@@ -329,7 +329,8 @@ façon.
 ## Tous les messages du panneau Course
 
 Le journal du panneau **Course** garde les cinq derniers messages, le plus récent en tête. Voici
-chacun de ceux que le logiciel peut y écrire, ce qu'il veut dire, et ce qu'il faut faire. Les
+chacun de ceux que le logiciel peut y écrire, ce qu'il veut dire, et ce qu'il faut faire — les
+alertes d'abord, les faits de course ensuite. Les
 symptômes qui demandent une explication longue ont leur section plus haut ; celle-ci est la table
 d'entrée quand on lit un message et qu'on ne sait pas par où commencer.
 
@@ -352,3 +353,14 @@ d'entrée quand on lit un message et qu'on ne sait pas par où commencer.
 | `test capteurs : impossible pendant une course` | Le test capteurs est une course à blanc ; il ne peut pas tourner par-dessus une vraie. | Attendre l'arrivée, ou STOP. |
 | `test capteurs : après le décompte du boîtier, tournez chaque rouleau, une piste à la fois` | Ce n'est pas une erreur : c'est la marche à suivre. Le firmware ne lit ses capteurs qu'en course. | Faire tourner un rouleau à la fois et lire quelle piste bouge. |
 | `test capteurs : commande refusée par le lien : …` | La course à blanc n'a pas pu être armée. | Même cause que `commande refusée par le lien`. |
+| `mode démo : impossible pendant une course` | La vitrine refuse de démarrer : des gens pédalent. | Attendre l'arrivée, ou STOP. Voir le manuel, « Entre deux manches ». |
+
+Les quatre suivants ne sont pas des alertes : ce sont les faits de course, écrits au même endroit
+pour que le journal se lise comme le récit de la manche. Aucun ne demande d'action.
+
+| Message | Ce qu'il veut dire |
+|---|---|
+| `FAUX DÉPART piste N` | Le boîtier a vu la piste `N` bouger pendant le décompte. Ce que le public en voit dépend de la politique choisie — voir `docs/02` §4. |
+| `Piste N éliminée (rang R, écart X m)` | Poursuite : la piste `N` a atteint l'écart décisif et sort, à la place `R`. |
+| `Terminé — vainqueur piste N (nom)` | La course est arrivée. Le nom est celui **du départ**, pas celui que le roster porte maintenant. |
+| `Terminé — vainqueur piste N (nom)  [INTERROMPUE]` | La course a été arrêtée. Le motif, lui, est sur l'écran public ; un plafond de sécurité a bien un vainqueur et ne porte pas cette mention (`docs/02` §3). |

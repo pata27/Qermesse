@@ -1448,3 +1448,33 @@ La règle : devant toute constante en secondes ou en mètres, aller lire les
 bornes que la configuration accepte, et vérifier le comportement **aux deux
 extrémités**. Le milieu de l'intervalle ne prouve rien — c'est là qu'on a choisi
 la constante.
+
+## Une garde qui ne lit qu'un fichier protège ce fichier, pas la promesse
+
+La table de `DEPANNAGE` affirme lister « chacun » des messages du journal. La
+garde ne lisait que `app_controller.gd` — or le journal a trois sources : le
+contrôleur, la vitrine qui passe par son signal, et le panneau qui y écrit
+directement les faits de course. Quatre messages échappaient donc à une
+vérification qui semblait complète.
+
+Devant une garde qui vérifie une promesse, la question n'est pas « lit-elle bien
+ce fichier ? » mais **« la promesse porte sur quoi, exactement, et ai-je couvert
+tout ce que ce quoi recouvre ? »**
+
+## Une garde textuelle se casse sur la forme, jamais sur le fond
+
+Quatrième, cinquième et sixième occurrence dans ce projet, toutes trouvées le
+même jour en élargissant une garde :
+
+* le découpage retirait le spécificateur de format du **premier** morceau, qui
+  n'en suit aucun — « Module » devenait « odule », et ça passait par
+  correspondance partielle ;
+* le recollage des littéraux ne franchissait pas `"a" % [x] + "b"` — une phrase
+  pour l'opérateur, deux morceaux pour la garde ;
+* la comparaison exigeait le plus long morceau, c'est-à-dire la phrase entière,
+  alors qu'une table d'entrée cite seulement ce qui identifie.
+
+Aucune de ces trois n'était un défaut du produit. Toutes rendaient la garde
+menteuse — dans un sens ou dans l'autre, ce qui est pire qu'une garde absente.
+**Une garde textuelle doit être éprouvée sur un cas sain qu'elle pourrait mal
+lire, et pas seulement sur le cas fautif qu'elle doit attraper.**
