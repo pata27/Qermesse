@@ -279,9 +279,25 @@ func _append_csv(row: Dictionary) -> void:
 		_row_value(row, "vitesse_moy_kph"),
 		_row_value(row, "vitesse_max_kph"),
 		_row_value(row, "rang"),
-		_escape_csv(_row_value(row, "note")),
+		_row_value(row, "note"),
 	]
-	file.store_line(",".join(fields))
+	# ECHAPPEMENT DE TOUTE LA LIGNE, pas du seul champ « note ».
+	#
+	# Il ne portait que sur la note, parce que c'est la qu'on attendait une
+	# virgule. Mais le DOSSARD est un champ de texte libre saisi par
+	# l'operateur : « 7,5 » suffisait a produire une ligne de douze colonnes
+	# dans un fichier qui en annonce onze, et tout ce qui suit se decalait — la
+	# distance devenait un morceau du dossard, le temps devenait la distance.
+	# Silencieux, et sur le fichier meme que `DEPANNAGE` fait envoyer au
+	# developpeur devant un resultat suspect.
+	#
+	# Echapper a la sortie plutot qu'a chaque champ : c'est le seul endroit ou
+	# une ligne devient du CSV, et un champ ajoute plus tard y passera sans que
+	# personne ait a y penser.
+	var safe := PackedStringArray()
+	for field: Variant in fields:
+		safe.append(_escape_csv(str(field)))
+	file.store_line(",".join(safe))
 	file.close()
 
 

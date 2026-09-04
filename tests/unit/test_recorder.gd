@@ -844,3 +844,55 @@ func test_un_penalise_n_emporte_jamais_de_distance_negative() -> void:
 	assert_false(text.contains(",-"), "aucun nombre negatif dans le journal")
 	var relu := Recorder.new(_logs, _races).load_day()[0]
 	assert_gte(relu.distance_m[1], 0.0, "ni au rechargement du JSON")
+
+
+func test_aucun_champ_du_csv_ne_peut_decaler_les_colonnes() -> void:
+	# L'echappement ne portait que sur la note, parce que c'est la qu'on
+	# attendait une virgule. Mais le DOSSARD est un champ de texte libre saisi
+	# par l'operateur : « 7,5 » suffisait a produire une ligne de DOUZE colonnes
+	# dans un fichier qui en annonce onze. Tout ce qui suit se decalait — la
+	# distance devenait un morceau du dossard, le temps devenait la distance —
+	# et rien ne le signalait.
+	#
+	# C'est le fichier meme que `DEPANNAGE` fait envoyer au developpeur devant
+	# un resultat suspect : un decalage silencieux y est le pire des defauts,
+	# puisqu'il rend menteur l'outil du diagnostic.
+	var config := _config()
+	# Une virgule, un guillemet et un point-virgule : les trois pieges usuels.
+	_recorder.begin_race(config, {
+		0: {"name": "Alice", "dossard": "7,5"},
+		1: {"name": "Bob \"le rapide\"", "dossard": "9;2"},
+	})
+	_recorder.record_rider_finished(0, 20000, 1)
+	_recorder.record_tick_rejected(1, "valeur folle, ecartee")
+
+	var file := FileAccess.open(_recorder.csv_path(), FileAccess.READ)
+	assert_not_null(file, "le journal existe")
+	var header := file.get_csv_line()
+	assert_eq(header.size(), 11, "l'en-tete annonce onze colonnes")
+	var rows := 0
+	while not file.eof_reached():
+		var row := file.get_csv_line()
+		if row.size() <= 1:
+			continue
+		rows += 1
+		assert_eq(
+			row.size(), header.size(),
+			"ligne « %s » : autant de colonnes que l'en-tete" % row[1]
+		)
+	assert_gte(rows, 3, "les trois lignes ont bien ete ecrites")
+
+
+func test_un_dossard_a_virgule_se_relit_intact() -> void:
+	# Echapper ne suffit pas : il faut que la valeur REVIENNE telle quelle.
+	var config := _config()
+	_recorder.begin_race(config, {0: {"name": "Alice", "dossard": "7,5"}})
+	_recorder.record_rider_finished(0, 20000, 1)
+	var file := FileAccess.open(_recorder.csv_path(), FileAccess.READ)
+	file.get_csv_line()
+	var found := ""
+	while not file.eof_reached():
+		var row := file.get_csv_line()
+		if row.size() > 4 and row[1] == "RIDER_FINISH":
+			found = row[4]
+	assert_eq(found, "7,5", "le dossard sort du fichier comme il y est entre")
