@@ -463,3 +463,53 @@ func test_le_bandeau_d_abandon_tient_dans_l_ecran_et_s_y_centre() -> void:
 	var small: Rect2 = _hud.notice_metrics()["rect"]
 	assert_lt(small.size.x, RaceHud.NOTICE_BIG_WIDTH, "le lien perdu ne prend pas tout l'ecran")
 	assert_lt(small.position.y, 300.0, "il reste sous la bande")
+
+
+func test_un_penalise_n_a_jamais_parcouru_moins_que_rien() -> void:
+	# Le handicap de la politique PENALITE est NEGATIF et s'ajoute a la
+	# distance : la carte annoncait « -10 m parcourus » au public. Un nombre
+	# juste au sens du calcul, et faux au sens de la phrase — le coureur n'a pas
+	# pedale -10 m, il est parti dix metres derriere la ligne.
+	#
+	# Le chiffre « reste », lui, etait deja bon : il lui reste bien 260 m sur une
+	# course de 250. C'est le mot « parcourus » qui mentait.
+	#
+	# La carte dit donc la PENALITE tant qu'elle n'est pas rattrapee. C'est
+	# aussi ce que `docs/02` §4 demande de cette politique — annoncer la piste
+	# et son handicap : le bandeau le dit une fois, la carte le tient sous les
+	# yeux tant que ca dure.
+	for mode: RaceConfig.Mode in [
+		RaceConfig.Mode.DISTANCE, RaceConfig.Mode.TIME, RaceConfig.Mode.PURSUIT
+	]:
+		var config := RaceConfig.new()
+		config.mode = mode
+		config.distance_m = 250.0
+		config.duration_s = 30.0
+		config.gap_m = 40.0
+		config.active_riders = [0, 1]
+		config.false_start_policy = RaceConfig.FalseStartPolicy.PENALTY
+		config.false_start_penalty_m = 10.0
+		_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+		_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+
+		var state := RaceState.new(config)
+		state.handicap_m[1] = -config.false_start_penalty_m
+		var physics := Physics.new(config.roller_mm)
+		# Trois metres de roue : il est encore sept metres derriere la ligne.
+		state.apply_sample(
+			[physics.metres_to_ticks(20.0), physics.metres_to_ticks(3.0), 0, 0], 1600
+		)
+		_controller.progress_updated.emit(state)
+		var behind := _hud.card_detail_text(1)
+		assert_false(behind.contains("-"), "mode %d : aucun nombre negatif au public" % mode)
+		assert_string_contains(behind, "7 m de pénalité", "mode %d : la penalite est dite" % mode)
+
+		# Une fois la ligne rattrapee, l'affichage redevient celui de tout le
+		# monde : la penalite a ete purgee, il n'y a plus rien a annoncer.
+		state.apply_sample(
+			[physics.metres_to_ticks(40.0), physics.metres_to_ticks(25.0), 0, 0], 3200
+		)
+		_controller.progress_updated.emit(state)
+		var ahead := _hud.card_detail_text(1)
+		assert_string_contains(ahead, "15 m parcourus", "mode %d : puis la distance vraie" % mode)
+		assert_false(ahead.contains("pénalité"), "mode %d : et plus de penalite" % mode)

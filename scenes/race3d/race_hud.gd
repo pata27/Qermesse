@@ -723,16 +723,34 @@ func _on_progress(state: RaceState) -> void:
 			RaceConfig.Mode.DISTANCE:
 				# LA question de l'utilisateur : combien reste-t-il ?
 				var left := maxf(0.0, config.distance_m - done)
+				# UN PENALISE N'A PAS PARCOURU MOINS QUE RIEN. Son handicap est
+				# NEGATIF et s'ajoute a la distance : la carte annoncait donc
+				# « -10 m parcourus » au public, un nombre juste au sens du
+				# calcul et faux au sens de la phrase — il n'a pas pedale
+				# -10 m, il est parti dix metres derriere la ligne.
+				#
+				# Tant qu'il n'a pas rattrape la ligne, la carte dit ce qui se
+				# passe reellement. C'est aussi ce que `docs/02` §4 demande de
+				# la politique PENALITE — annoncer la piste et son handicap :
+				# le bandeau le dit une fois, la carte le tient sous les yeux
+				# tant que ca dure.
 				(card["distance"] as Label).text = (
-					"%.0f m parcourus   —   reste %.0f m" % [done, left]
+					"%.0f m de pénalité   —   reste %.0f m" % [-done, left]
+					if done < 0.0
+					else "%.0f m parcourus   —   reste %.0f m" % [done, left]
 				)
 				(card["bar"] as ProgressBar).value = (
 					clampf(done / maxf(1.0, config.distance_m), 0.0, 1.0) * 100.0
 				)
 			RaceConfig.Mode.TIME:
 				var remaining := maxf(0.0, config.duration_s - state.elapsed_ms / 1000.0)
+				# Meme regle : un penalise affiche sa penalite, pas une distance
+				# negative. En mode temps la penalite se paie en distance, et
+				# c'est bien elle qui manquera au classement.
 				(card["distance"] as Label).text = (
-					"%.0f m parcourus   —   reste %.1f s" % [done, remaining]
+					"%.0f m de pénalité   —   reste %.1f s" % [-done, remaining]
+					if done < 0.0
+					else "%.0f m parcourus   —   reste %.1f s" % [done, remaining]
 				)
 				(card["bar"] as ProgressBar).value = (
 					clampf(state.elapsed_ms / 1000.0 / maxf(1.0, config.duration_s), 0.0, 1.0)
@@ -740,8 +758,12 @@ func _on_progress(state: RaceState) -> void:
 				)
 			RaceConfig.Mode.PURSUIT:
 				var behind := state.distance_m[leader] - done
+				# Meme regle qu'en distance : un penalise affiche sa penalite,
+				# pas une distance negative.
 				(card["distance"] as Label).text = (
-					"%.0f m parcourus   —   %s"
+					"%.0f m de pénalité   —   %s" % [-done, "à %.1f m" % behind]
+					if done < 0.0
+					else "%.0f m parcourus   —   %s"
 					% [done, "en tête" if lane == leader else "à %.1f m" % behind]
 				)
 				(card["bar"] as ProgressBar).value = (
