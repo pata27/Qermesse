@@ -441,3 +441,66 @@ func test_le_manuel_reprend_mot_pour_mot_les_lignes_d_etat() -> void:
 		if not manual.contains("| %s |" % RaceEngine.state_label(state)):
 			missing.append(RaceEngine.state_label(state))
 	assert_eq(missing, [] as Array[String], "des lignes d'etat absentes de la table du manuel")
+
+
+## Chaque message DOCUMENTE existe encore dans le code — le sens inverse.
+##
+## `test_chaque_alerte_de_l_operateur_est_dans_le_depannage` verifie qu'une
+## alerte ajoutee au code est ecrite dans le guide. Rien ne verifiait l'autre
+## sens, et c'est la meme derive vue de l'autre bout : un message reformule ou
+## supprime laisse dans `DEPANNAGE` une ligne qui ne correspond plus a rien.
+##
+## Ce defaut-la est plus vicieux que son symetrique. Une alerte non documentee
+## laisse l'operateur sans reponse — il cherche ailleurs. Un guide qui nomme un
+## message que le logiciel n'emet plus l'envoie chercher un FANTOME : il attend
+## quelque chose qui ne viendra jamais, et conclut que le materiel est en cause.
+func test_chaque_message_du_depannage_existe_encore_dans_le_code() -> void:
+	var guide := FileAccess.open("res://docs/DEPANNAGE.md", FileAccess.READ)
+	assert_not_null(guide, "le guide se lit")
+	var text := guide.get_as_text()
+	var marker := "## Tous les messages du panneau Course"
+	assert_true(text.contains(marker), "la table des messages est toujours la")
+
+	var corpus := ""
+	for path: String in [
+		"res://scenes/app_controller.gd",
+		"res://hardware/link.gd",
+		"res://scenes/operator/panel_hardware.gd",
+		"res://scenes/operator/panel_race.gd",
+	]:
+		var file := FileAccess.open(path, FileAccess.READ)
+		if file != null:
+			corpus += _joined_literals(file.get_as_text())
+
+	var phantom: Array[String] = []
+	for line: String in text.substr(text.find(marker)).split("\n"):
+		if not line.begins_with("| `"):
+			continue
+		# Le premier `…` de la ligne est le message ; le reste de la ligne est
+		# son explication, qui n'a pas a se retrouver dans le code.
+		var quoted := line.split("`")
+		if quoted.size() < 2:
+			continue
+		# Ce qui precede la premiere partie VARIABLE — le motif qui suit, un
+		# numero de piste, une valeur. C'est le morceau fixe, celui qu'on peut
+		# chercher.
+		var head := quoted[1]
+		for cut: String in ["…", " N ", " X ", "N :"]:
+			if head.contains(cut):
+				head = head.substr(0, head.find(cut))
+		head = head.strip_edges()
+		if head.length() < 10:
+			continue
+		if not corpus.contains(head):
+			phantom.append(head)
+	assert_eq(phantom, [] as Array[String], "des messages documentes que le code n'emet plus")
+
+
+## Recolle les litteraux ADJACENTS avant de chercher dedans.
+##
+## GDScript concatene `"a" + "b"` a l'analyse, et le code s'en sert pour tenir
+## la limite de cent colonnes : le message du test capteurs vit sur deux lignes.
+## Une recherche naive ne le trouvait pas et l'accusait d'avoir disparu — une
+## garde qui accuse a tort finit ignoree.
+static func _joined_literals(source: String) -> String:
+	return RegEx.create_from_string('"\\s*\\+\\s*"').sub(source, "", true)

@@ -1395,3 +1395,30 @@ sans avertissement. Deux fois de suite.
 La bonne manière : copier le fichier de côté avant, le remettre après. Un
 `checkout` restaure depuis le dépôt, pas depuis l'état d'avant la dernière
 commande.
+
+## Une garde de cohérence a deux sens, et on n'en écrit qu'un
+
+Le projet vérifiait depuis longtemps que **toute alerte du code figure dans
+`DEPANNAGE.md`**. Personne n'avait écrit l'inverse : qu'un message documenté
+existe encore dans le code.
+
+Les deux dérives sont pourtant symétriques et n'ont pas la même gravité. Une
+alerte non documentée laisse l'opérateur sans réponse — il cherche ailleurs, il
+finit par trouver. Un guide qui nomme un message que le logiciel n'émet plus
+l'envoie chercher un **fantôme** : il attend un signal qui ne viendra jamais et
+conclut que le matériel est en cause.
+
+La règle : devant une garde qui compare deux listes, demander laquelle des deux
+elle protège — puis écrire l'autre.
+
+## Recoller les littéraux avant de chercher dedans
+
+Le premier jet de cette garde a accusé un message parfaitement présent. Il vit
+sur deux lignes, `"…" + "…"`, parce que le code tient la limite de cent
+colonnes ; GDScript les concatène à l'analyse, une recherche naïve non. Un
+`RegEx` qui supprime `" + "` entre deux littéraux règle la question.
+
+C'est la troisième fois qu'une garde de ce projet accuse à tort pour une raison
+de forme et non de fond — chemins ASCII, prose expliquant la clause qu'elle
+refuse, et maintenant concaténation. Avant de faire passer une garde au vert,
+il faut lui montrer un cas sain qu'elle pourrait mal lire.
