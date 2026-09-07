@@ -234,7 +234,16 @@ func _process(_delta: float) -> void:
 # --- Intentions de l'interface -----------------------------------------------
 
 ## Bascule simulateur / materiel — docs/05 lot 3, « en un clic ».
+## ON NE CHANGE PAS DE BOITIER EN PLEINE COURSE. Basculer materiel/simulateur
+## remplace le lien : le moteur restait « course en cours » sur un lien
+## DISCONNECTED — ni LIEN PERDU, ni abandon a trois secondes, une course figee
+## sans autre issue que STOP, et un boitier reel toujours en course. Mesure.
+## STOP d'abord, puis la bascule : c'est aussi l'ordre de la fiche « Rien ne
+## fonctionne et le public attend ».
 func apply_backend(use_simulator: bool) -> void:
+	if race_in_progress():
+		notice.emit("lien : pas de changement de boîtier pendant une course — STOP d'abord")
+		return
 	settings.use_simulator = use_simulator
 	if use_simulator:
 		_link.use_simulator()

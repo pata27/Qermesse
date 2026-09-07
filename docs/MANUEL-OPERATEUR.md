@@ -27,7 +27,8 @@ décrit le déroulé normal d'une soirée.
 
 1. Brancher l'Arduino en USB **avant** de lancer le logiciel, ou cliquer **Rafraîchir les ports**.
 2. Panneau **Matériel** : le port apparaît avec le motif de sa retenue ou de son rejet. Basculer
-   l'interrupteur **Simulateur** sur arrêt.
+   l'interrupteur **Simulateur** sur arrêt. Cet interrupteur est **grisé pendant une course** : le
+   boîtier ne se change pas sous des gens qui pédalent — STOP d'abord.
 3. Attendre `Lien : IDENTIFIED` et la ligne **Firmware : SS_v0.1.7**. Tant que ce n'est pas le cas,
    le bouton START reste grisé, et son infobulle dit pourquoi.
 4. **Test capteurs** : le boîtier ne lit ses capteurs qu'en course — le bouton en lance une, à

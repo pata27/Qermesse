@@ -1667,3 +1667,12 @@ Résultats ». Faux depuis toujours : le chemin n'existait qu'après la premièr
 promesses faites pour *la veille* — machine neuve, salle vide, aucune course — sont celles que les
 tests, qui font tous courir quelqu'un, ne visitent jamais. Méthode : pour chaque phrase du manuel
 qui décrit l'état avant toute course, une sonde sur un contrôleur frais, sans START.
+
+## Remplacer une dépendance vivante sous une opération la fige sans la casser
+
+Basculer matériel/simulateur en course remplaçait le lien : le moteur restait « en cours », le
+lien passait DISCONNECTED — état *hors course* que rien, en course, ne surveille : ni LIEN PERDU,
+ni abandon à trois secondes. Une course figée sans issue. Même famille que la vitrine et le test
+capteurs : ce qui remplace ou emprunte le boîtier doit être refusé (et grisé) tant qu'une course
+dure. Méthode : lister les actions du panneau Matériel et sonder chacune **en course**, pas au
+repos où tout marche.

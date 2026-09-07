@@ -903,3 +903,28 @@ func test_le_panneau_resultats_donne_le_chemin_du_csv_des_le_lancement() -> void
 	var label := _panel.results_panel().csv_path_label()
 	assert_string_contains(label, "CSV : ")
 	assert_string_contains(label, AppPaths.daily_log_name(), "le journal du jour, ou ira la prochaine")
+
+
+func test_le_boitier_ne_se_change_pas_pendant_une_course() -> void:
+	# Basculer materiel/simulateur en pleine course remplacait le lien : le
+	# moteur restait « course en cours » sur un lien DISCONNECTED, sans LIEN
+	# PERDU ni abandon a trois secondes — figee, sans autre issue que STOP.
+	# Mesure. Le controleur refuse, l'interrupteur est grise et se remet en
+	# place.
+	assert_true(await _await_identified())
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+	var toggle: BaseButton = _panel.hardware_panel().get("_backend_toggle")
+	assert_false(toggle.disabled, "au repos : on peut basculer")
+	assert_true(_controller.start_race())
+	assert_true(toggle.disabled, "en course : grise")
+	assert_string_contains(toggle.tooltip_text, "STOP d'abord")
+
+	_controller.apply_backend(false)
+	assert_true(_controller.is_simulated(), "refuse : le lien reste celui de la course")
+	assert_eq(_controller.link_state(), Protocol.State.IDENTIFIED, "et identifie")
+	assert_true(_controller.race_in_progress(), "la course continue")
+	assert_has(notices, "lien : pas de changement de boîtier pendant une course — STOP d'abord")
+
+	_controller.stop_race()
+	assert_false(toggle.disabled, "STOP : on peut de nouveau basculer")

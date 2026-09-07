@@ -267,6 +267,8 @@ func stats_text() -> String:
 
 func _on_backend_toggled(pressed: bool) -> void:
 	_controller.apply_backend(pressed)
+	# Refuse en course : l'interrupteur revient a l'etat reel du lien.
+	_backend_toggle.set_pressed_no_signal(_controller.is_simulated())
 	refresh()
 	backend_changed.emit()
 
@@ -311,6 +313,16 @@ func _on_sensor_test_changed(active: bool) -> void:
 ## s'enfoncer.
 func _refresh_sensor_button() -> void:
 	var running := _controller.race_in_progress()
+	# L'interrupteur simulateur/materiel suit la meme regle : le lien ne se
+	# remplace pas sous une course. Refuse par le controleur, il se remet en
+	# place ; grise, il n'invite plus au clic.
+	_backend_toggle.disabled = running
+	_backend_toggle.set_pressed_no_signal(_controller.is_simulated())
+	_backend_toggle.tooltip_text = (
+		"Impossible pendant une course : STOP d'abord, puis basculer."
+		if running
+		else "Simulateur : cyclistes synthétiques, mêmes trames que le boîtier."
+	)
 	var demo := _controller.demo_mode
 	_sensor_button.disabled = running or demo
 	if running:

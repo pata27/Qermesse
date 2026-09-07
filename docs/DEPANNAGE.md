@@ -279,9 +279,11 @@ l'affichage : fermer la fenêtre spectacle n'arrête rien.
 
 ## Rien ne fonctionne et le public attend
 
-1. Panneau matériel → **Simulateur**.
-2. Lancer la course. Elle se déroulera de bout en bout, avec des cyclistes synthétiques.
-3. Diagnostiquer après.
+1. Si une course est encore « en cours » à l'écran, **STOP** d'abord : le boîtier ne se change
+   pas sous une course, l'interrupteur est grisé tant qu'elle dure.
+2. Panneau matériel → **Simulateur**.
+3. Lancer la course. Elle se déroulera de bout en bout, avec des cyclistes synthétiques.
+4. Diagnostiquer après.
 
 Le simulateur produit exactement les mêmes trames que le boîtier, bugs du firmware compris. Ce n'est
 pas un mode dégradé bricolé : c'est le même logiciel, avec une autre source de données.
@@ -369,6 +371,7 @@ d'entrée quand on lit un message et qu'on ne sait pas par où commencer.
 | `REGLAGES : N valeur(s) corrigée(s) dans settings.json — …` | Le fichier de réglages se lit, mais une ou plusieurs valeurs sont hors bornes ou ne sont pas des nombres — édité à la main. Chacune est ramenée dans ses bornes ou remplacée par la valeur par défaut ; le message les nomme, avec la valeur lue et la valeur gardée. | Vérifier les réglages dans les panneaux **Mode** et **Matériel** avant la première course. La prochaine sauvegarde réécrit le fichier propre. |
 | `Module natif absent : retour au simulateur.` | Le GDExtension n'est pas compilé : aucun port série n'est accessible. | `cd addons/serial_link && scons target=template_debug`. Voir « Le boîtier n'est pas détecté ». |
 | `test capteurs : impossible pendant une course` | Le test capteurs est une course à blanc ; il ne peut pas tourner par-dessus une vraie. | Attendre l'arrivée, ou STOP. |
+| `lien : pas de changement de boîtier pendant une course — STOP d'abord` | L'interrupteur Simulateur/Matériel a été actionné pendant une course. Remplacer le lien sous une course la figeait sans issue. | STOP, puis basculer. |
 | `test capteurs : impossible pendant le mode démo` | La vitrine tourne ; entre deux manches le moteur est au repos, mais le boîtier simulé lui appartient. | Arrêter le mode démo (panneau **Fenêtre spectacle**), puis relancer le test. |
 | `test capteurs : interrompu, lien perdu` | Le boîtier a été débranché pendant un test capteurs. La course à blanc côté boîtier n'existe plus ; le bouton se relâche. | Rebrancher, attendre `IDENTIFIED`, relancer le test si besoin. |
 | `test capteurs : après le décompte du boîtier, tournez chaque rouleau, une piste à la fois` | Ce n'est pas une erreur : c'est la marche à suivre. Le firmware ne lit ses capteurs qu'en course. | Faire tourner un rouleau à la fois et lire quelle piste bouge. |
