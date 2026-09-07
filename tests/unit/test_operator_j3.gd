@@ -894,3 +894,12 @@ func test_un_test_capteurs_ne_survit_pas_a_un_lien_perdu() -> void:
 	button.button_pressed = true
 	assert_true(_controller.sensor_test_active(), "et un nouveau test repart proprement")
 	button.button_pressed = false
+
+
+func test_le_panneau_resultats_donne_le_chemin_du_csv_des_le_lancement() -> void:
+	# Manuel §1 : « lancer le logiciel une premiere fois [...] le chemin du CSV
+	# s'affiche dans le panneau Resultats ». Il ne s'affichait qu'apres la
+	# premiere course — la veille, dans une salle vide, il n'y avait rien.
+	var label := _panel.results_panel().csv_path_label()
+	assert_string_contains(label, "CSV : ")
+	assert_string_contains(label, AppPaths.daily_log_name(), "le journal du jour, ou ira la prochaine")

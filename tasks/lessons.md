@@ -1659,3 +1659,11 @@ ne fait rien tourner ; il faut armer le moteur et alimenter **son** état. (2) `
 passe par ARMING, qui reconstruit les rigs : une référence prise avant est libérée (« previously
 freed »). Le rig se prend après l'armement. Et un accesseur qui attend une image (`await
 process_frame`) est une coroutine : ses appelants l'attendent aussi, le parseur le dit.
+
+## Relire le manuel étape par étape, et sonder chaque promesse « au premier lancement »
+
+Manuel §1 : « lancer le logiciel une première fois […] le chemin du CSV s'affiche dans le panneau
+Résultats ». Faux depuis toujours : le chemin n'existait qu'après la première ligne écrite. Les
+promesses faites pour *la veille* — machine neuve, salle vide, aucune course — sont celles que les
+tests, qui font tous courir quelqu'un, ne visitent jamais. Méthode : pour chaque phrase du manuel
+qui décrit l'état avant toute course, une sonde sur un contrôleur frais, sans START.

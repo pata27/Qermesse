@@ -6,7 +6,8 @@ décrit le déroulé normal d'une soirée.
 ## 1. Avant la salle (la veille)
 
 1. Lancer le logiciel une première fois sur la machine qui servira : il crée ses fichiers de
-   réglages et son dossier de résultats (le chemin du CSV s'affiche dans le panneau **Résultats**).
+   réglages et son dossier de résultats (le chemin du CSV s'affiche dans le panneau **Résultats**,
+   **avant même la première course** : c'est le journal où ira la prochaine).
 2. Panneau **Fenêtre spectacle** : ouvrir la fenêtre, choisir l'écran du projecteur, cocher
    **Plein écran**. Le réglage est mémorisé.
    *Sous Wayland (Hyprland, Sway…), l'écran et le plein écran se règlent côté compositeur — le

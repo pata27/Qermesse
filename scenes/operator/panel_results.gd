@@ -12,6 +12,9 @@ var _csv_label: Label
 func setup(controller: AppController) -> void:
 	_controller = controller
 	_build()
+	# DES LE LANCEMENT, pas apres la premiere course : le manuel fait reperer
+	# ce chemin la veille, dans une salle vide.
+	_csv_label.text = "CSV : %s" % _controller.recorder.csv_path()
 	# Les courses deja sur disque aujourd'hui — le logiciel a pu etre relance.
 	_rebuild_history()
 	_controller.race_finished.connect(_on_race_finished)

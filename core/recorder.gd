@@ -88,7 +88,14 @@ func json_path(uuid: String) -> String:
 	return "" if uuid.is_empty() else _races_dir.path_join("%s.json" % uuid)
 
 
+## Le journal CSV de la course OUVERTE — ou, hors course, celui ou ira la
+## prochaine : le fichier du jour. Il restait vide jusqu'a la premiere ligne
+## ecrite, si bien que le panneau Resultats affichait « CSV : » sans chemin au
+## lancement — alors que le manuel fait reperer ce chemin LA VEILLE, dans une
+## salle vide, avant toute course.
 func csv_path() -> String:
+	if _csv_path.is_empty():
+		return _logs_dir.path_join(AppPaths.daily_log_name())
 	return _csv_path
 
 

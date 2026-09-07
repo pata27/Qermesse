@@ -77,3 +77,19 @@ func _mutate(name: String, before: Variant) -> Variant:
 	if before is int:
 		return int(before) + 3
 	return before
+
+
+func test_le_chemin_du_journal_est_connu_avant_la_premiere_course() -> void:
+	# Le manuel fait reperer le chemin du CSV LA VEILLE, dans une salle vide.
+	# `csv_path()` restait vide jusqu'a la premiere ligne ecrite : le panneau
+	# affichait « CSV : » sans rien derriere.
+	var recorder := Recorder.new(_logs, _races)
+	var expected := _logs.path_join(AppPaths.daily_log_name())
+	assert_eq(recorder.csv_path(), expected, "hors course : le journal du jour, ou ira la prochaine")
+
+	# Une course ouverte impose SON journal — celui du jour de son depart —,
+	# meme si ce n'est pas celui d'aujourd'hui.
+	var veille := {"year": 1999, "month": 12, "day": 31, "hour": 4, "minute": 59, "second": 0}
+	recorder.begin_race(RaceConfig.new(), {}, veille)
+	assert_ne(recorder.csv_path(), expected, "en course : le journal de la course")
+	assert_true(recorder.csv_path().ends_with(AppPaths.daily_log_name(veille)))
