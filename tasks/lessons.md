@@ -1641,3 +1641,12 @@ Méthode : chaque exclusion d'une garde par réflexion doit avoir **sa propre ga
 côté ; « possédé par X » veut dire « à vérifier chez X », pas « à ne pas vérifier ». Et la
 comparaison de listes se fait sur la déclaration (`get_property_list`), jamais sur une liste
 recopiée à la main — c'est celle-là qui vieillit.
+
+## Ce qui suit un flux doit savoir quoi faire quand le flux s'arrête
+
+L'intensité sonore était recalculée à chaque trame `R:`. Lien perdu : plus de trames, donc plus de
+recalcul — et le lit restait à sa dernière valeur, rouleaux sifflants sous un écran figé. Un
+consommateur de flux qui ne fait rien « entre deux trames » a implicitement choisi *garder la
+dernière valeur* ; il faut décider si c'est le bon choix pour chaque façon dont le flux peut
+s'interrompre (lien perdu, abandon, arrivée). Méthode : lister les abonnés à `progress_updated`
+et demander à chacun ce qu'il montre quand le signal cesse.

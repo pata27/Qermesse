@@ -105,6 +105,7 @@ func setup(controller: AppController) -> void:
 	_controller.progress_updated.connect(_on_progress)
 	_controller.rider_finished.connect(_on_rider_finished)
 	_controller.rider_eliminated.connect(_on_rider_eliminated)
+	_controller.link_state_changed.connect(_on_link_state)
 	_controller.race_finished.connect(_on_race_finished)
 	_controller.false_start_detected.connect(_on_false_start)
 
@@ -244,6 +245,23 @@ func _on_false_start(_rider: int, policy: int) -> void:
 		return
 	_buzzer.play()
 	_cue("faux-depart")
+
+
+## LIEN PERDU : LE LIT S'EFFACE ET RESTE EFFACE — docs/04 §6. La course est
+## figee a l'ecran ; les trames n'arrivent plus, donc `_on_progress` non plus,
+## et l'intensite restait a sa derniere valeur : rouleaux qui sifflent, nappe
+## qui monte, sous un ecran immobile au bandeau LIEN PERDU. Mesure : niveaux
+## identiques deux secondes apres la coupure. L'intensite retombe a zero, le
+## lit plonge comme sous une annonce, et ne remonte qu'avec les trames.
+func _on_link_state(state: int) -> void:
+	if state == Protocol.State.LINK_LOST and _running:
+		_intensity = 0.0
+		_duck()
+
+
+## Niveaux du lit — rouleaux, vent, rumeur —, pour les tests. `-60` vaut silence.
+func bed_levels() -> Dictionary:
+	return {"rollers": _rollers.volume_db, "wind": _wind.volume_db, "murmur": _murmur.volume_db}
 
 
 func _on_race_state(_previous: int, current: int) -> void:

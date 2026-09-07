@@ -236,6 +236,10 @@ un son discret, c'est un son absent. La suite de tests le vérifie sur chaque fl
 * **Le lit s'efface sous les annonces.** Cloche, klaxon et glas font plonger rouleaux, rumeur et
   nappe le temps de passer, puis tout remonte. Sans cela l'annonce se noie dans le fond qu'elle
   est censée interrompre.
+* **Lien perdu : le lit s'efface et reste effacé.** La course est figée à l'écran, bandeau
+  `LIEN PERDU` ; des rouleaux qui sifflent et une nappe qui monte sous un écran immobile passent
+  pour un plantage. Rouleaux, vent, rumeur et couches retombent à leur plancher et n'y remontent
+  qu'avec les trames, quand le lien revient. Seul le pouls reste : la course n'est pas finie.
 * Souffle de vent indexé sur la vitesse.
 ### Synthèse d'abord, enregistrements là où elle échoue
 

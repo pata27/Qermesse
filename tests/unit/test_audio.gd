@@ -636,3 +636,53 @@ func test_la_salle_ne_hurle_pas_pour_du_bruit_de_mesure() -> void:
 	)
 	controller.progress_updated.emit(state)
 	assert_eq(int(audio.cue_counts.get("souffle", 0)), 1, "dix metres, c'est un depassement")
+
+
+func test_lien_perdu_le_lit_s_efface_et_ne_remonte_qu_avec_les_trames() -> void:
+	# docs/04 §6. Les trames n'arrivent plus, donc l'intensite non plus : elle
+	# restait a sa derniere valeur, et rouleaux, vent, nappe continuaient comme
+	# si l'on pedalait sous un ecran fige au bandeau LIEN PERDU. Mesure : memes
+	# niveaux deux secondes apres la coupure.
+	var rig := _rig()
+	var controller: AppController = rig[0]
+	var audio: RaceAudio = rig[1]
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.DISTANCE
+	config.distance_m = 2000.0
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	var state := RaceState.new(config)
+	var physics := Physics.new(config.roller_mm)
+	# 12,5 m/s — 45 km/h : le lit est a pleine intensite.
+	for metres: float in [100.0, 200.0, 300.0, 400.0, 500.0]:
+		var ticks := physics.metres_to_ticks(metres)
+		state.apply_sample([ticks, ticks, 0, 0], int(metres * 80.0))
+		controller.progress_updated.emit(state)
+	await get_tree().process_frame
+	var before: Dictionary = audio.bed_levels()
+	assert_gt(float(audio.music_levels()["lead"]), -30.0, "a 45 km/h la couche de tete joue")
+	assert_gt(float(before["rollers"]), -15.0, "et les rouleaux sifflent")
+
+	controller.link_state_changed.emit(Protocol.State.LINK_LOST)
+	for i: int in range(3):
+		await get_tree().process_frame
+	var lost: Dictionary = audio.bed_levels()
+	assert_lt(float(lost["rollers"]), float(before["rollers"]) - 10.0, "les rouleaux retombent")
+	assert_lt(float(lost["wind"]), float(before["wind"]) - 10.0, "le vent aussi")
+	assert_eq(float(audio.music_levels()["lead"]), -60.0, "la couche de tete se tait")
+	assert_eq(float(audio.music_levels()["drive"]), -60.0, "la couche de rythme aussi")
+	assert_gt(float(audio.music_levels()["pulse"]), -20.0, "seul le pouls reste : pas finie")
+
+	# Le lien revient : rien ne remonte tant que les trames ne reviennent pas.
+	controller.link_state_changed.emit(Protocol.State.IDENTIFIED)
+	await get_tree().process_frame
+	assert_eq(float(audio.music_levels()["lead"]), -60.0, "le lien seul ne suffit pas")
+	for metres: float in [600.0, 700.0, 800.0]:
+		var ticks := physics.metres_to_ticks(metres)
+		state.apply_sample([ticks, ticks, 0, 0], int(metres * 80.0))
+		controller.progress_updated.emit(state)
+	await get_tree().process_frame
+	assert_gt(float(audio.music_levels()["lead"]), -30.0, "les trames reviennent, le lit remonte")
+	# Le plongeon de l'annonce se relache encore : on mesure la remontee par
+	# rapport au niveau coupe, pas dans l'absolu.
+	assert_gt(float(audio.bed_levels()["rollers"]), float(lost["rollers"]) + 5.0, "les rouleaux aussi")
