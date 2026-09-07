@@ -66,6 +66,13 @@ var _load_panes := -1
 var _effect_relief := 0.0
 var _finish_m := -1.0
 var _leader_speed_kph := 0.0
+## LIEN PERDU : LA SCENE SE FIGE, PAS SEULEMENT LES POSITIONS. Sans trames,
+## la vitesse de chaque coureur restait celle de la derniere : jambes a 45 km/h
+## sur des velos immobiles, foule qui s'agite, bandeau de vitesse au rouge —
+## sous un ecran qui dit LIEN PERDU. Ca ne se lit pas comme une course figee,
+## ca se lit comme un bug. Tant que le lien est perdu, la vitesse montree est
+## nulle ; les trames suivantes la rendent.
+var _link_lost := false
 var _auto_degrade := true
 
 
@@ -96,6 +103,7 @@ func setup(controller: AppController, level: int = -1) -> void:
 	_controller.race_state_changed.connect(_on_race_state_changed)
 	_controller.roster_changed.connect(apply_rider_colors)
 	_controller.progress_updated.connect(_on_progress)
+	_controller.link_state_changed.connect(_on_link_state)
 	_controller.rider_finished.connect(_on_rider_finished)
 	_controller.rider_eliminated.connect(_on_rider_eliminated)
 	_controller.countdown_tick.connect(_on_countdown)
@@ -359,6 +367,16 @@ func _place_finish_gate() -> void:
 	add_child(_finish_gate)
 
 
+func _on_link_state(link_state: int) -> void:
+	_link_lost = link_state == Protocol.State.LINK_LOST
+	if _link_lost:
+		_leader_speed_kph = 0.0
+
+
+func link_lost() -> bool:
+	return _link_lost
+
+
 func _on_progress(state: RaceState) -> void:
 	for lane: int in _interpolators:
 		var interp: RiderInterpolator = _interpolators[lane]
@@ -520,7 +538,7 @@ func _reposition_riders(delta: float) -> void:
 		rig.position = Vector3(TrackBuilder.lane_x(_lane_index(lane), _lane_count), 0.0, z)
 		var eliminated := state != null and state.eliminated[lane]
 		var finished := state != null and state.finished_ms[lane] > 0
-		var speed := state.speed_kph[lane] if state != null else 0.0
+		var speed := state.speed_kph[lane] if state != null and not _link_lost else 0.0
 		rig.advance(delta, speed, eliminated, finished)
 
 	if _finish_gate != null:
@@ -610,7 +628,9 @@ func _reposition_riders(delta: float) -> void:
 		# elle pilote ici le champ et le roulis, deux effets de fond qu'un
 		# tremblement rend immédiatement visibles.
 		var head_lane: int = order[bounds[group]]
-		var group_speed := 0.0 if state_now == null else state_now.display_speed_kph[head_lane]
+		var group_speed := (
+			0.0 if state_now == null or _link_lost else state_now.display_speed_kph[head_lane]
+		)
 		rig.note_speed(delta, group_speed)
 		rig.aim(
 			float(frame["x"]),

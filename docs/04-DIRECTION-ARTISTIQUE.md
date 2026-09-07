@@ -240,6 +240,9 @@ un son discret, c'est un son absent. La suite de tests le vérifie sur chaque fl
   `LIEN PERDU` ; des rouleaux qui sifflent et une nappe qui monte sous un écran immobile passent
   pour un plantage. Rouleaux, vent, rumeur et couches retombent à leur plancher et n'y remontent
   qu'avec les trames, quand le lien revient. Seul le pouls reste : la course n'est pas finie.
+  **L'image suit la même règle** : sans trames, jambes, foule et effets de vitesse retombent à
+  l'arrêt — des vélos immobiles aux jambes qui tournent à 45 km/h ne se lisent pas comme une
+  course figée, mais comme un bug. Seul le bandeau vit, jusqu'aux trames suivantes.
 * Souffle de vent indexé sur la vitesse.
 ### Synthèse d'abord, enregistrements là où elle échoue
 

@@ -1650,3 +1650,12 @@ consommateur de flux qui ne fait rien « entre deux trames » a implicitement ch
 dernière valeur* ; il faut décider si c'est le bon choix pour chaque façon dont le flux peut
 s'interrompre (lien perdu, abandon, arrivée). Méthode : lister les abonnés à `progress_updated`
 et demander à chacun ce qu'il montre quand le signal cesse.
+
+## La scène lit l'état chez le moteur, et l'armement reconstruit les coureurs
+
+Deux pièges de test, notés pour ne plus les repayer : (1) `RaceScene._process` lit
+`engine.race_state()`, pas le dernier `progress_updated` — un état fabriqué et émis par le signal
+ne fait rien tourner ; il faut armer le moteur et alimenter **son** état. (2) `engine.arm()`
+passe par ARMING, qui reconstruit les rigs : une référence prise avant est libérée (« previously
+freed »). Le rig se prend après l'armement. Et un accesseur qui attend une image (`await
+process_frame`) est une coroutine : ses appelants l'attendent aussi, le parseur le dit.
