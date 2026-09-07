@@ -114,6 +114,39 @@ func test_des_reglages_corrompus_demarrent_par_defaut_et_le_disent() -> void:
 	DirAccess.remove_absolute(settings_path)
 
 
+func test_un_fichier_de_reglages_lisible_mais_faux_est_dit_au_lancement() -> void:
+	# `"gap_m": "abc"` donnait un ecart de 10 m en silence — `float("abc")`
+	# vaut 0, ramene a la borne basse — et la poursuite eliminait au premier
+	# tour de rouleau. Le fichier se lit, donc `JsonStore` n'a rien a dire ;
+	# c'est le chargement qui doit compter ce qu'il a corrige, et le dire sur
+	# la ligne orange, celle qui survit au premier depart.
+	var settings_path := ProjectSettings.globalize_path(TEST_ROOT).path_join("settings-faux.json")
+	AppPaths.ensure_dir(ProjectSettings.globalize_path(TEST_ROOT))
+	var file := FileAccess.open(settings_path, FileAccess.WRITE)
+	file.store_string('{"mode": 2, "gap_m": "abc", "distance_m": 10000}')
+	file.close()
+
+	var controller := AppController.new()
+	controller.preferences_enabled = true
+	controller.settings_path = settings_path
+	controller.roster_path = ProjectSettings.globalize_path(TEST_ROOT).path_join("roster-absent.json")
+	controller.recorder_logs_dir = _logs
+	controller.recorder_races_dir = _races
+	add_child_autofree(controller)
+	var panel := OperatorPanel.new()
+	add_child_autofree(panel)
+	panel.setup(controller)
+
+	assert_eq(controller.settings.mode, RaceConfig.Mode.PURSUIT, "ce qui est juste est pris")
+	assert_eq(controller.settings.gap_m, Settings.new().gap_m, "« abc » : l'ecart par defaut")
+	assert_eq(controller.startup_problems().size(), 1)
+	var line := panel.race_panel().startup_text()
+	assert_string_contains(line, "REGLAGES : 2 valeur(s) corrigée(s) dans settings.json")
+	assert_string_contains(line, "gap_m : « abc » n'est pas un nombre")
+	assert_string_contains(line, "distance_m : 10000 hors bornes")
+	DirAccess.remove_absolute(settings_path)
+
+
 func test_un_journal_impossible_a_ecrire_est_signale_en_fin_de_course() -> void:
 	# Un FICHIER a la place du dossier des journaux : le disque plein en
 	# miniature. Le classement doit s'afficher, et l'operateur doit savoir

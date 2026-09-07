@@ -145,6 +145,16 @@ func initialize() -> void:
 
 	if preferences_enabled:
 		_load_user_file(settings.load_from.bind(settings_path), "REGLAGES")
+		# UN FICHIER LISIBLE MAIS FAUX EST DIT AUSSI. Chaque valeur ramenee dans
+		# ses bornes ou remplacee par defaut est nommee, avec ce qui a ete lu et
+		# ce qui est garde : l'operateur qui a edite le fichier a la main sait
+		# quoi verifier avant la premiere course.
+		var corrected := settings.corrections()
+		if not corrected.is_empty():
+			_startup_problems.append(
+				"REGLAGES : %d valeur(s) corrigée(s) dans settings.json — %s"
+				% [corrected.size(), " ; ".join(corrected)]
+			)
 		_load_user_file(roster.load_from.bind(roster_path), "ROSTER")
 
 	_link = Link.new()

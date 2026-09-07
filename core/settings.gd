@@ -62,6 +62,11 @@ var audio_volume_db: float = 0.0
 ## reglage.
 var render_quality: int = -1
 
+## CE QUE LE CHARGEMENT A CORRIGE, en toutes lettres, une entree par valeur.
+## Vide apres un fichier sain. Voir `_clamp_float` : ramener dans les bornes
+## sans le dire, c'est changer un reglage sous les pieds de l'operateur.
+var _corrections: Array[String] = []
+
 
 func to_dict() -> Dictionary:
 	return {
@@ -90,6 +95,7 @@ func to_dict() -> Dictionary:
 
 
 func from_dict(data: Dictionary) -> void:
+	_corrections.clear()
 	preferred_port = str(data.get("preferred_port", preferred_port))
 	use_simulator = bool(data.get("use_simulator", use_simulator))
 	roller_mm = _clamp_float(data, "roller_mm", roller_mm, 20.0, 500.0)
@@ -160,14 +166,62 @@ func load_from(path: String = "") -> bool:
 
 
 ## Une valeur hors bornes dans le fichier est ramenee dans les bornes, pas
-## rejetee : mieux vaut un reglage plafonne qu'un demarrage refuse.
+## rejetee : mieux vaut un reglage plafonne qu'un demarrage refuse. MAIS C'EST
+## DIT. Un fichier edite a la main avec `"gap_m": "abc"` donnait un ecart de
+## 10 m en silence — `float("abc")` vaut 0, ramene a la borne basse — et la
+## poursuite eliminait au premier tour de rouleau, sans que rien n'explique
+## pourquoi. Ce qui n'est pas un nombre garde la valeur par defaut ; ce qui
+## est hors bornes est plafonne ; les deux sont notes dans `corrections()`.
 func _clamp_float(data: Dictionary, key: String, fallback: float, low: float, high: float) -> float:
 	if not data.has(key):
 		return fallback
-	return clampf(float(data[key]), low, high)
+	var raw: Variant = data[key]
+	if not _is_number(raw):
+		_corrections.append(
+			"%s : « %s » n'est pas un nombre, valeur par défaut %s gardée"
+			% [key, raw, _plain(fallback)]
+		)
+		return fallback
+	var value := float(raw)
+	var kept := clampf(value, low, high)
+	if kept != value:
+		_corrections.append(
+			"%s : %s hors bornes [%s, %s], ramené à %s"
+			% [key, _plain(value), _plain(low), _plain(high), _plain(kept)]
+		)
+	return kept
 
 
 func _clamp_enum(data: Dictionary, key: String, fallback: int, low: int, high: int) -> int:
 	if not data.has(key):
 		return fallback
-	return int(clampf(float(data[key]), float(low), float(high)))
+	var raw: Variant = data[key]
+	if not _is_number(raw):
+		_corrections.append(
+			"%s : « %s » n'est pas un nombre, valeur par défaut %d gardée" % [key, raw, fallback]
+		)
+		return fallback
+	var value := int(float(raw))
+	var kept := clampi(value, low, high)
+	if kept != value:
+		_corrections.append(
+			"%s : %d hors bornes [%d, %d], ramené à %d" % [key, value, low, high, kept]
+		)
+	return kept
+
+
+## « 10000 », pas « 10000.0 » : le message cite le fichier, qui ecrit les
+## entiers sans decimale.
+static func _plain(value: float) -> String:
+	return str(int(value)) if value == floorf(value) else str(value)
+
+
+## Un nombre JSON, ou une chaine qui en ecrit un (`"250"`) — pas un booleen :
+## `float(true)` vaut 1 et ferait d'une faute de frappe une duree d'une seconde.
+static func _is_number(raw: Variant) -> bool:
+	return raw is float or raw is int or (raw is String and (raw as String).is_valid_float())
+
+
+## Les corrections du dernier chargement, pour la ligne de demarrage.
+func corrections() -> Array[String]:
+	return _corrections

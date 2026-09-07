@@ -216,6 +216,13 @@ l'écriture. Le logiciel démarre quand même, **avec les valeurs par défaut**,
 panneau **Course** au lancement : `REGLAGES : JSON invalide ligne N …`. Le fichier fautif est
 remplacé à la prochaine sauvegarde ; le message donne son chemin.
 
+Un fichier **lisible mais faux** — une distance de 10 000 m, un écart écrit `"abc"`, une durée
+`true` — ne bloque pas non plus : la valeur hors bornes est **ramenée dans les bornes**, la valeur
+qui n'est pas un nombre est **remplacée par la valeur par défaut**, et la ligne orange du panneau
+**Course** dit lesquelles : `REGLAGES : N valeur(s) corrigée(s) dans settings.json — …`. Sans
+cela, un écart `"abc"` devenait 10 m en silence, et la poursuite éliminait au premier tour de
+rouleau.
+
 ---
 
 ## Il n'y a pas de son
@@ -352,6 +359,7 @@ d'entrée quand on lit un message et qu'on ne sait pas par où commencer.
 | `SAUVEGARDE DES REGLAGES : …` / `SAUVEGARDE DU ROSTER : …` | Les réglages ou les noms n'ont pas pu être écrits. La course, elle, est enregistrée. | Vérifier l'espace disque et les droits sur le dossier de configuration. Les noms seront à ressaisir au prochain lancement. |
 | `COURSES DU JOUR : N fichier(s) de course illisible(s), la liste est incomplète` | Au lancement, un ou plusieurs fichiers de course du jour n'ont pas pu être relus — disque coupé pendant l'écriture, fichier tronqué. La liste **Courses du jour** est donc plus courte que le nombre de manches réellement courues. | Le message donne les noms. Le **journal CSV du jour garde ses lignes** : classements, temps et vitesses y sont. Seul le rejeu de ces courses-là est perdu. |
 | `REGLAGES : …` / `ROSTER : …` au lancement | Un fichier de configuration est illisible ; les valeurs par défaut ont été prises. | Voir « Les noms des riders et les réglages ont disparu au lancement ». |
+| `REGLAGES : N valeur(s) corrigée(s) dans settings.json — …` | Le fichier de réglages se lit, mais une ou plusieurs valeurs sont hors bornes ou ne sont pas des nombres — édité à la main. Chacune est ramenée dans ses bornes ou remplacée par la valeur par défaut ; le message les nomme, avec la valeur lue et la valeur gardée. | Vérifier les réglages dans les panneaux **Mode** et **Matériel** avant la première course. La prochaine sauvegarde réécrit le fichier propre. |
 | `Module natif absent : retour au simulateur.` | Le GDExtension n'est pas compilé : aucun port série n'est accessible. | `cd addons/serial_link && scons target=template_debug`. Voir « Le boîtier n'est pas détecté ». |
 | `test capteurs : impossible pendant une course` | Le test capteurs est une course à blanc ; il ne peut pas tourner par-dessus une vraie. | Attendre l'arrivée, ou STOP. |
 | `test capteurs : après le décompte du boîtier, tournez chaque rouleau, une piste à la fois` | Ce n'est pas une erreur : c'est la marche à suivre. Le firmware ne lit ses capteurs qu'en course. | Faire tourner un rouleau à la fois et lire quelle piste bouge. |

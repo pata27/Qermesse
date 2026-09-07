@@ -1566,3 +1566,14 @@ de `setup()` est tombé derrière le `return` de la nouvelle fonction, inaccessi
 gdlint ne signale pas le code mort après `return`, et la suite a échoué ailleurs (labels
 jamais construits), loin de la cause. Après toute insertion par motif textuel, relire
 la fonction voisine **jusqu'à sa fin**, ou insérer avant un `func` complet.
+
+## « Ramené dans les bornes » sans le dire, c'est changer un réglage sous les pieds
+
+Troisième application de « tout mécanisme qui ignore une entrée invalide doit compter ce qu'il
+a ignoré » : `_clamp_float` de `settings.gd`. Un fichier édité à la main avec `"gap_m": "abc"`
+donnait un écart de **10 m en silence** — `float("abc")` vaut 0, ramené à la borne basse — et
+la poursuite éliminait au premier tour de rouleau. Deux règles en sortent : ce qui n'est pas un
+nombre garde la **valeur par défaut**, pas la borne basse (la borne basse est un réglage
+extrême, pas un réglage neutre) ; et chaque correction est nommée sur la ligne de démarrage.
+Un `bool` n'est pas un nombre : `float(true)` vaut 1 et fait d'une faute de frappe une durée
+d'une seconde.

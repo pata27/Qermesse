@@ -77,6 +77,9 @@ func test_tous_les_reglages_declares_font_l_aller_retour() -> void:
 		if not (int(property["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE):
 			continue
 		var name := str(property["name"])
+		# L'etat prive (`_corrections`) n'est pas un reglage : rien a persister.
+		if name.begins_with("_"):
+			continue
 		var value: Variant = _mutate(settings.get(name), int(property["type"]))
 		settings.set(name, value)
 		expected[name] = value
@@ -485,6 +488,9 @@ func test_aucun_reglage_persiste_n_est_lettre_morte() -> void:
 	for entry: Dictionary in Settings.new().get_property_list():
 		if int(entry["usage"]) & PROPERTY_USAGE_SCRIPT_VARIABLE == 0:
 			continue
+		# L'etat prive (`_corrections`) n'est pas un reglage.
+		if str(entry["name"]).begins_with("_"):
+			continue
 		var name := str(entry["name"])
 		if not sources.contains(".%s" % name):
 			orphans.append(name)
@@ -554,3 +560,55 @@ func test_une_ecriture_qui_echoue_laisse_l_ancien_fichier_intact() -> void:
 		"l'ancien contenu est intact — c'est toute la promesse"
 	)
 	DirAccess.remove_absolute(path + ".tmp")
+
+
+func test_une_valeur_corrigee_au_chargement_est_nommee() -> void:
+	# Ramener dans les bornes sans le dire, c'est changer un reglage sous les
+	# pieds de l'operateur qui a edite le fichier a la main. Chaque correction
+	# est nommee : la cle, ce qui a ete lu, ce qui est garde.
+	AppPaths.ensure_dir(_dir)
+	var file := FileAccess.open(_path("settings.json"), FileAccess.WRITE)
+	file.store_string('{"distance_m": 10000, "gap_m": "abc", "duration_s": true, "render_quality": 7}')
+	file.close()
+
+	var settings := Settings.new()
+	assert_true(settings.load_from(_path("settings.json")), "le fichier se lit")
+	assert_eq(settings.corrections().size(), 4, "quatre valeurs fausses, quatre lignes")
+	var said := " ; ".join(settings.corrections())
+	assert_eq(settings.distance_m, 5000.0, "hors bornes : plafonne")
+	assert_string_contains(said, "distance_m : 10000 hors bornes [50, 5000], ramené à 5000")
+	# PAS UN NOMBRE : la valeur par defaut, pas la borne basse. `float("abc")`
+	# vaut 0 et faisait de l'ecart un 10 m qui eliminait au premier tour.
+	assert_eq(settings.gap_m, Settings.new().gap_m, "« abc » garde l'ecart par defaut")
+	assert_string_contains(said, "gap_m : « abc » n'est pas un nombre, valeur par défaut 50 gardée")
+	assert_eq(settings.duration_s, Settings.new().duration_s, "`true` n'est pas 1 s")
+	assert_string_contains(said, "duration_s : « true » n'est pas un nombre")
+	assert_eq(settings.render_quality, 2, "l'enumeration est plafonnee aussi")
+	assert_string_contains(said, "render_quality : 7 hors bornes [-1, 2], ramené à 2")
+
+
+func test_un_fichier_sain_ne_signale_aucune_correction() -> void:
+	# La garde testee sur un cas sain qu'elle pourrait mal lire : un nombre
+	# ecrit en chaine, une valeur pile sur la borne, un flottant entier.
+	AppPaths.ensure_dir(_dir)
+	var file := FileAccess.open(_path("settings.json"), FileAccess.WRITE)
+	file.store_string('{"distance_m": "250", "gap_m": 10, "duration_s": 3600.0, "render_quality": -1}')
+	file.close()
+
+	var settings := Settings.new()
+	assert_true(settings.load_from(_path("settings.json")))
+	assert_eq(settings.corrections(), [] as Array[String], "rien a corriger, rien a dire")
+	assert_eq(settings.distance_m, 250.0, "« 250 » est un nombre")
+	assert_eq(settings.duration_s, 3600.0, "pile sur la borne, ce n'est pas hors bornes")
+
+	# Et un second chargement, sain apres un faux, repart de zero.
+	file = FileAccess.open(_path("settings.json"), FileAccess.WRITE)
+	file.store_string('{"distance_m": 10000}')
+	file.close()
+	settings.load_from(_path("settings.json"))
+	assert_eq(settings.corrections().size(), 1)
+	file = FileAccess.open(_path("settings.json"), FileAccess.WRITE)
+	file.store_string('{"distance_m": 250}')
+	file.close()
+	settings.load_from(_path("settings.json"))
+	assert_eq(settings.corrections().size(), 0, "les corrections sont celles du DERNIER chargement")
