@@ -33,8 +33,16 @@ func evaluate(state: RaceState) -> Verdict:
 	return verdict
 
 
-## Decroissant par ticks cumules. Ex aequo departage par vitesse de pointe —
-## et si elle est egale aussi, par numero de piste.
+## Decroissant par DISTANCE DE COURSE — les metres roules, handicap deduit
+## (docs/02 §2 et §4). Le classement comparait les ticks bruts : un penalise
+## de 10 m ayant roule 105 m passait devant un coureur regulier a 100 m, alors
+## que podium et tableau affichaient 94,9 m contre 99,8 m. Le public voyait la
+## plus petite distance gagner. « Une penalite qui ne couterait rien a
+## l'arrivee n'en serait pas une » — en temps, l'arrivee est le gong, et le
+## prix se paie sur la distance qui classe.
+##
+## Ex aequo departage par vitesse de pointe — et si elle est egale aussi, par
+## numero de piste.
 ##
 ## docs/02 §2 s'arretait a la pointe. `sort_custom` n'etant pas stable, deux
 ## coureurs identiques — cas courant au simulateur, possible en vrai — se
@@ -43,8 +51,8 @@ func evaluate(state: RaceState) -> Verdict:
 func final_ranking(state: RaceState) -> Array[int]:
 	var ranking: Array[int] = state.config.active_riders.duplicate()
 	ranking.sort_custom(func(a: int, b: int) -> bool:
-		if state.ticks[a] != state.ticks[b]:
-			return state.ticks[a] > state.ticks[b]
+		if not is_equal_approx(state.distance_m[a], state.distance_m[b]):
+			return state.distance_m[a] > state.distance_m[b]
 		if not is_equal_approx(state.max_speed_kph[a], state.max_speed_kph[b]):
 			return state.max_speed_kph[a] > state.max_speed_kph[b]
 		return a < b)

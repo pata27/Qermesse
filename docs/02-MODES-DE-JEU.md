@@ -83,9 +83,12 @@ pas. Recette et démonstration en `01` §5.5. `T` reste entièrement géré par 
 > Quand ils arrivent (T ≤ 32 s), ils sont traités comme une confirmation loggée, jamais comme
 > une condition de fin.
 
-**Classement.** Décroissant par ticks cumulés. Ex æquo → vitesse de pointe la plus élevée, et à
-pointe égale → numéro de piste : arbitraire, mais **déterministe**, comme pour l'ex æquo d'arrivée
-du mode distance. Ce mode n'a en revanche **pas de photo-finish** : tout le monde s'arrête à
+**Classement.** Décroissant par **distance de course** — les mètres roulés, **handicap déduit**
+(§4) : un pénalisé de 10 m qui en a roulé 105 se classe à 95, derrière un coureur régulier à 100.
+C'est la distance que podium et tableau affichent ; classer sur les ticks bruts faisait gagner,
+devant le public, celui dont le chiffre affiché était le plus petit. Ex æquo → vitesse de pointe la
+plus élevée, et à pointe égale → numéro de piste : arbitraire, mais **déterministe**, comme pour
+l'ex æquo d'arrivée du mode distance. Ce mode n'a en revanche **pas de photo-finish** : tout le monde s'arrête à
 l'instant du gong, l'égalité des temps y est la règle et non un fait de course.
 
 ---
@@ -158,6 +161,8 @@ purement informatif. En v3, comportement paramétrable en réglages, **défaut :
 Le handicap se paie **en ticks** : le fautif doit couvrir `D + P` mètres pour franchir la ligne. Il
 n'est pas seulement dessiné en arrière — une pénalité qui ne coûterait rien à l'arrivée n'en serait
 pas une. Sa distance au tableau reste celle de l'épreuve ; c'est son temps qui porte le prix.
+En **temps**, où c'est la distance qui classe (§2), le prix se paie là : le fautif est classé et
+affiché à `P` mètres de moins que ce qu'il a roulé.
 
 En **poursuite**, une pénalité supérieure ou égale à l'écart décisif est **refusée à l'armement** :
 le fautif partirait déjà à la distance d'élimination, la course se terminerait à la première trame

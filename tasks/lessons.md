@@ -1577,3 +1577,13 @@ nombre garde la **valeur par défaut**, pas la borne basse (la borne basse est u
 extrême, pas un réglage neutre) ; et chaque correction est nommée sur la ligne de démarrage.
 Un `bool` n'est pas un nombre : `float(true)` vaut 1 et fait d'une faute de frappe une durée
 d'une seconde.
+
+## Ce qui classe et ce qui s'affiche doivent être la même grandeur
+
+Le mode temps classait sur les **ticks bruts** et affichait la **distance de course** (handicap
+déduit). Tant que personne n'était pénalisé, les deux coïncidaient et rien ne le montrait. Avec
+une pénalité, le podium rangeait 94,9 m devant 99,8 m. Méthode : pour chaque classement, nommer
+la grandeur triée et la grandeur affichée à côté du rang ; si ce ne sont pas les mêmes, chercher
+le cas où elles divergent — il existe presque toujours. Trouvé en relisant une question laissée
+« ouverte » : la doc y répondait déjà par un principe (« une pénalité qui ne coûterait rien n'en
+serait pas une »), il suffisait de l'appliquer au mode qu'elle n'avait pas nommé.

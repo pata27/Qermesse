@@ -902,3 +902,35 @@ func test_le_motif_d_une_relance_nomme_la_piste_en_numero_humain() -> void:
 	assert_false(notes.is_empty(), "la course est arretee")
 	assert_string_contains(notes[0], "piste 2", "la piste est nommee comme a l'ecran")
 	assert_false(notes[0].contains("piste 1"), "et pas sous son indice")
+
+
+func test_en_temps_le_penalise_est_classe_sur_sa_distance_handicap_deduit() -> void:
+	# docs/02 §2 et §4. Le classement du mode temps comparait les TICKS BRUTS :
+	# un penalise de 10 m ayant roule 105 m passait devant un coureur regulier a
+	# 100 m, alors que podium et tableau affichaient 94,9 m contre 99,8 m — le
+	# public voyait la plus petite distance gagner. Le prix d'une penalite se
+	# paie sur ce qui classe : en temps, la distance.
+	var config := RaceConfig.new()
+	config.mode = RaceConfig.Mode.TIME
+	config.duration_s = 60.0
+	config.active_riders = [0, 1] as Array[int]
+	var state := RaceState.new(config)
+	var rule := RuleTime.new()
+	rule.begin(state)
+	var physics := state.physics
+
+	# CAS SAIN D'ABORD : sans handicap, 105 m bat 100 m.
+	state.apply_sample([physics.metres_to_ticks(100.0), physics.metres_to_ticks(105.0), 0, 0], 60000)
+	assert_eq(rule.final_ranking(state), [1, 0] as Array[int], "sans penalite, 105 m gagne")
+
+	# Avec 10 m de handicap, ses 105 m roules valent 95 m de course : derriere.
+	state.handicap_m[1] = -10.0
+	state.apply_sample([physics.metres_to_ticks(100.0), physics.metres_to_ticks(105.0), 0, 0], 60000)
+	assert_lt(state.distance_m[1], state.distance_m[0], "sa distance de course est la plus courte")
+	assert_eq(rule.final_ranking(state), [0, 1] as Array[int], "et il est classe derriere")
+
+	# Et le podium montre ces distances-la : le classement et le chiffre affiche
+	# racontent la meme course.
+	var result := RaceResult.from_state(state, rule, RaceRule.EndReason.TIME_ELAPSED)
+	assert_eq(result.winner(), 0)
+	assert_lt(result.distance_m[1], result.distance_m[0])
