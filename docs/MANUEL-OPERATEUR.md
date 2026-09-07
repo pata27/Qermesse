@@ -102,6 +102,11 @@ Sous les boutons, une ligne dit **où en est la course**, en toutes lettres :
 | arrivée — classement figé | le PC a tranché, plus rien ne peut changer le résultat |
 | résultat affiché — à acquitter | le podium est à l'écran public jusqu'au prochain départ |
 
+Si quelque chose s'est mal passé **au lancement** — roster illisible, réglages perdus, course du
+jour introuvable —, le panneau **Course** l'affiche en orange au-dessus du journal, et **cela y
+reste**. Ce n'est pas l'alerte d'une course : c'est vrai tant que le fichier n'est pas réparé, et
+ça ne s'efface donc pas au départ de la suivante.
+
 Sous les boutons, le panneau **Course** tient un court journal : les cinq derniers messages, le plus
 récent en tête, effacé au départ de la course suivante. C'est là qu'apparaissent les alertes — piste
 muette, pointe suspecte, trames perdues, faux départ, lien perdu. Aucune ne peut plus être effacée

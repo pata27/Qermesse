@@ -1513,3 +1513,18 @@ La garde est simple — charger chaque fichier de `tests/unit` et vérifier qu'i
 générale : **tout mécanisme qui « ignore » une entrée invalide doit être doublé
 d'une garde qui compte ce qu'il a ignoré.** Un avertissement dans un journal
 n'est pas une garde.
+
+## Un événement et une condition ne se rangent pas au même endroit
+
+Les problèmes de démarrage — roster illisible, réglages perdus — étaient poussés
+dans le journal des alertes de course, qui se vide à chaque armement. Le
+mécanisme d'effacement était juste ; c'est le classement du message qui ne
+l'était pas.
+
+Une alerte de course décrit un **événement** : elle appartient à sa manche et
+doit disparaître avec elle. Un fichier illisible décrit un **état** : il reste
+vrai tant que personne ne répare le fichier, et l'effacer au premier départ
+revient à le cacher au moment précis où l'opérateur cesse de regarder l'écran.
+
+La question à se poser devant tout message : **est-ce que ceci cesse d'être vrai
+tout seul ?** Si non, il ne va pas dans une zone qui se vide.

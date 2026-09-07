@@ -25,6 +25,9 @@ var _state_label: Label
 var _clock_label: Label
 var _lanes: Array[Label] = []
 var _notice: Label
+## Conditions de la session, distinctes des alertes de course : elles survivent
+## a l'ardoise propre.
+var _startup: Label
 var _notices: PackedStringArray = []
 
 
@@ -40,10 +43,11 @@ func setup(controller: AppController) -> void:
 	_controller.rider_eliminated.connect(_on_rider_eliminated)
 	_controller.false_start_detected.connect(_on_false_start)
 	refresh()
-	# Ce qui a mal tourne au chargement se dit ici, au premier regard.
-	if not _controller.startup_problems().is_empty():
-		for problem: String in _controller.startup_problems():
-			_push_notice(problem)
+	# Ce qui a mal tourne au chargement se dit ici, au premier regard — ET Y
+	# RESTE. Voir `_startup` : ce n'est pas un evenement, c'est un etat.
+	var problems := _controller.startup_problems()
+	_startup.visible = not problems.is_empty()
+	_startup.text = "\n".join(problems)
 
 
 func _build() -> void:
@@ -84,6 +88,25 @@ func _build() -> void:
 		label.add_theme_font_size_override("font_size", 18)
 		add_child(label)
 		_lanes.append(label)
+
+	# CE QUI DURE TOUTE LA SOIREE, au-dessus de ce qui passe.
+	#
+	# Les problemes de demarrage — roster illisible, reglages perdus, courses du
+	# jour introuvables — etaient pousses dans le journal, qui se vide a chaque
+	# armement. Un operateur qui lance sa premiere course dans la minute
+	# perdait donc la SEULE notification lui disant que ses noms de coureurs
+	# n'avaient pas ete relus. Il decouvrait « Piste 1, Piste 2 » a l'ecran
+	# public, ou dans le CSV le lendemain.
+	#
+	# Ce n'est pas l'alerte d'une course : c'est une CONDITION de la session,
+	# vraie tant que le fichier n'est pas repare. Elle a donc sa place a elle,
+	# que l'ardoise propre n'efface pas.
+	_startup = Label.new()
+	_startup.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_startup.custom_minimum_size.x = 520
+	_startup.add_theme_color_override("font_color", Color("#FFB300"))
+	_startup.visible = false
+	add_child(_startup)
 
 	_notice = Label.new()
 	_notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -132,6 +155,12 @@ func restart_button() -> Button:
 ## Ce que l'operateur lit sur l'etat de la course.
 func state_text() -> String:
 	return _state_label.text
+
+
+## Les conditions de session affichees — pour les tests, qui verifient qu'elles
+## survivent au depart d'une course.
+func startup_text() -> String:
+	return _startup.text if _startup.visible else ""
 
 
 func notice_text() -> String:

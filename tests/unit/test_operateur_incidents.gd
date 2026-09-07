@@ -106,8 +106,11 @@ func test_des_reglages_corrompus_demarrent_par_defaut_et_le_disent() -> void:
 
 	assert_eq(controller.settings.mode, RaceConfig.Mode.DISTANCE, "valeurs par defaut")
 	assert_eq(controller.startup_problems().size(), 1, "le roster absent n'est pas un probleme")
-	assert_string_contains(panel.race_panel().notice_text(), "REGLAGES")
-	assert_string_contains(panel.race_panel().notice_text(), "JSON invalide")
+	# LIGNE PERSISTANTE, pas le journal : un probleme de demarrage decrit l'etat
+	# de la session, pas un evenement de course, et il survit a l'ardoise propre
+	# du premier armement.
+	assert_string_contains(panel.race_panel().startup_text(), "REGLAGES")
+	assert_string_contains(panel.race_panel().startup_text(), "JSON invalide")
 	DirAccess.remove_absolute(settings_path)
 
 
@@ -749,3 +752,46 @@ func test_une_course_en_temps_courte_signale_aussi_sa_piste_vide() -> void:
 			said = true
 	assert_true(said, "signalee au quart du temps, pas au gong")
 	_controller.engine.abort("fin du test")
+
+
+func test_un_probleme_de_demarrage_survit_au_premier_depart() -> void:
+	# Les problemes de demarrage — roster illisible, reglages perdus, courses du
+	# jour introuvables — etaient pousses dans le journal du panneau Course, qui
+	# se vide a CHAQUE armement. Un operateur qui lance sa premiere course dans
+	# la minute perdait donc la seule notification lui disant que ses noms de
+	# coureurs n'avaient pas ete relus : il decouvrait « Piste 1, Piste 2 » sur
+	# l'ecran public, ou dans le CSV le lendemain.
+	#
+	# Ce n'est pas l'alerte d'une course, c'est une CONDITION de la session,
+	# vraie tant que le fichier n'est pas repare. Elle a donc sa place a elle,
+	# que l'ardoise propre n'efface pas.
+	var dir := ProjectSettings.globalize_path("user://test_demarrage")
+	DirAccess.make_dir_recursive_absolute(dir)
+	var path := dir.path_join("roster.json")
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string("{ ceci n'est pas du JSON")
+	file.close()
+
+	var controller := AppController.new()
+	controller.settings_path = dir.path_join("reglages.json")
+	controller.roster_path = path
+	controller.recorder_logs_dir = dir.path_join("logs")
+	controller.recorder_races_dir = dir.path_join("races")
+	add_child_autofree(controller)
+	# `_ready` n'est pas synchrone selon d'ou l'on ajoute le noeud : le
+	# controleur expose `initialize` exactement pour cela.
+	controller.initialize()
+	var panel := PanelRace.new()
+	add_child_autofree(panel)
+	panel.setup(controller)
+
+	assert_string_contains(panel.startup_text(), "ROSTER", "le probleme est dit au lancement")
+	# L'operateur lance sa premiere course.
+	controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	await wait_physics_frames(1)
+	assert_string_contains(
+		panel.startup_text(), "ROSTER", "et il est TOUJOURS la apres le premier depart"
+	)
+	# Le journal des alertes, lui, s'efface bien : c'est sa raison d'etre.
+	assert_eq(panel.notice_text(), "", "l'ardoise des alertes reste propre")
+	DirAccess.remove_absolute(path)
