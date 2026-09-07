@@ -944,3 +944,51 @@ func test_un_fichier_d_un_autre_jour_n_est_pas_compte_comme_illisible() -> void:
 		"un fichier d'un autre jour n'est pas une perte du jour"
 	)
 	DirAccess.remove_absolute(veille)
+
+
+func test_une_course_a_cheval_sur_la_bascule_de_journee_reste_dans_un_seul_fichier() -> void:
+	# Chaque ligne du CSV recalculait le nom du fichier du jour a l'horloge du
+	# moment. Une course commencee a 04 h 59 ecrivait donc son RACE_START dans
+	# le fichier de la veille et son RACE_FINISH dans celui du lendemain :
+	# coupee en deux, et introuvable en entier dans l'un comme dans l'autre.
+	# Son JSON, lui, est range au jour du DEPART — les deux fichiers ne
+	# racontaient pas la meme journee.
+	#
+	# Le jour est desormais choisi UNE FOIS, a l'ouverture de la course. Pour
+	# le prouver sans attendre 5 h du matin, on ouvre la course a une date que
+	# l'horloge de la machine ne donnera jamais : si une seule ligne allait
+	# chercher l'horloge, elle tomberait dans un autre fichier.
+	var config := _config()
+	var veille := {"year": 1999, "month": 12, "day": 31, "hour": 4, "minute": 59, "second": 0}
+	_recorder.begin_race(config, {0: {"name": "Alice"}, 1: {"name": "Bob"}}, veille)
+	var attendu := _logs.path_join(AppPaths.daily_log_name(veille))
+	assert_eq(_recorder.csv_path(), attendu, "le journal est celui du jour du depart")
+	assert_string_contains(attendu.get_file(), "1999_12_30", "soit la veille, 04 h 59 etant avant 5 h")
+
+	_recorder.record_rider_finished(0, 20000, 1)
+	_recorder.record_rider_finished(1, 20400, 2)
+	var result := RaceResult.new()
+	result.config = config
+	result.mode = "distance"
+	result.ranking = [0, 1]
+	result.end_reason = RaceRule.EndReason.ALL_FINISHED
+	result.finished_ms[0] = 20000
+	result.finished_ms[1] = 20400
+	_recorder.finish_race(result)
+
+	# TOUTES les lignes dans CE fichier, et aucune ailleurs.
+	var file := FileAccess.open(attendu, FileAccess.READ)
+	assert_not_null(file, "le fichier de la veille existe")
+	var events: Array[String] = []
+	file.get_csv_line()
+	while not file.eof_reached():
+		var row := file.get_csv_line()
+		if row.size() > 1:
+			events.append(row[1])
+	assert_has(events, "RACE_START", "le depart y est")
+	assert_has(events, "RACE_FINISH", "et l'arrivee aussi — la course n'a qu'un jour")
+	assert_eq(events.count("RIDER_FINISH"), 2, "et chaque franchissement")
+	assert_false(
+		FileAccess.file_exists(_logs.path_join(AppPaths.daily_log_name())),
+		"rien n'est parti dans le fichier d'aujourd'hui"
+	)

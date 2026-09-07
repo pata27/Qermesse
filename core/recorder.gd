@@ -93,8 +93,20 @@ func csv_path() -> String:
 
 
 ## Ouvre une course. `roster` associe un numero de piste a {name, dossard}.
-func begin_race(config: RaceConfig, roster: Dictionary = {}) -> String:
+## `now` s'injecte pour les tests ; en soiree c'est l'horloge de la machine.
+func begin_race(
+	config: RaceConfig, roster: Dictionary = {},
+	now: Dictionary = Time.get_datetime_dict_from_system()
+) -> String:
 	_uuid = _make_uuid()
+	# LE JOURNAL DU JOUR EST CHOISI UNE FOIS PAR COURSE, ici. Chaque ligne le
+	# recalculait a l'horloge du moment : une course a cheval sur la bascule de
+	# 5 h du matin ecrivait son depart dans le fichier de la veille et son
+	# arrivee dans celui du lendemain — coupee en deux, et introuvable en entier
+	# dans l'un comme dans l'autre. Son JSON, lui, est range au jour du DEPART
+	# (`load_day` lit `started_at`) : le CSV suit desormais la meme regle, et une
+	# course n'a plus deux jours.
+	_csv_path = _logs_dir.path_join(AppPaths.daily_log_name(now))
 	# Les problemes sont ceux de CETTE course : une cle USB retiree puis
 	# remise ne doit pas faire accuser toutes les courses suivantes.
 	_problems.clear()
@@ -245,7 +257,11 @@ func _append_csv(row: Dictionary) -> void:
 		return
 	if not AppPaths.ensure_dir(_logs_dir, _problems):
 		return
-	_csv_path = _logs_dir.path_join(AppPaths.daily_log_name())
+	# Le chemin a ete fixe par `begin_race` ; on ne le recalcule que s'il manque —
+	# un appel hors course, qui n'existe pas aujourd'hui mais qu'on ne veut pas
+	# voir echouer en silence.
+	if _csv_path.is_empty():
+		_csv_path = _logs_dir.path_join(AppPaths.daily_log_name())
 
 	var is_new := not FileAccess.file_exists(_csv_path)
 	# APPEND REEL : on ouvre en lecture-ecriture et on se place a la fin. La v1

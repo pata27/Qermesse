@@ -186,8 +186,10 @@ n'ait couru vient d'un outil lancé avant ce cloisonnement.
 
 Un fichier par journée d'exploitation, nommé `AAAA_MM_JJ_SilverSprintRaceLog.csv`. Cette journée
 va de 5 h à 5 h : une course de 00 h 10 est écrite dans le fichier de la **veille**, avec le reste
-de sa soirée. Les courses s'y **ajoutent** : il
-n'est jamais réécrit, et le fichier de la veille n'est jamais touché.
+de sa soirée. **Une course appartient au jour de son départ**, toute entière : celle qui part à
+04 h 59 et arrive à 05 h 01 est dans le fichier de la veille du début à la fin, comme son JSON.
+Les courses s'y **ajoutent** : il n'est jamais réécrit, et le fichier de la veille n'est jamais
+touché.
 
 Le dossier `races/` voisin contient un JSON par course, avec la trace complète des mesures. C'est ce
 qu'il faut envoyer au développeur en cas de résultat suspect : la course peut être rejouée à

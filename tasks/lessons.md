@@ -1528,3 +1528,19 @@ revient à le cacher au moment précis où l'opérateur cesse de regarder l'écr
 
 La question à se poser devant tout message : **est-ce que ceci cesse d'être vrai
 tout seul ?** Si non, il ne va pas dans une zone qui se vide.
+
+## Une décision prise à chaque ligne n'est pas une décision
+
+Le nom du journal CSV du jour était recalculé à chaque ligne écrite, à l'horloge
+du moment. Sur une course qui chevauche la bascule de 5 h, le départ allait dans
+le fichier de la veille et l'arrivée dans celui du lendemain — coupée en deux,
+et introuvable en entier dans aucun. Son JSON, lui, est rangé au jour du départ.
+
+Le défaut n'était pas le calcul, qui était juste ; c'était **l'endroit où il
+était fait**. Une propriété qui doit rester constante pendant une opération se
+décide au début de l'opération, une fois, et se transmet. La recalculer « pour
+être sûr » à chaque étape est ce qui la rend inconstante.
+
+Corollaire de test : pour prouver qu'une valeur est fixée une fois, on l'injecte
+avec une date que l'horloge de la machine ne donnera jamais. Si une seule étape
+va rechercher l'horloge, elle tombe ailleurs — et le test le voit.
