@@ -1478,3 +1478,21 @@ Aucune de ces trois n'était un défaut du produit. Toutes rendaient la garde
 menteuse — dans un sens ou dans l'autre, ce qui est pire qu'une garde absente.
 **Une garde textuelle doit être éprouvée sur un cas sain qu'elle pourrait mal
 lire, et pas seulement sur le cas fautif qu'elle doit attraper.**
+
+## Un correctif peut être juste sans être prouvable par un test
+
+L'écriture « atomique » de `JsonStore` supprimait la destination avant de
+renommer : entre les deux appels, plus aucun fichier n'existait, et c'est le
+seul instant où une coupure de courant fait des dégâts. Le correctif — renommer
+d'abord, ne supprimer qu'en repli — est certainement juste.
+
+Aucun test ne le distingue pourtant de l'ancien code. Sur POSIX, renommer
+par-dessus un fichier réussit toujours ; les deux versions se comportent à
+l'identique tant que rien ne s'interrompt, et aucun test ne peut se placer entre
+deux appels système au moment où le courant tombe.
+
+La bonne conduite n'est ni de renoncer au correctif, ni d'inventer un test qui
+prouverait autre chose. C'est d'écrire les tests qui gardent le **contrat**
+— une réécriture laisse toujours un fichier lisible, un échec ne détruit rien —
+et de dire dans le commentaire et le commit **ce que la preuve ne couvre pas**.
+Un rouge annoncé qu'on n'a pas est pire qu'un correctif honnêtement raisonné.

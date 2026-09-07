@@ -30,10 +30,31 @@ static func write(path: String, data: Dictionary) -> bool:
 
 	var dir := DirAccess.open(path.get_base_dir())
 	if dir == null:
+		last_error = "dossier illisible : %s" % path.get_base_dir()
 		return false
+
+	# LE RENOMMAGE D'ABORD, la suppression seulement s'il refuse.
+	#
+	# L'ancienne version supprimait la destination AVANT de renommer. Entre les
+	# deux, plus aucun fichier n'existait a ce chemin : une coupure exactement
+	# la — et c'est le seul moment ou elle fait des degats — perdait roster et
+	# reglages, precisement ce que l'ecriture atomique existe pour empecher. Le
+	# commentaire en tete de ce fichier promettait « l'ancien fichier intact »,
+	# et la promesse avait une fenetre.
+	#
+	# Sur les systemes POSIX, renommer par-dessus un fichier existant est ATOMIQUE
+	# et remplace la destination — verifie. La suppression ne sert donc a rien, et
+	# elle nuit. On la garde en repli pour les systemes dont le renommage refuse
+	# une destination occupee : la fenetre y subsiste, mais elle n'est plus
+	# ouverte partout.
+	if dir.rename(temp.get_file(), path.get_file()) == OK:
+		return true
 	if FileAccess.file_exists(path):
 		dir.remove(path.get_file())
-	return dir.rename(temp.get_file(), path.get_file()) == OK
+	if dir.rename(temp.get_file(), path.get_file()) == OK:
+		return true
+	last_error = "renommage impossible : %s" % path
+	return false
 
 
 ## Rend un dictionnaire vide si le fichier est absent ou illisible. Un reglage

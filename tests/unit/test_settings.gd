@@ -511,3 +511,46 @@ func _read_scripts(path: String) -> String:
 		name = dir.get_next()
 	dir.list_dir_end()
 	return out
+
+
+func test_reecrire_un_fichier_ne_le_fait_jamais_disparaitre() -> void:
+	# L'ecriture atomique supprimait la destination AVANT de renommer. Entre les
+	# deux, plus aucun fichier n'existait a ce chemin — et c'est le seul instant
+	# ou une coupure fait des degats. `DEPANNAGE` decrit d'ailleurs cette perte
+	# comme un cas connu : « disque coupe pendant l'ecriture ».
+	#
+	# Renommer par-dessus un fichier existant est atomique sur les systemes
+	# POSIX et remplace la destination : la suppression ne servait a rien, et
+	# elle ouvrait la fenetre que l'ecriture atomique existe pour fermer.
+	var path := _path("atomique.json")
+	assert_true(JsonStore.write(path, {"tour": 1}), "premiere ecriture")
+	for tour: int in range(2, 6):
+		assert_true(JsonStore.write(path, {"tour": tour}), "reecriture %d" % tour)
+		assert_true(FileAccess.file_exists(path), "le fichier existe apres la reecriture %d" % tour)
+		assert_eq(int(JsonStore.read(path).get("tour", 0)), tour, "et porte la valeur %d" % tour)
+	# Aucun temporaire ne traine : un `.tmp` oublie serait relu un jour comme
+	# une sauvegarde valable.
+	assert_false(FileAccess.file_exists(path + ".tmp"), "pas de temporaire abandonne")
+
+
+func test_une_ecriture_qui_echoue_laisse_l_ancien_fichier_intact() -> void:
+	# C'est toute la promesse de l'ecriture atomique, et elle se verifie sur un
+	# echec REEL : un dossier occupe le nom du fichier temporaire, donc rien ne
+	# peut s'y ecrire. L'ancien contenu doit survivre entier.
+	# Ce test ne prouve PAS la fermeture de la fenetre de coupure : elle n'est
+	# observable qu'entre deux appels systeme, au moment precis ou le courant
+	# tombe, et aucun test ne peut s'y placer. Il garde le contrat — un echec ne
+	# detruit rien — qui est ce que l'operateur constate, et il attraperait la
+	# regression evidente : supprimer la destination avant meme d'avoir ecrit le
+	# temporaire.
+	var path := _path("intact.json")
+	assert_true(JsonStore.write(path, {"garde": "ancien"}), "le fichier de depart")
+	DirAccess.make_dir_recursive_absolute(path + ".tmp")
+
+	assert_false(JsonStore.write(path, {"garde": "nouveau"}), "l'ecriture echoue")
+	assert_false(JsonStore.last_error.is_empty(), "et elle dit pourquoi")
+	assert_eq(
+		str(JsonStore.read(path).get("garde", "")), "ancien",
+		"l'ancien contenu est intact — c'est toute la promesse"
+	)
+	DirAccess.remove_absolute(path + ".tmp")
