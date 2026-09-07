@@ -109,6 +109,26 @@ var _notice_big := false
 var _abort_veil: ColorRect
 
 
+## LA CONFIGURATION DE LA COURSE EN COURS, pas celle qu'on prepare.
+##
+## L'habillage lisait `current_config()` — les reglages VIVANTS du panneau
+## operateur — a cinq endroits. Or l'operateur prepare la manche suivante
+## pendant que celle-ci court : il change le mode, la distance. Le bandeau
+## d'alerte, qui se place d'apres le mode, atterrissait alors AU MILIEU DES
+## CARTES d'une course en distance des que le panneau etait passe sur
+## poursuite — mesure : centre en x=1328 avant, x=960 apres, la course n'ayant
+## pas change.
+##
+## Une course armee porte sa propre configuration, figee a l'armement
+## (`RaceState.config`). C'est elle que l'ecran public raconte. Les reglages
+## vivants ne servent qu'au repos, quand il n'y a rien d'autre a montrer.
+func _race_config() -> RaceConfig:
+	var state := _controller.engine.race_state()
+	if state != null and state.config != null and _controller.race_in_progress():
+		return state.config
+	return _controller.current_config()
+
+
 func setup(controller: AppController) -> void:
 	_controller = controller
 	layer = 2
@@ -216,7 +236,7 @@ func rebuild_cards() -> void:
 	# pour redire ce que la barre de tension montre déjà par ses couleurs :
 	# qui mène, et de combien chacun est en retard. Le sujet du mode est
 	# l'écart, il occupe le centre de l'écran, seul (docs/04 §5).
-	if _controller.current_config().mode == RaceConfig.Mode.PURSUIT:
+	if _race_config().mode == RaceConfig.Mode.PURSUIT:
 		return
 
 	var lanes := _controller.roster.active_lanes()
@@ -299,7 +319,7 @@ func rebuild_cards() -> void:
 ## un nom et deux lignes VIDES, ce qui se lit comme un affichage casse. Une
 ## carte doit dire ce qu'elle contiendra avant de le contenir.
 func _reset_cards_to_start() -> void:
-	var config := _controller.current_config()
+	var config := _race_config()
 	var development: float = maxf(_controller.settings.development_m, 0.5)
 	for lane: Variant in _cards.keys():
 		var card: Dictionary = _cards[lane]
@@ -578,7 +598,7 @@ func _place_notice() -> void:
 	# En poursuite les cartes sont absentes : la banniere revient au milieu de
 	# l'ecran. Dans les autres modes elle se centre dans l'espace qu'elles
 	# laissent libre.
-	var pursuit := _controller.current_config().mode == RaceConfig.Mode.PURSUIT
+	var pursuit := _race_config().mode == RaceConfig.Mode.PURSUIT
 	var centre := SCREEN_CENTRE_X if pursuit else CLEAR_CENTRE_X
 	_notice.position = Vector2(centre - width * 0.5, band_height() + 16.0)
 
@@ -614,7 +634,7 @@ static func make_label(size: int, color: Color) -> Label:
 
 
 func _refresh_objective() -> void:
-	var config := _controller.current_config()
+	var config := _race_config()
 	_mode_label.text = "MODE %s" % config.mode_name().to_upper()
 	match config.mode:
 		RaceConfig.Mode.DISTANCE:
@@ -918,6 +938,8 @@ func decision_text() -> String:
 	return _tension.decision_text()
 
 
+## Le bandeau du haut — mode et objectif — pour les tests, qui verifient qu'il
+## dit la course EN COURS et non les reglages qu'on prepare pour la suivante.
 func notice_text() -> String:
 	return _notice.text
 

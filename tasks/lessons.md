@@ -1544,3 +1544,21 @@ décide au début de l'opération, une fois, et se transmet. La recalculer « po
 Corollaire de test : pour prouver qu'une valeur est fixée une fois, on l'injecte
 avec une date que l'horloge de la machine ne donnera jamais. Si une seule étape
 va rechercher l'horloge, elle tombe ailleurs — et le test le voit.
+
+## Un consommateur de réglages vivants pendant une opération lit la copie figée
+
+Corollaire de « une propriété constante pendant une opération se décide au début » :
+il ne suffit pas que le moteur fige la configuration à l'armement, il faut que **tout
+ce qui raconte l'opération** lise cette copie-là. L'habillage public lisait
+`current_config()` à quatre endroits ; le bandeau d'alerte se plaçait donc d'après le
+mode que l'opérateur préparait pour la manche suivante. Méthode : `grep` chaque lecture
+des réglages vivants et demander pour chacune « à quel moment est-ce appelé ? » — celles
+qui tournent pendant l'opération doivent passer par la copie figée.
+
+## Une insertion textuelle peut couper une fonction en deux — vérifier la fin
+
+J'ai inséré une fonction « après les trois premières lignes de `setup()` » ; le reste
+de `setup()` est tombé derrière le `return` de la nouvelle fonction, inaccessible.
+gdlint ne signale pas le code mort après `return`, et la suite a échoué ailleurs (labels
+jamais construits), loin de la cause. Après toute insertion par motif textuel, relire
+la fonction voisine **jusqu'à sa fin**, ou insérer avant un `func` complet.

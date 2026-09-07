@@ -513,3 +513,38 @@ func test_un_penalise_n_a_jamais_parcouru_moins_que_rien() -> void:
 		var ahead := _hud.card_detail_text(1)
 		assert_string_contains(ahead, "15 m parcourus", "mode %d : puis la distance vraie" % mode)
 		assert_false(ahead.contains("pénalité"), "mode %d : et plus de penalite" % mode)
+
+
+func test_l_ecran_public_raconte_la_course_en_cours_pas_les_reglages_qu_on_prepare() -> void:
+	# L'operateur prepare la manche suivante PENDANT que celle-ci court : il
+	# passe le panneau sur poursuite. L'habillage lisait les reglages vivants a
+	# cinq endroits ; le bandeau d'alerte, qui se place d'apres le mode,
+	# atterrissait alors au milieu des cartes d'une course en distance. Mesure :
+	# centre en x=1328 avant le changement de panneau, x=960 apres — la course
+	# n'ayant pas change.
+	#
+	# Une course armee porte sa propre configuration, figee a l'armement. C'est
+	# elle que l'ecran public raconte.
+	_controller.settings.mode = RaceConfig.Mode.DISTANCE
+	_controller.settings.distance_m = 250.0
+	_controller.race_state_changed.emit(RaceEngine.State.IDLE, RaceEngine.State.ARMING)
+	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	# Le moteur porte la configuration de la course : on l'arme vraiment.
+	assert_true(_controller.engine.arm(_controller.current_config(), 0), "la course est armee")
+	_controller.link_state_changed.emit(Protocol.State.LINK_LOST)
+	var before: Rect2 = _hud.notice_metrics()["rect"]
+	_controller.link_state_changed.emit(Protocol.State.IDENTIFIED)
+
+	# Le panneau passe sur POURSUITE pour la manche suivante.
+	_controller.settings.mode = RaceConfig.Mode.PURSUIT
+	_controller.link_state_changed.emit(Protocol.State.LINK_LOST)
+	var after: Rect2 = _hud.notice_metrics()["rect"]
+	assert_almost_eq(
+		after.position.x + after.size.x * 0.5, before.position.x + before.size.x * 0.5, 1.0,
+		"le bandeau reste a la place de la course EN COURS, pas de celle qu'on prepare"
+	)
+	assert_almost_eq(
+		after.position.x + after.size.x * 0.5, RaceHud.CLEAR_CENTRE_X, 1.0,
+		"soit l'espace libre a droite des cartes d'une course en distance"
+	)
+	_controller.engine.abort("fin du test")
