@@ -325,3 +325,44 @@ func test_fermer_la_fenetre_spectacle_arrete_la_vitrine() -> void:
 	var button: Button = _main.operator.spectacle_panel().demo_button()
 	assert_string_contains(button.text, "Mode démo")
 	assert_true(button.disabled, "et grise : il n'y a rien a montrer")
+
+
+func test_l_operateur_ne_peut_pas_lancer_une_vraie_course_pendant_la_vitrine() -> void:
+	# Entre deux manches de vitrine le moteur est au repos : START etait
+	# disponible, et la course reelle partait ENREGISTREUR MUET — mesure :
+	# historique a zero apres l'arrivee, une course de vrais gens perdue — puis
+	# la vitrine reprenait par-dessus son podium a la respiration suivante.
+	_main.open_spectacle()
+	assert_true(await _await_identified())
+	var start: Button = _main.operator.race_panel().start_button()
+	var sensor: Button = _main.operator.hardware_panel().sensor_button()
+	assert_false(start.disabled, "au repos : disponible")
+	assert_true(_main.attract.start())
+	# Attendre la respiration entre deux manches : la vitrine roule, pas le moteur.
+	var seen_running := false
+	for i: int in range(20000):
+		await get_tree().process_frame
+		if _main.controller.race_in_progress():
+			seen_running = true
+		elif seen_running:
+			break
+	assert_true(seen_running, "une manche de vitrine a tourne")
+	assert_false(_main.controller.race_in_progress(), "et le moteur est au repos entre deux")
+
+	assert_string_contains(_main.controller.start_blocked_reason(), "mode démo")
+	assert_false(_main.controller.start_race(), "START opérateur refuse")
+	assert_true(start.disabled, "et grise")
+	assert_string_contains(start.tooltip_text, "mode démo", "avec le motif")
+	assert_false(_main.controller.restart_race(), "Relancer aussi")
+	assert_true(sensor.disabled, "Test capteurs aussi")
+	assert_string_contains(sensor.tooltip_text, "mode démo")
+	_main.controller.begin_sensor_test()
+	assert_false(_main.controller.sensor_test_active(), "meme force, refuse")
+
+	_main.attract.stop()
+	# La vitrine rend le backend : le lien se re-identifie d'abord.
+	assert_true(await _await_identified())
+	assert_false(start.disabled, "la vitrine arretee, START revient")
+	assert_false(sensor.disabled, "Test capteurs aussi")
+	assert_true(_main.controller.start_race(), "et une vraie course part")
+	_main.controller.stop_race()

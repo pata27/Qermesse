@@ -135,6 +135,9 @@ secondes — c'est le temps qu'il faut à quelqu'un pour s'arrêter et regarder.
 * **Vos réglages sont rendus à l'arrêt** — mode, distance, durée, écart, pistes actives, profil du
   simulateur, et le choix simulateur/matériel. Lancez la vitrine pendant l'apéritif, arrêtez-la
   quand les coureurs arrivent, tout est comme vous l'aviez laissé.
+* Tant que la vitrine tourne, **START, Relancer et Test capteurs sont grisés** — l'infobulle le
+  dit. L'arrêter d'abord. Sans cela, une vraie course lancée entre deux manches partait
+  enregistreur muet, comme une démonstration, et n'entrait pas dans **Courses du jour**.
 * Le bouton est **grisé pendant une course** : on n'interrompt pas des gens qui pédalent. Il l'est
   aussi tant que la fenêtre spectacle est fermée — il n'y aurait rien à montrer. Et **fermer la
   fenêtre spectacle pendant la vitrine l'arrête**, pour la même raison ; vos réglages sont rendus

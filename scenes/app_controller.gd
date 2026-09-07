@@ -33,6 +33,10 @@ signal sensor_activity(ticks: PackedInt32Array)
 ## resynchronise dessus : il restait enfonce apres un START et disait un test
 ## en cours quand il n'y en avait plus.
 signal sensor_test_changed(active: bool)
+## Le mode demo commence ou finit. START, Relancer et Test capteurs s'y
+## regrisent : une vraie course lancee entre deux manches de vitrine partait
+## enregistreur MUET — perdue —, et la vitrine reprenait par-dessus son podium.
+signal demo_mode_changed(active: bool)
 
 ## docs/01 §6.2 — au-dela, la course est perdue.
 const LINK_GRACE_MS := 3000
@@ -84,9 +88,12 @@ const STALLED_LANE_MS := 5000
 ## pour sa vraie course suivante.
 var demo_mode := false:
 	set(value):
+		var changed := demo_mode != value
 		demo_mode = value
 		if recorder != null:
 			recorder.muted = value
+		if changed:
+			demo_mode_changed.emit(value)
 
 var preferences_enabled := true
 ## Coutures de test : fichiers de reglages et de roster. Vides = chemins de
@@ -275,14 +282,24 @@ func is_simulated() -> bool:
 	return _link.is_simulated()
 
 
+## DEDUIT DU MOTIF, pas recopie. Les deux fonctions listaient chacune leurs
+## conditions ; le mode demo ajoute au motif ne grisait pas le bouton, qui
+## disait « Lancer la course » sur un depart que `start_race` refusait.
 func can_start_race() -> bool:
-	# docs/01 §4 : IDENTIFIED est la SEULE condition d'autorisation du depart.
-	return _link.can_start_race() and _engine_at_rest() and current_config().is_valid()
+	return start_blocked_reason().is_empty()
 
 
 ## Motif du refus, pour que le bouton grise puisse s'expliquer. Un bouton
 ## desactive sans raison visible est un appel au support en pleine soiree.
-func start_blocked_reason() -> String:
+## `from_demo` : la vitrine lance ses propres manches pendant le mode demo ;
+## l'operateur, lui, en est empeche tant qu'elle tourne. Une vraie course
+## partie entre deux manches — le moteur y est au repos, START etait
+## disponible — courait enregistreur muet et n'entrait pas dans Courses du
+## jour : mesure, historique a zero apres l'arrivee. Et la vitrine reprenait
+## par-dessus son podium a la respiration suivante.
+func start_blocked_reason(from_demo: bool = false) -> String:
+	if demo_mode and not from_demo:
+		return "mode démo en cours — l'arrêter d'abord (panneau Fenêtre spectacle)"
 	if not _link.can_start_race():
 		return "lien %s — le boîtier doit avoir répondu V: (docs/01 §4)" % (
 			Protocol.state_name(_link.get_link_state())
@@ -314,8 +331,8 @@ func current_config() -> RaceConfig:
 	return settings.to_race_config(roster.active_lanes())
 
 
-func start_race() -> bool:
-	var reason := start_blocked_reason()
+func start_race(from_demo: bool = false) -> bool:
+	var reason := start_blocked_reason(from_demo)
 	if not reason.is_empty():
 		notice.emit("départ impossible : %s" % reason)
 		return false
@@ -378,6 +395,11 @@ func acknowledge_results() -> void:
 func begin_sensor_test() -> void:
 	if engine.state() != RaceEngine.State.IDLE and engine.state() != RaceEngine.State.RESULTS:
 		notice.emit("test capteurs : impossible pendant une course")
+		return
+	if demo_mode:
+		# Entre deux manches le moteur est au repos, mais le boitier simule
+		# appartient a la vitrine : une course a blanc tomberait sur sa manche.
+		notice.emit("test capteurs : impossible pendant le mode démo")
 		return
 	_sensor_test_active = true
 	for i: int in range(Protocol.MAX_RIDERS):

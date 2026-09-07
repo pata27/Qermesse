@@ -1615,3 +1615,19 @@ seule) et en poursuite (le muet est éliminé à l'écart). Méthode : pour chaq
 recommande ou implique une action, énumérer les modes ou états dans lesquels il peut apparaître,
 et relire la phrase dans chacun. Une phrase générique écrite pour le mode « par défaut » est le
 motif le plus courant.
+
+## Un mode qui emprunte le matériel doit fermer TOUTES les portes d'entrée du matériel
+
+La vitrine grisait son propre bouton pendant une course, mais rien ne grisait START pendant la
+vitrine : entre deux manches le moteur est au repos, START était disponible, et la vraie course
+partait **enregistreur muet** — perdue —, la vitrine reprenant par-dessus son podium. Méthode :
+pour un mode exclusif (démo, test capteurs), lister tout ce qui peut s'emparer de la même
+ressource (START, Relancer, Test capteurs, la vitrine elle-même) et vérifier chaque paire dans
+**les deux sens**. Corollaire trouvé en route : `can_start_race()` recopiait les conditions de
+`start_blocked_reason()` au lieu de s'en déduire — un booléen et son motif sont une seule liste.
+
+## Une commande, une passe de suite
+
+Deux passes de la suite dans une même commande dépassent le délai de dix minutes, et tout ce qui
+suit — la restauration d'une neutralisation, notamment — n'est pas exécuté. Une passe par
+commande, et la restauration dans la même commande que la neutralisation, jamais après.

@@ -38,6 +38,7 @@ func setup(controller: AppController) -> void:
 	_controller.sensor_activity.connect(_on_sensor_activity)
 	_controller.sensor_test_changed.connect(_on_sensor_test_changed)
 	_controller.race_state_changed.connect(func(_p: int, _c: int) -> void: _refresh_sensor_button())
+	_controller.demo_mode_changed.connect(func(_a: bool) -> void: _refresh_sensor_button())
 	refresh()
 
 
@@ -310,12 +311,18 @@ func _on_sensor_test_changed(active: bool) -> void:
 ## s'enfoncer.
 func _refresh_sensor_button() -> void:
 	var running := _controller.race_in_progress()
-	_sensor_button.disabled = running
-	_sensor_button.tooltip_text = (
-		"Impossible pendant une course : le test est une course à blanc côté boîtier."
-		if running
-		else "Lance une course à blanc pour vérifier que chaque rouleau anime la bonne piste."
-	)
+	var demo := _controller.demo_mode
+	_sensor_button.disabled = running or demo
+	if running:
+		_sensor_button.tooltip_text = (
+			"Impossible pendant une course : le test est une course à blanc côté boîtier."
+		)
+	elif demo:
+		_sensor_button.tooltip_text = "Impossible pendant le mode démo : l'arrêter d'abord."
+	else:
+		_sensor_button.tooltip_text = (
+			"Lance une course à blanc pour vérifier que chaque rouleau anime la bonne piste."
+		)
 
 
 func _reset_sensor_labels() -> void:

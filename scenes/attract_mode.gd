@@ -161,7 +161,7 @@ func _next_race() -> void:
 	var scenario: Dictionary = SCENARIOS[_index % SCENARIOS.size()]
 	_index += 1
 	_apply(scenario)
-	if not _controller.start_race():
+	if not _controller.start_race(true):
 		# Le lien n'est pas encore identifié au tout premier passage : on
 		# réessaie au tour suivant plutôt que d'abandonner la vitrine.
 		_wait_s = 1.0

@@ -11,13 +11,14 @@
 
 ## Le bouton START est grisé
 
-Ce n'est jamais arbitraire : **survoler le bouton affiche le motif**. Trois causes possibles.
+Ce n'est jamais arbitraire : **survoler le bouton affiche le motif**. Quatre causes possibles.
 
 | Infobulle | Cause | Quoi faire |
 |---|---|---|
 | `lien DISCONNECTED` ou `PORT_OPEN` | Le boîtier n'a pas répondu `V:` | Voir *Le boîtier n'est pas détecté* |
 | `une course est déjà en cours` | La course précédente n'a pas été clôturée | Appuyer sur STOP |
 | `aucune piste active` | Le roster est vide | Cocher au moins une piste |
+| `mode démo en cours — l'arrêter d'abord` | La vitrine tourne. Entre deux manches le moteur est au repos, mais une vraie course partirait enregistreur muet, hors **Courses du jour**, et la vitrine reprendrait par-dessus son podium. | Panneau **Fenêtre spectacle** → **Arrêter le mode démo** |
 
 > Un port ouvert **n'est pas** une preuve qu'on parle au bon appareil. Le logiciel refuse de démarrer
 > tant que le boîtier n'a pas répondu — c'est délibéré : la v1 acceptait n'importe quel périphérique
@@ -368,6 +369,7 @@ d'entrée quand on lit un message et qu'on ne sait pas par où commencer.
 | `REGLAGES : N valeur(s) corrigée(s) dans settings.json — …` | Le fichier de réglages se lit, mais une ou plusieurs valeurs sont hors bornes ou ne sont pas des nombres — édité à la main. Chacune est ramenée dans ses bornes ou remplacée par la valeur par défaut ; le message les nomme, avec la valeur lue et la valeur gardée. | Vérifier les réglages dans les panneaux **Mode** et **Matériel** avant la première course. La prochaine sauvegarde réécrit le fichier propre. |
 | `Module natif absent : retour au simulateur.` | Le GDExtension n'est pas compilé : aucun port série n'est accessible. | `cd addons/serial_link && scons target=template_debug`. Voir « Le boîtier n'est pas détecté ». |
 | `test capteurs : impossible pendant une course` | Le test capteurs est une course à blanc ; il ne peut pas tourner par-dessus une vraie. | Attendre l'arrivée, ou STOP. |
+| `test capteurs : impossible pendant le mode démo` | La vitrine tourne ; entre deux manches le moteur est au repos, mais le boîtier simulé lui appartient. | Arrêter le mode démo (panneau **Fenêtre spectacle**), puis relancer le test. |
 | `test capteurs : interrompu, lien perdu` | Le boîtier a été débranché pendant un test capteurs. La course à blanc côté boîtier n'existe plus ; le bouton se relâche. | Rebrancher, attendre `IDENTIFIED`, relancer le test si besoin. |
 | `test capteurs : après le décompte du boîtier, tournez chaque rouleau, une piste à la fois` | Ce n'est pas une erreur : c'est la marche à suivre. Le firmware ne lit ses capteurs qu'en course. | Faire tourner un rouleau à la fois et lire quelle piste bouge. |
 | `test capteurs : commande refusée par le lien : …` | La course à blanc n'a pas pu être armée. | Même cause que `commande refusée par le lien`. |

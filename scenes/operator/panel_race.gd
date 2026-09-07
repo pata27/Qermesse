@@ -36,6 +36,7 @@ func setup(controller: AppController) -> void:
 	_build()
 	_controller.race_state_changed.connect(_on_race_state)
 	_controller.link_state_changed.connect(func(_s: int) -> void: refresh())
+	_controller.demo_mode_changed.connect(func(_a: bool) -> void: refresh())
 	_controller.countdown_tick.connect(_on_countdown)
 	_controller.progress_updated.connect(_on_progress)
 	_controller.notice.connect(_on_notice)
