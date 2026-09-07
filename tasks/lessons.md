@@ -1631,3 +1631,13 @@ ressource (START, Relancer, Test capteurs, la vitrine elle-même) et vérifier c
 Deux passes de la suite dans une même commande dépassent le délai de dix minutes, et tout ce qui
 suit — la restauration d'une neutralisation, notamment — n'est pas exécuté. Une passe par
 commande, et la restauration dans la même commande que la neutralisation, jamais après.
+
+## Un champ « possédé par l'enregistreur » n'est pas un champ vérifié
+
+La garde par réflexion de `RaceResult` excluait `config` — « le recorder l'écrase à
+l'enregistrement » — et se contentait de « relue, non nulle ». Derrière cette exclusion, deux
+champs de `RaceConfig` sur douze ne partaient jamais au JSON, et le rejeu les prenait par défaut.
+Méthode : chaque exclusion d'une garde par réflexion doit avoir **sa propre garde** de l'autre
+côté ; « possédé par X » veut dire « à vérifier chez X », pas « à ne pas vérifier ». Et la
+comparaison de listes se fait sur la déclaration (`get_property_list`), jamais sur une liste
+recopiée à la main — c'est celle-là qui vieillit.

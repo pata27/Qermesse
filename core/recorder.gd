@@ -468,6 +468,13 @@ func _write_json(result: RaceResult) -> String:
 			"pursuit_time_cap_s": _config.pursuit_time_cap_s,
 			"pursuit_distance_cap_m": _config.pursuit_distance_cap_m,
 			"distance_timeout_s": _config.distance_timeout_s,
+			# TOUT CE QUI A ARBITRE LA COURSE. Deux champs manquaient — la
+			# penalite de faux depart et la fenetre de lissage — et le rejeu
+			# les prenait par defaut : une course a 25 m de penalite se
+			# rejouait a 10 m, et l'outil accusait d'ecart une trace saine.
+			# `test_recorder` compare cette liste aux champs declares.
+			"false_start_penalty_m": _config.false_start_penalty_m,
+			"speed_samples": _config.speed_samples,
 		},
 		"roster": _roster,
 		"result": {

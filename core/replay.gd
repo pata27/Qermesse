@@ -164,6 +164,10 @@ static func config_from_dict(raw_config: Dictionary) -> RaceConfig:
 	config.pursuit_time_cap_s = float(raw_config.get("pursuit_time_cap_s", 300.0))
 	config.pursuit_distance_cap_m = float(raw_config.get("pursuit_distance_cap_m", 5000.0))
 	config.distance_timeout_s = float(raw_config.get("distance_timeout_s", 600.0))
+	# Absents des traces anterieures : les defauts d'alors, qui etaient aussi
+	# ceux que le rejeu prenait en silence.
+	config.false_start_penalty_m = float(raw_config.get("false_start_penalty_m", 10.0))
+	config.speed_samples = int(raw_config.get("speed_samples", Physics.SPEED_SAMPLES))
 	return config
 
 
