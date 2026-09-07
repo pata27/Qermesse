@@ -168,6 +168,19 @@ func initialize() -> void:
 	recorder = Recorder.new(recorder_logs_dir, recorder_races_dir)
 	# Un redemarrage en pleine soiree ne vide pas « Courses du jour ».
 	_history = recorder.load_day()
+	# ET IL DIT CE QU'IL N'A PAS SU RELIRE. Une course ecartee disparaissait de
+	# la liste sans un mot : l'operateur se retrouvait avec onze lignes pour
+	# douze manches, sans savoir laquelle manquait. Le CSV du jour, lui, garde
+	# ses lignes — c'est la premiere chose a dire a quelqu'un qui cherche une
+	# course absente.
+	var unreadable := recorder.last_scan_unreadable()
+	if not unreadable.is_empty():
+		_startup_problems.append(
+			"COURSES DU JOUR : %d fichier(s) de course illisible(s), la liste est incomplète"
+			% unreadable.size()
+			+ " — le journal CSV du jour, lui, garde ses lignes. Fichiers : %s"
+			% ", ".join(unreadable)
+		)
 
 	engine.command_requested.connect(_on_command_requested)
 	engine.state_changed.connect(func(p: int, c: int) -> void: race_state_changed.emit(p, c))

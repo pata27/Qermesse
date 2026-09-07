@@ -896,3 +896,51 @@ func test_un_dossard_a_virgule_se_relit_intact() -> void:
 		if row.size() > 4 and row[1] == "RIDER_FINISH":
 			found = row[4]
 	assert_eq(found, "7,5", "le dossard sort du fichier comme il y est entre")
+
+
+func test_une_course_illisible_est_ecartee_mais_comptee() -> void:
+	# `load_day` ecartait en silence tout fichier qu'il ne savait pas relire.
+	# L'intention etait bonne — l'historique ne doit jamais empecher de courir —
+	# mais le silence allait trop loin : une course disparaissait de « Courses
+	# du jour » sans un mot, et l'operateur se retrouvait le soir avec onze
+	# lignes pour douze manches, sans savoir laquelle manquait ni pourquoi.
+	#
+	# C'est pourtant ce fichier que `DEPANNAGE` lui fait envoyer au developpeur
+	# devant un resultat suspect : qu'il soit illisible est une nouvelle.
+	var bonne := _run_recorded_race(_config(), [45.0, 43.0])
+	assert_false(bonne.uuid.is_empty(), "une course valide est ecrite")
+
+	# Un second fichier, du MEME jour — son nom porte la date, comme tous les
+	# autres — mais tronque, comme le laisserait une coupure de courant.
+	var abimee := _races.path_join("%s-abimee.json" % bonne.uuid.substr(0, 8))
+	var file := FileAccess.open(abimee, FileAccess.WRITE)
+	file.store_string('{"format": "silversprint-race/1", "result": {"ran')
+	file.close()
+
+	var recorder := Recorder.new(_logs, _races)
+	var relues := recorder.load_day()
+	assert_eq(relues.size(), 1, "la course valide est bien relue")
+	assert_eq(recorder.last_scan_unreadable().size(), 1, "et l'illisible est COMPTEE")
+	assert_string_contains(
+		recorder.last_scan_unreadable()[0], "abimee", "elle est nommee, pas seulement comptee"
+	)
+	DirAccess.remove_absolute(abimee)
+
+
+func test_un_fichier_d_un_autre_jour_n_est_pas_compte_comme_illisible() -> void:
+	# Ecarter n'est pas echouer. Le dossier des courses ne s'elague jamais : il
+	# contient les soirees precedentes, et les compter comme des pertes ferait
+	# crier au loup a chaque lancement.
+	_run_recorded_race(_config(), [45.0, 43.0])
+	var veille := _races.path_join("19990101T120000-vieille.json")
+	var file := FileAccess.open(veille, FileAccess.WRITE)
+	file.store_string('{"format": "silversprint-race/1"}')
+	file.close()
+
+	var recorder := Recorder.new(_logs, _races)
+	recorder.load_day()
+	assert_eq(
+		recorder.last_scan_unreadable().size(), 0,
+		"un fichier d'un autre jour n'est pas une perte du jour"
+	)
+	DirAccess.remove_absolute(veille)

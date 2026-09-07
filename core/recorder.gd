@@ -63,6 +63,9 @@ var _samples: Array = []
 var _hardware_finishes: Array = []
 var _events: Array[Dictionary] = []
 var _last_scan_opened: int = 0
+## Fichiers du jour que le dernier `load_day` n'a pas su relire. Les compter ne
+## coute rien et evite le pire : une liste incomplete qu'on croit complete.
+var _last_scan_unreadable: Array[String] = []
 
 
 func _init(logs_dir: String = "", races_dir: String = "") -> void:
@@ -305,8 +308,15 @@ func _append_csv(row: Dictionary) -> void:
 ## se decale et le CSV devient faux sans prevenir.
 ## Relit les courses du jour depuis leurs JSON — docs/02 §5, « Historique du
 ## jour ». Le jour est le jour LOCAL, celui qui nomme le CSV ; `started_at` est
-## ecrit en UTC, d'ou la conversion. Un fichier illisible ou d'un autre format
-## est ignore en silence : l'historique ne doit jamais empecher de courir.
+## ecrit en UTC, d'ou la conversion.
+##
+## Un fichier illisible ou d'un autre format est ECARTE mais COMPTE. L'historique
+## ne doit jamais empecher de courir — c'est pourquoi rien n'echoue ici — mais le
+## silence allait trop loin : une course disparaissait de « Courses du jour »
+## sans un mot, et l'operateur se retrouvait le soir avec onze lignes pour douze
+## manches courues, sans savoir laquelle manquait ni pourquoi. Or c'est
+## precisement ce fichier que `DEPANNAGE` lui fait envoyer au developpeur devant
+## un resultat suspect : qu'il soit illisible est une nouvelle, pas un detail.
 func load_day(now: Dictionary = Time.get_datetime_dict_from_system()) -> Array[RaceResult]:
 	var found: Array[RaceResult] = []
 	if not DirAccess.dir_exists_absolute(_races_dir):
@@ -331,12 +341,16 @@ func load_day(now: Dictionary = Time.get_datetime_dict_from_system()) -> Array[R
 		if not candidates.has(stamp):
 			candidates.append(stamp)
 	_last_scan_opened = 0
+	_last_scan_unreadable.clear()
 	for name: String in DirAccess.get_files_at(_races_dir):
 		if name.get_extension() != "json" or not candidates.has(name.substr(0, 8)):
 			continue
 		_last_scan_opened += 1
 		var data := JsonStore.read(_races_dir.path_join(name))
 		if data.is_empty() or str(data.get("format", "")) != "silversprint-race/1":
+			# Le nom du fichier porte deja la date du jour — le filtre au-dessus
+			# l'a verifie — donc c'est bien une course d'aujourd'hui qui manque.
+			_last_scan_unreadable.append(name)
 			continue
 		var started := str(data.get("started_at", ""))
 		if not _is_same_local_day(started, bias_s, now):
@@ -355,6 +369,11 @@ func load_day(now: Dictionary = Time.get_datetime_dict_from_system()) -> Array[R
 
 ## Fichiers ouverts par le dernier `load_day` — pour prouver que le filtre
 ## sur le nom travaille avant le parseur.
+## Noms des fichiers du jour que le dernier `load_day` a du ecarter.
+func last_scan_unreadable() -> Array[String]:
+	return _last_scan_unreadable
+
+
 func last_scan_opened() -> int:
 	return _last_scan_opened
 
