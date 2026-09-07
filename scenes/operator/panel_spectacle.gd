@@ -41,6 +41,14 @@ func setup(root: Node, controller: AppController) -> void:
 	_build()
 	if _root.has_signal("spectacle_changed"):
 		_root.connect("spectacle_changed", refresh)
+		# LE BOUTON DEMO DIT L'ETAT DE LA VITRINE, pas le dernier clic. Elle
+		# s'arrete aussi d'elle-meme — fenetre fermee, fermeture du logiciel —
+		# et se grise pendant une course : sans ces deux signaux, il restait
+		# sur « Mode démo » pendant une demo et actif pendant une course.
+		var attract: Node = _root.get("attract")
+		if attract != null:
+			attract.connect("changed", refresh)
+	_controller.race_state_changed.connect(func(_p: int, _c: int) -> void: refresh())
 	refresh()
 
 
@@ -129,6 +137,10 @@ func _build() -> void:
 ## pédalent pour une démonstration. Et elle ne se lance pas fenêtre fermée — il
 ## n'y aurait rien à montrer, et un bouton qui semble agir sans rien changer à
 ## l'écran est pire qu'un bouton grisé.
+func demo_button() -> Button:
+	return _demo
+
+
 func _refresh_demo(spectacle_open: bool) -> void:
 	var running := _demo_running()
 	_demo.text = "Arrêter le mode démo" if running else "Mode démo (vitrine)"

@@ -1596,3 +1596,13 @@ enfoncé sur un test qui n'existait plus. Règle : l'état d'un bouton à bascul
 (signal `sensor_test_changed`, `set_pressed_no_signal`), et le clic n'est qu'une demande. Et
 « est-ce que ça cesse d'être vrai tout seul ? » : une course à blanc vit dans le boîtier ;
 débranché, il l'oublie — le PC doit l'oublier aussi, et le dire.
+
+## Un bouton qui dérive son état d'un modèle doit écouter TOUS les signaux de ce modèle
+
+Suite de la leçon sur les bascules. Le bouton **Mode démo** n'était pas à bascule, son texte et
+son grisage venaient bien du modèle (`_refresh_demo`) — mais il n'écoutait que `spectacle_changed`.
+La vitrine a son propre signal `changed`, et la course son `race_state_changed` : sans eux, le
+bouton disait « Mode démo » pendant une démo et restait actif pendant une course. Méthode : pour
+chaque bouton dérivé, lister les grandeurs qu'il lit dans son rafraîchissement (ici : fenêtre,
+vitrine, course) et vérifier qu'un signal couvre **chacune**. Et sonder toujours le cas où la
+valeur change *sans passer par le bouton* — c'est celui que le clic ne couvre jamais.

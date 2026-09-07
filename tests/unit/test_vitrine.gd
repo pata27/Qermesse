@@ -281,3 +281,47 @@ func test_la_sauvegarde_se_refuse_d_elle_meme_pendant_la_vitrine() -> void:
 	assert_true(controller.save_preferences())
 	assert_true(FileAccess.file_exists(controller.settings_path), "et tout revient apres")
 	DirAccess.remove_absolute(controller.settings_path)
+
+
+func test_le_bouton_demo_dit_l_etat_de_la_vitrine_pas_le_dernier_clic() -> void:
+	# Mesure a la sonde : vitrine lancee, le bouton disait encore « Mode démo » ;
+	# vitrine arretee par le code — fermeture du logiciel —, il disait encore
+	# « Arrêter ». Le texte ne suivait que les changements de fenetre.
+	_main.open_spectacle()
+	var button: Button = _main.operator.spectacle_panel().demo_button()
+	assert_string_contains(button.text, "Mode démo")
+	assert_true(_main.attract.start())
+	assert_string_contains(button.text, "Arrêter", "la vitrine tourne, le bouton le dit")
+	_main.attract.stop()
+	assert_string_contains(button.text, "Mode démo", "elle est arretee, le bouton le dit")
+
+
+func test_le_bouton_demo_se_grise_des_qu_une_vraie_course_part() -> void:
+	# Le manuel : « grisé pendant une course ». Il ne l'etait qu'au prochain
+	# changement de fenetre ; entre-temps il repondait par un refus au journal.
+	_main.open_spectacle()
+	var button: Button = _main.operator.spectacle_panel().demo_button()
+	assert_true(await _await_identified())
+	assert_false(button.disabled, "au repos, fenetre ouverte : disponible")
+	assert_true(_main.controller.start_race())
+	assert_true(button.disabled, "grise des le depart")
+	assert_string_contains(button.tooltip_text, "pendant une course")
+	_main.controller.stop_race()
+	assert_false(button.disabled, "rendu des la fin")
+
+
+func test_fermer_la_fenetre_spectacle_arrete_la_vitrine() -> void:
+	# « Il n'y aurait rien à montrer » vaut aussi pour une vitrine deja lancee :
+	# elle continuait a enchainer des manches pour personne, reglages
+	# empruntes, jusqu'a ce que quelqu'un pense a cliquer.
+	_main.open_spectacle()
+	var distance: float = _main.controller.settings.distance_m
+	assert_true(_main.attract.start())
+	assert_ne(_main.controller.settings.distance_m, distance, "la vitrine a emprunte la distance")
+	_main.close_spectacle()
+	assert_false(_main.attract.is_running(), "plus de fenetre, plus de vitrine")
+	assert_false(_main.controller.demo_mode, "et le mode demo est rendu")
+	assert_eq(_main.controller.settings.distance_m, distance, "les reglages aussi")
+	var button: Button = _main.operator.spectacle_panel().demo_button()
+	assert_string_contains(button.text, "Mode démo")
+	assert_true(button.disabled, "et grise : il n'y a rien a montrer")

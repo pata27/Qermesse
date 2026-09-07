@@ -136,7 +136,9 @@ secondes — c'est le temps qu'il faut à quelqu'un pour s'arrêter et regarder.
   simulateur, et le choix simulateur/matériel. Lancez la vitrine pendant l'apéritif, arrêtez-la
   quand les coureurs arrivent, tout est comme vous l'aviez laissé.
 * Le bouton est **grisé pendant une course** : on n'interrompt pas des gens qui pédalent. Il l'est
-  aussi tant que la fenêtre spectacle est fermée — il n'y aurait rien à montrer.
+  aussi tant que la fenêtre spectacle est fermée — il n'y aurait rien à montrer. Et **fermer la
+  fenêtre spectacle pendant la vitrine l'arrête**, pour la même raison ; vos réglages sont rendus
+  comme après un arrêt au bouton.
 * La vitrine bascule sur le **simulateur** le temps de tourner, même si le boîtier est branché : un
   vrai boîtier attendrait des ticks que personne ne produit.
 

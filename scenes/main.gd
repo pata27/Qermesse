@@ -95,7 +95,17 @@ func open_spectacle() -> void:
 
 ## Ferme la fenêtre spectacle. La course, elle, continue : l'affichage public
 ## n'est pas la course.
+## PLUS DE FENETRE, PLUS DE VITRINE. C'est la fenetre spectacle qui montre ;
+## fermee, la vitrine enchainait des manches pour personne, reglages empruntes,
+## jusqu'a ce que quelqu'un pense a cliquer. Arretee AVANT que la fenetre
+## disparaisse, elle rend tout ce qu'elle avait pris, comme au bouton.
+func _stop_attract_without_a_stage() -> void:
+	if attract != null and attract.is_running():
+		attract.stop()
+
+
 func close_spectacle() -> void:
+	_stop_attract_without_a_stage()
 	if spectacle != null:
 		spectacle.hide()
 	controller.settings.single_window_mode = true
@@ -132,6 +142,7 @@ func spectacle_fullscreen() -> bool:
 
 
 func _on_spectacle_closed() -> void:
+	_stop_attract_without_a_stage()
 	controller.settings.single_window_mode = true
 	spectacle_changed.emit()
 
