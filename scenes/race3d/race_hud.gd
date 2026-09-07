@@ -846,9 +846,13 @@ func _on_false_start(rider: int, policy: int) -> void:
 	if policy == RaceConfig.FalseStartPolicy.PENALTY:
 		# Sans un mot, le public voit un coureur inexplicablement distancé dès
 		# le départ — et croit à un bug plutôt qu'à une sanction.
+		# LE CHIFFRE EST CELUI QUE LE MOTEUR APPLIQUE : la pénalité de la course
+		# armée, pas le réglage vivant du panneau. L'écran annonçait 25 m quand
+		# l'opérateur préparait la manche suivante et que le moteur en
+		# appliquait 10 — mesuré.
 		_notice.text = (
 			"PISTE %d PÉNALISÉE — DÉPART %.0f m EN ARRIÈRE"
-			% [rider + 1, _controller.settings.false_start_penalty_m]
+			% [rider + 1, _race_config().false_start_penalty_m]
 		)
 	else:
 		_notice.text = "FAUX DÉPART — PISTE %d" % (rider + 1)

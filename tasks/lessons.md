@@ -1554,6 +1554,10 @@ ce qui raconte l'opération** lise cette copie-là. L'habillage public lisait
 mode que l'opérateur préparait pour la manche suivante. Méthode : `grep` chaque lecture
 des réglages vivants et demander pour chacune « à quel moment est-ce appelé ? » — celles
 qui tournent pendant l'opération doivent passer par la copie figée.
+Raffinement, un tour plus tard : `grep current_config()` avait manqué une lecture
+**directe** de `settings.false_start_penalty_m` — l'écran annonçait 25 m de pénalité quand
+le moteur en appliquait 10. Chercher aussi les accès `settings.` bruts, pas seulement
+l'accesseur.
 
 ## Une insertion textuelle peut couper une fonction en deux — vérifier la fin
 

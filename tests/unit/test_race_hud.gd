@@ -548,3 +548,22 @@ func test_l_ecran_public_raconte_la_course_en_cours_pas_les_reglages_qu_on_prepa
 		"soit l'espace libre a droite des cartes d'une course en distance"
 	)
 	_controller.engine.abort("fin du test")
+
+
+func test_la_penalite_annoncee_est_celle_que_le_moteur_applique() -> void:
+	# Le moteur applique `_config.false_start_penalty_m` — la configuration
+	# figee a l'armement. L'ecran, lui, lisait le reglage vivant du panneau :
+	# course armee a 10 m, panneau passe a 25 m pour la manche suivante, faux
+	# depart — l'ecran annoncait « 25 m EN ARRIERE » quand le coureur partait
+	# 10 m en arriere. Un chiffre faux devant la salle, sur une sanction.
+	_controller.settings.mode = RaceConfig.Mode.DISTANCE
+	_controller.settings.false_start_policy = RaceConfig.FalseStartPolicy.PENALTY
+	_controller.settings.false_start_penalty_m = 10.0
+	assert_true(_controller.engine.arm(_controller.current_config(), 0), "la course est armee")
+	_controller.settings.false_start_penalty_m = 25.0
+	_controller.false_start_detected.emit(1, RaceConfig.FalseStartPolicy.PENALTY)
+	assert_eq(
+		_hud.notice_text(), "PISTE 2 PÉNALISÉE — DÉPART 10 m EN ARRIÈRE",
+		"le chiffre annonce est celui de la course armee, pas du panneau"
+	)
+	_controller.engine.abort("fin du test")
