@@ -28,6 +28,11 @@ signal notice(text: String)
 signal roster_changed()
 ## Ticks bruts par piste, pour le test capteurs du panneau materiel.
 signal sensor_activity(ticks: PackedInt32Array)
+## Le test capteurs commence ou finit — par le bouton, par un START qui y met
+## fin, ou par un lien qui tombe. Le bouton a bascule du panneau materiel se
+## resynchronise dessus : il restait enfonce apres un START et disait un test
+## en cours quand il n'y en avait plus.
+signal sensor_test_changed(active: bool)
 
 ## docs/01 §6.2 — au-dela, la course est perdue.
 const LINK_GRACE_MS := 3000
@@ -386,6 +391,7 @@ func begin_sensor_test() -> void:
 		"test capteurs : après le décompte du boîtier, tournez chaque rouleau,"
 		+ " une piste à la fois"
 	)
+	sensor_test_changed.emit(true)
 
 
 func end_sensor_test() -> void:
@@ -393,6 +399,7 @@ func end_sensor_test() -> void:
 		return
 	_sensor_test_active = false
 	_link.send_command("s")
+	sensor_test_changed.emit(false)
 
 
 func sensor_test_active() -> bool:
@@ -544,6 +551,17 @@ func _on_command_requested(command: String) -> void:
 func _on_link_state(state: int) -> void:
 	_last_link_state = state
 	link_state_changed.emit(state)
+	# UN TEST CAPTEURS NE SURVIT PAS AU LIEN. La course a blanc vivait dans le
+	# boitier ; debranche, il l'oublie, et au rebranchement il repart au repos.
+	# Garder le test « actif » ici, c'est un bouton enfonce qui ment, et des
+	# trames R: detournees vers un affichage que personne ne regarde plus.
+	if (
+		_sensor_test_active
+		and state in [Protocol.State.LINK_LOST, Protocol.State.DISCONNECTED]
+	):
+		_sensor_test_active = false
+		notice.emit("test capteurs : interrompu, lien perdu")
+		sensor_test_changed.emit(false)
 	if state == Protocol.State.LINK_LOST:
 		_link_lost_since_ms = Time.get_ticks_msec()
 		recorder.record_link_lost("lien perdu pendant la course")

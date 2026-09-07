@@ -33,6 +33,9 @@ décrit le déroulé normal d'une soirée.
    blanc, que le logiciel n'arbitre pas. Attendre **~4 s** (son décompte), puis faire tourner chaque
    rouleau à la main. Chaque piste doit s'animer dans l'ordre attendu. Ré-appuyer pour arrêter. Une piste qui reste à zéro, ou qui bouge quand on tourne le rouleau d'à côté,
    c'est un câblage à reprendre **avant** la première course — pas pendant.
+   Le bouton dit toujours la vérité : il se **relâche de lui-même** si un START met fin au test ou
+   si le lien tombe, et il est **grisé pendant une course** — le boîtier ne fait pas deux choses à
+   la fois.
 5. Débrancher puis rebrancher l'USB une fois. **Hors course**, ce n'est pas le bandeau rouge
    qu'on attend — il ne viendra pas : la ligne du panneau **Matériel** passe à
    `Lien : DISCONNECTED` en moins d'une seconde, le firmware redevient *inconnu* et START se

@@ -1587,3 +1587,12 @@ la grandeur triée et la grandeur affichée à côté du rang ; si ce ne sont pa
 le cas où elles divergent — il existe presque toujours. Trouvé en relisant une question laissée
 « ouverte » : la doc y répondait déjà par un principe (« une pénalité qui ne coûterait rien n'en
 serait pas une »), il suffisait de l'appliquer au mode qu'elle n'avait pas nommé.
+
+## Un bouton à bascule doit être resynchronisé sur l'état qu'il prétend montrer
+
+Le bouton **Test capteurs** était un `toggle` dont l'état ne venait que du clic. Tout ce qui
+finissait le test ailleurs — START, lien perdu, refus pendant une course — laissait le bouton
+enfoncé sur un test qui n'existait plus. Règle : l'état d'un bouton à bascule vient du modèle
+(signal `sensor_test_changed`, `set_pressed_no_signal`), et le clic n'est qu'une demande. Et
+« est-ce que ça cesse d'être vrai tout seul ? » : une course à blanc vit dans le boîtier ;
+débranché, il l'oublie — le PC doit l'oublier aussi, et le dire.

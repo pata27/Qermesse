@@ -827,3 +827,70 @@ func test_courses_du_jour_montre_la_derniere_en_tete() -> void:
 	assert_string_contains(results.table_text(), "Manche 3", "cliquer la tete montre la derniere")
 	results.select_history(2)
 	assert_string_contains(results.table_text(), "Manche 1", "et le bas montre la premiere")
+
+
+func test_le_bouton_test_capteurs_se_relache_quand_un_start_met_fin_au_test() -> void:
+	# Le bouton est a bascule et n'etait jamais resynchronise. Test en cours,
+	# START : le controleur terminait le test (sinon `g` tombait sur un
+	# firmware deja parti), mais le bouton restait enfonce toute la course, et
+	# disait un test en cours quand il n'y en avait plus. Mesure : actif=false,
+	# bouton=true, grise=false.
+	assert_true(await _await_identified())
+	var hardware := _panel.hardware_panel()
+	var button := hardware.sensor_button()
+	button.button_pressed = true
+	assert_true(_controller.sensor_test_active())
+
+	assert_true(_controller.start_race(), "START met fin au test et arme")
+	assert_false(_controller.sensor_test_active(), "le test est fini")
+	assert_false(button.button_pressed, "et le bouton le dit")
+	assert_true(button.disabled, "grise tant que la course dure")
+	assert_string_contains(button.tooltip_text, "pendant une course")
+	assert_string_contains(hardware.sensor_text(0), "—", "affichage remis a zero")
+
+	_controller.stop_race()
+	assert_false(button.disabled, "rendu des la fin de la course")
+
+
+func test_le_bouton_test_capteurs_ne_s_enfonce_pas_sur_un_refus() -> void:
+	# Presse pendant une course : le journal disait « impossible pendant une
+	# course », mais le bouton s'enfoncait quand meme. Mesure : actif=false,
+	# bouton=true. Il est grise desormais ; et si on le presse malgre tout —
+	# par le code, ou par un etat non prevu —, il ne reste pas enfonce.
+	assert_true(await _await_identified())
+	assert_true(_controller.start_race())
+	var button := _panel.hardware_panel().sensor_button()
+	assert_true(button.disabled, "grise pendant la course")
+	button.button_pressed = true
+	assert_false(_controller.sensor_test_active(), "refuse par le controleur")
+	assert_false(button.button_pressed, "et le bouton ne ment pas")
+	_controller.stop_race()
+
+
+func test_un_test_capteurs_ne_survit_pas_a_un_lien_perdu() -> void:
+	# Le manuel fait debrancher l'USB juste apres le test capteurs. Si on
+	# oubliait d'arreter le test, il restait « actif » cote PC : bouton
+	# enfonce, trames R: detournees vers un affichage vide, et au rebranchement
+	# un boitier au repos qu'on croyait en course a blanc. Une course a blanc
+	# vit dans le boitier ; debranche, il l'oublie — le PC aussi, et le dit.
+	assert_true(await _await_identified())
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+	var button := _panel.hardware_panel().sensor_button()
+	button.button_pressed = true
+	assert_true(_controller.sensor_test_active())
+
+	_controller.simulate_link_loss()
+	for i: int in range(120):
+		await wait_physics_frames(1)
+		if not _controller.sensor_test_active():
+			break
+	assert_false(_controller.sensor_test_active(), "le test est fini avec le lien")
+	assert_false(button.button_pressed, "et le bouton se relache")
+	assert_has(notices, "test capteurs : interrompu, lien perdu", "l'operateur sait pourquoi")
+
+	_controller.simulate_link_return()
+	assert_true(await _await_identified(), "le lien revient")
+	button.button_pressed = true
+	assert_true(_controller.sensor_test_active(), "et un nouveau test repart proprement")
+	button.button_pressed = false

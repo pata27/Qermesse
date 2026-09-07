@@ -36,6 +36,8 @@ func setup(controller: AppController) -> void:
 	_build()
 	_controller.link_state_changed.connect(func(_s: int) -> void: refresh())
 	_controller.sensor_activity.connect(_on_sensor_activity)
+	_controller.sensor_test_changed.connect(_on_sensor_test_changed)
+	_controller.race_state_changed.connect(func(_p: int, _c: int) -> void: _refresh_sensor_button())
 	refresh()
 
 
@@ -285,10 +287,40 @@ func _on_development_changed(value: float) -> void:
 func _on_sensor_test_toggled(pressed: bool) -> void:
 	if pressed:
 		_controller.begin_sensor_test()
+		# Refuse — en course, lien muet — : le bouton ne reste pas enfonce sur
+		# un test qui n'existe pas.
+		if not _controller.sensor_test_active():
+			_sensor_button.set_pressed_no_signal(false)
 	else:
 		_controller.end_sensor_test()
-		for lane: int in range(Protocol.MAX_RIDERS):
-			_sensor_labels[lane].text = "P%d : —" % (lane + 1)
+		_reset_sensor_labels()
+
+
+## LE BOUTON DIT L'ETAT DU CONTROLEUR, pas l'inverse. Un START met fin au test,
+## un lien qui tombe aussi : le bouton se relache et l'affichage se vide, sans
+## que l'operateur ait a cliquer sur un test deja fini.
+func _on_sensor_test_changed(active: bool) -> void:
+	_sensor_button.set_pressed_no_signal(active)
+	if not active:
+		_reset_sensor_labels()
+
+
+## Grise pendant une course, comme la vitrine : le boitier ne fait pas deux
+## choses a la fois, et le refus dans le journal n'empechait pas le bouton de
+## s'enfoncer.
+func _refresh_sensor_button() -> void:
+	var running := _controller.race_in_progress()
+	_sensor_button.disabled = running
+	_sensor_button.tooltip_text = (
+		"Impossible pendant une course : le test est une course à blanc côté boîtier."
+		if running
+		else "Lance une course à blanc pour vérifier que chaque rouleau anime la bonne piste."
+	)
+
+
+func _reset_sensor_labels() -> void:
+	for lane: int in range(Protocol.MAX_RIDERS):
+		_sensor_labels[lane].text = "P%d : —" % (lane + 1)
 
 
 func _on_sensor_activity(ticks: PackedInt32Array) -> void:
