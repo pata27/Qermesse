@@ -828,3 +828,57 @@ func test_un_probleme_de_demarrage_survit_au_premier_depart() -> void:
 	# Le journal des alertes, lui, s'efface bien : c'est sa raison d'etre.
 	assert_eq(panel.notice_text(), "", "l'ardoise des alertes reste propre")
 	DirAccess.remove_absolute(path)
+
+
+func test_la_piste_muette_est_annoncee_avec_ce_que_la_course_en_fera_selon_le_mode() -> void:
+	# « La course attend cette piste » n'etait vrai qu'en distance. En temps le
+	# gong tombe quand meme — un operateur qui lisait « attend » pouvait
+	# arreter une course qui allait finir seule — et en poursuite le muet est
+	# elimine a l'ecart. La phrase dicte le geste : elle doit etre vraie dans
+	# le mode joue.
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+
+	# TEMPS, 20 s : le quart tombe a 5 s.
+	_controller.settings.mode = RaceConfig.Mode.TIME
+	_controller.settings.duration_s = 20.0
+	var config := _controller.current_config()
+	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	var state := RaceState.new(config)
+	var physics := Physics.new(config.roller_mm)
+	state.apply_sample([physics.metres_to_ticks(30.0), 0, 0, 0], 6000)
+	_controller.engine.progress_updated.emit(state)
+	var said := _last_containing(notices, "aucun tick depuis le départ")
+	assert_string_contains(said, "PISTE 2")
+	assert_string_contains(said, "finira au gong", "en temps, la course finit seule")
+	assert_false(said.contains("attend cette piste"), "et n'attend personne")
+	_controller.engine.abort("fin du test")
+
+
+func test_en_poursuite_la_piste_muette_est_annoncee_eliminee_a_l_ecart() -> void:
+	# Meme regle, autre mode — et un autre test, parce que la liste des pistes
+	# deja signalees ne se vide qu'au START : la piste 2 du test precedent y
+	# serait encore.
+	var notices: Array[String] = []
+	_controller.notice.connect(func(text: String) -> void: notices.append(text))
+	_controller.settings.mode = RaceConfig.Mode.PURSUIT
+	var config := _controller.current_config()
+	_controller.race_state_changed.emit(RaceEngine.State.COUNTDOWN, RaceEngine.State.RUNNING)
+	var state := RaceState.new(config)
+	var physics := Physics.new(config.roller_mm)
+	# Dix secondes : la poursuite n'a pas de quart, sa fin depend d'un ecart.
+	state.apply_sample([physics.metres_to_ticks(60.0), 0, 0, 0], 10500)
+	_controller.engine.progress_updated.emit(state)
+	var said := _last_containing(notices, "aucun tick depuis le départ")
+	assert_string_contains(said, "PISTE 2")
+	assert_string_contains(said, "sera éliminée", "en poursuite, l'ecart decide")
+	assert_false(said.contains("attend cette piste"))
+	_controller.engine.abort("fin du test")
+
+
+func _last_containing(texts: Array[String], needle: String) -> String:
+	var found := ""
+	for text: String in texts:
+		if text.contains(needle):
+			found = text
+	return found

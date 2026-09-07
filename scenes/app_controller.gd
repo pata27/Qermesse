@@ -674,8 +674,24 @@ func _warn_silent_lanes(state: RaceState) -> void:
 		notice.emit(
 			"PISTE %d : aucun tick depuis le départ — coureur absent"
 			% (rider + 1)
-			+ " ou capteur débranché ? La course attend cette piste."
+			+ " ou capteur débranché ? "
+			+ _lane_consequence(state)
 		)
+
+
+## CE QUE LA COURSE FERA D'UNE PISTE MUETTE, selon le mode. « La course attend
+## cette piste » n'etait vrai qu'en distance, ou tout le monde va au bout. En
+## temps le gong tombe quand meme, et un operateur qui lisait « attend »
+## pouvait arreter une course qui allait finir seule ; en poursuite le muet est
+## elimine des que l'ecart est atteint. La phrase dit quoi faire — elle doit
+## donc etre vraie dans le mode joue.
+static func _lane_consequence(state: RaceState) -> String:
+	match state.config.mode:
+		RaceConfig.Mode.TIME:
+			return "La course finira au gong quand même ; cette piste marquera zéro."
+		RaceConfig.Mode.PURSUIT:
+			return "Elle sera éliminée dès que l'écart décisif sera atteint."
+	return "La course attend cette piste."
 
 
 ## Est-on assez avance dans l'epreuve pour qu'une piste muette soit anormale ?
@@ -731,7 +747,8 @@ func _warn_stalled_lanes(state: RaceState) -> void:
 		notice.emit(
 			"PISTE %d : plus un seul tick depuis %.0f s alors qu'elle roulait"
 			% [rider + 1, silence_ms / 1000.0]
-			+ " — coureur arrêté ou capteur perdu en route ? La course attend cette piste."
+			+ " — coureur arrêté ou capteur perdu en route ? "
+			+ _lane_consequence(state)
 		)
 
 

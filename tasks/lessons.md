@@ -1606,3 +1606,12 @@ bouton disait « Mode démo » pendant une démo et restait actif pendant une co
 chaque bouton dérivé, lister les grandeurs qu'il lit dans son rafraîchissement (ici : fenêtre,
 vitrine, course) et vérifier qu'un signal couvre **chacune**. Et sonder toujours le cas où la
 valeur change *sans passer par le bouton* — c'est celui que le clic ne couvre jamais.
+
+## Une phrase qui dicte un geste doit être vraie dans chaque mode où elle s'affiche
+
+« La course attend cette piste » fermait les deux alertes de piste muette. Vrai en distance ;
+faux en temps (le gong tombe quand même — l'opérateur pouvait STOPper une course qui allait finir
+seule) et en poursuite (le muet est éliminé à l'écart). Méthode : pour chaque message qui
+recommande ou implique une action, énumérer les modes ou états dans lesquels il peut apparaître,
+et relire la phrase dans chacun. Une phrase générique écrite pour le mode « par défaut » est le
+motif le plus courant.
