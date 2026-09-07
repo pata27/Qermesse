@@ -1496,3 +1496,20 @@ prouverait autre chose. C'est d'écrire les tests qui gardent le **contrat**
 — une réécriture laisse toujours un fichier lisible, un échec ne détruit rien —
 et de dire dans le commentaire et le commit **ce que la preuve ne couvre pas**.
 Un rouge annoncé qu'on n'a pas est pire qu'un correctif honnêtement raisonné.
+
+## Une suite de tests peut mentir dans le sens rassurant
+
+Une erreur de syntaxe dans un fichier de tests l'a fait sauter en ENTIER — ses
+tests existants compris — et la suite a rendu « 329 passants, 0 échec ». Vert,
+avec quatre tests de moins que l'exécution d'avant. GUT n'émet qu'un
+avertissement, noyé dans plusieurs centaines de lignes.
+
+C'est le pire mode de défaillance possible : le silence va dans le sens qui
+rassure. Personne ne compare le total d'une exécution à l'autre, et un fichier
+entier peut disparaître le jour où quelqu'un le modifie.
+
+La garde est simple — charger chaque fichier de `tests/unit` et vérifier qu'il
+étend `GutTest` — et elle aurait attrapé la chose en une seconde. La règle
+générale : **tout mécanisme qui « ignore » une entrée invalide doit être doublé
+d'une garde qui compte ce qu'il a ignoré.** Un avertissement dans un journal
+n'est pas une garde.

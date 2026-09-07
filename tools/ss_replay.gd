@@ -107,10 +107,20 @@ func _check(path: String) -> bool:
 		print("%-28s  SANS RESULTAT  la trace ne mene a aucune fin de course" % path.get_file())
 		return false
 
-	# Le classement enregistre est la reference ; le reste est indicatif, parce
-	# qu'une trace tronquee peut legitimement s'arreter plus tot.
+	# LE CLASSEMENT NE SUFFIT PAS. Le rejeu recalcule les distances, les temps,
+	# les moyennes et les pointes — il les imprimait avec `--detail` et ne les
+	# comparait a rien. Une regression qui fausserait toutes les distances sans
+	# changer l'ORDRE d'arrivee passait donc inapercue, sur l'outil meme que
+	# `docs/06` appelle le filet de securite le plus rentable du projet.
+	#
+	# Les chiffres ne sont compares que si l'ordre concorde : sinon la
+	# divergence de classement est la vraie nouvelle, et lister quatre ecarts
+	# par-dessus ne ferait que la noyer.
 	var same_ranking := replayed.ranking == Array(loaded.recorded_ranking)
-	var verdict := "CONFORME" if same_ranking else "DIVERGENT"
+	var gaps: Array[String] = []
+	if same_ranking:
+		gaps = Replay.figure_gaps(loaded, replayed)
+	var verdict := "CONFORME" if same_ranking and gaps.is_empty() else "DIVERGENT"
 	print(
 		"%-28s  %-9s  %s  %d trames  %.2f s  classement %s"
 		% [
@@ -124,6 +134,13 @@ func _check(path: String) -> bool:
 	)
 	if not same_ranking:
 		print("      enregistre : %s" % str(Array(loaded.recorded_ranking)))
+	for gap: String in gaps:
+		print("      %s" % gap)
+	# JAMAIS VERT PAR ABSENCE. Une trace trop ancienne pour porter l'instant
+	# d'elimination ne peut pas voir ses chiffres compares — mais le taire
+	# laisserait croire a une verification qui n'a pas eu lieu.
+	if same_ranking and not loaded.recorded_complete:
+		print("      chiffres non compares : trace anterieure a `eliminated_ms`")
 	if loaded.recorded_interrupted:
 		# Meme distinction qu'a l'ecran : un plafond de securite est une fin
 		# legitime, seul un ARRET merite le mot (docs/02 §3).
@@ -147,4 +164,4 @@ func _check(path: String) -> bool:
 					replayed.max_kph[rider],
 				]
 			)
-	return same_ranking
+	return same_ranking and gaps.is_empty()

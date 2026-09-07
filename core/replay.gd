@@ -33,6 +33,18 @@ class Loaded:
 	var recorded_mode_name: String = ""
 	var recorded_interrupted: bool = false
 	var recorded_interruption_note: String = ""
+	## Les CHIFFRES enregistres, par piste : temps d'arrivee, distance, moyenne,
+	## pointe. Le rejeu les recalcule tous ; sans les avoir sous la main, il ne
+	## pouvait comparer que l'ordre d'arrivee.
+	## La trace porte-t-elle tout ce qu'il faut pour comparer ses CHIFFRES ?
+	## `eliminated_ms` n'existe que depuis que le moteur retient l'instant d'une
+	## elimination ; sans lui, les moyennes du fichier ont ete calculees sur
+	## toute la course et aucun moteur d'aujourd'hui ne les redonnera.
+	var recorded_complete: bool = false
+	var recorded_finished_ms: Array[int] = []
+	var recorded_distance_m: Array[float] = []
+	var recorded_avg_kph: Array[float] = []
+	var recorded_max_kph: Array[float] = []
 
 
 static func load_file(path: String) -> Loaded:
@@ -75,6 +87,12 @@ static func load_file(path: String) -> Loaded:
 	out.recorded_mode_name = str(data.get("config", {}).get("mode", ""))
 	out.recorded_interrupted = bool(result.get("interrupted", false))
 	out.recorded_interruption_note = str(result.get("interruption_note", ""))
+	for rider: int in range(Protocol.MAX_RIDERS):
+		out.recorded_finished_ms.append(int(_nth(result.get("finished_ms", []), rider, 0)))
+		out.recorded_distance_m.append(float(_nth(result.get("distance_m", []), rider, 0.0)))
+		out.recorded_avg_kph.append(float(_nth(result.get("avg_kph", []), rider, 0.0)))
+		out.recorded_max_kph.append(float(_nth(result.get("max_kph", []), rider, 0.0)))
+	out.recorded_complete = result.has("eliminated_ms")
 	out.ok = true
 	return out
 
@@ -147,3 +165,54 @@ static func config_from_dict(raw_config: Dictionary) -> RaceConfig:
 	config.pursuit_distance_cap_m = float(raw_config.get("pursuit_distance_cap_m", 5000.0))
 	config.distance_timeout_s = float(raw_config.get("distance_timeout_s", 600.0))
 	return config
+
+
+## Nieme valeur d'un tableau relu du JSON, ou un defaut. Une trace tronquee ou
+## d'une version anterieure n'a pas toujours quatre entrees.
+static func _nth(values: Variant, index: int, fallback: Variant) -> Variant:
+	var list: Array = values if values is Array else []
+	return list[index] if index >= 0 and index < list.size() else fallback
+
+
+## Ecarts entre les chiffres RECALCULES et ceux enregistres, un par ligne.
+##
+## RIEN N'EST COMPARE SUR UNE TRACE ANCIENNE, et le motif est dit. Les traces de
+## reference du depot ont ete enregistrees AVANT que le moteur ne connaisse
+## l'instant d'elimination : leurs moyennes d'elimines sont calculees sur toute
+## la course, et le moteur d'aujourd'hui ne les redonnera jamais. Leur
+## anciennete est precisement leur valeur — voir `tests/fixtures/LISEZMOI.md` —
+## et les declarer divergentes reviendrait a leur reprocher d'etre ce qu'elles
+## sont. L'absence d'`eliminated_ms` dans le fichier est le signe de cette
+## anciennete.
+##
+## Le rejeu repousse les memes trames dans un moteur neuf : le calcul est
+## deterministe, et les deux series doivent coincider. Les tolerances ne
+## couvrent que l'aller-retour par le JSON, ou les flottants sont ecrits en
+## decimal — pas une difference de calcul, qui est justement ce qu'on cherche.
+static func figure_gaps(loaded: Loaded, replayed: RaceResult) -> Array[String]:
+	var gaps: Array[String] = []
+	if not loaded.recorded_complete:
+		return gaps
+	for rider: int in replayed.ranking:
+		if rider < 0 or rider >= loaded.recorded_distance_m.size():
+			continue
+		var checks := [
+			["temps", float(replayed.finished_ms[rider]),
+				float(loaded.recorded_finished_ms[rider]), 2.0, "ms"],
+			["distance", replayed.distance_m[rider],
+				loaded.recorded_distance_m[rider], 0.05, "m"],
+			["moyenne", replayed.avg_kph[rider],
+				loaded.recorded_avg_kph[rider], 0.1, "km/h"],
+			["pointe", replayed.max_kph[rider],
+				loaded.recorded_max_kph[rider], 0.1, "km/h"],
+		]
+		for check: Array in checks:
+			var rejoue: float = check[1]
+			var ecrit: float = check[2]
+			if absf(rejoue - ecrit) <= float(check[3]):
+				continue
+			gaps.append(
+				"piste %d, %s : rejoue %.2f %s, enregistre %.2f %s"
+				% [rider + 1, check[0], rejoue, check[4], ecrit, check[4]]
+			)
+	return gaps

@@ -586,3 +586,41 @@ static func _joined_literals(source: String) -> String:
 		'"\\s*%\\s*(?:\\[[^\\]]*\\]|\\([^)]*\\))\\s*\\+\\s*"'
 	).sub(source, "", true)
 	return RegEx.create_from_string('"\\s*\\+\\s*"').sub(joined, "", true)
+
+
+## Chaque fichier de tests se CHARGE. Un fichier casse disparait sans bruit.
+##
+## Decouvert en cassant le mien : une erreur de syntaxe dans
+## `test_traces_de_reference.gd` a fait sauter le fichier ENTIER — ses deux
+## tests existants compris — et la suite a rendu « 329 passants, 0 echec ». Vert,
+## avec quatre tests de moins qu'a l'execution precedente. GUT n'emet qu'un
+## avertissement, noye dans plusieurs centaines de lignes de sortie.
+##
+## C'est le pire mode de defaillance d'une suite de tests : elle ment dans le
+## sens rassurant. Un fichier entier peut disparaitre le jour ou quelqu'un le
+## modifie, et rien ne le dit — pas meme le total, que personne ne compare d'une
+## execution a l'autre.
+func test_chaque_fichier_de_tests_se_charge() -> void:
+	var broken: Array[String] = []
+	for name: String in DirAccess.get_files_at("res://tests/unit"):
+		if name.get_extension() != "gd":
+			continue
+		var path := "res://tests/unit/%s" % name
+		# `load` rend `null` sur une erreur d'analyse. On ne l'instancie pas :
+		# il ne s'agit pas de faire tourner les tests une seconde fois, mais de
+		# constater que le fichier est du GDScript valide et qu'il etend bien
+		# `GutTest` — sans quoi GUT l'ignore, en le disant tout aussi bas.
+		var script := load(path) as GDScript
+		if script == null:
+			broken.append("%s : illisible ou syntaxe invalide" % name)
+			continue
+		var base := script.get_base_script()
+		var extends_gut := false
+		while base != null:
+			if str(base.get_global_name()) == "GutTest":
+				extends_gut = true
+				break
+			base = base.get_base_script()
+		if not extends_gut:
+			broken.append("%s : n'etend pas GutTest, GUT l'ignorera" % name)
+	assert_eq(broken, [] as Array[String], "des fichiers de tests que GUT laisserait de cote")
