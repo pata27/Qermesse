@@ -261,8 +261,12 @@ func _refresh_quality(window: Node) -> void:
 	var detected := RenderQuality.detect()
 	var running := int(live.quality.level) if live != null else detected
 	_quality.clear()
+	# « abaissé » quand la scène tourne sous le niveau détecté : la dégradation
+	# automatique a joué, et le sélecteur doit le dire, pas seulement le niveau.
+	var running_name := str(RenderQuality.PROFILES[running]["name"])
 	_quality.add_item(
-		"automatique (%s)" % str(RenderQuality.PROFILES[running]["name"]), AUTOMATIC_ITEM
+		"automatique (%s)" % (running_name + " — abaissé" if running < detected else running_name),
+		AUTOMATIC_ITEM
 	)
 	for level: int in [RenderQuality.Level.LOW, RenderQuality.Level.MEDIUM, RenderQuality.Level.HIGH]:
 		_quality.add_item(str(RenderQuality.PROFILES[level]["name"]), level)

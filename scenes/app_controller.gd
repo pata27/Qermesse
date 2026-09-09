@@ -437,6 +437,15 @@ func sensor_test_active() -> bool:
 	return _sensor_test_active
 
 
+## La scene s'est allegee d'elle-meme sous les 60 fps (docs/04 §4). Une
+## decision prise sans l'operateur lui est dite : sans ce message, l'image
+## changeait et personne n'expliquait pourquoi.
+func report_quality_degraded(level_name: String) -> void:
+	notice.emit(
+		"QUALITÉ : la scène s'est allégée à %s — la machine ne tenait pas 60 fps" % level_name
+	)
+
+
 func history() -> Array[RaceResult]:
 	return _history
 

@@ -281,3 +281,32 @@ func test_une_couleur_choisie_atteint_l_ecran_public_sans_attendre_le_depart() -
 	assert_true(
 		rig.color.is_equal_approx(Color(Roster.DEFAULT_COLORS[0])), "et le retour au defaut aussi"
 	)
+
+
+func test_une_degradation_automatique_est_dite_et_le_selecteur_la_montre() -> void:
+	# docs/04 §4. La scene s'allege d'elle-meme sous les 60 fps ; personne
+	# n'ecoutait `quality_changed` : le selecteur disait encore
+	# « automatique (moyen) » sur une scene passee en bas, et aucun message
+	# n'expliquait pourquoi l'image avait change. Mesure.
+	_main.controller.settings.render_quality = -1
+	var notices: Array[String] = []
+	_main.controller.notice.connect(func(text: String) -> void: notices.append(text))
+	_main.open_spectacle()
+	var scene: RaceScene = _main.spectacle.scene
+	var panel: PanelSpectacle = _main.operator.spectacle_panel()
+	var selector: OptionButton = panel.quality_selector()
+	var before: String = selector.get_item_text(0)
+	assert_string_contains(before, "automatique (")
+	assert_false(before.contains("abaissé"), "rien n'a encore joue")
+
+	# Le chemin de la scene : le niveau tombe, puis le signal part.
+	assert_true(scene.quality.degrade(), "il y a un niveau en dessous")
+	scene.quality_changed.emit(scene.quality.level_name())
+
+	var said := ""
+	for text: String in notices:
+		if text.begins_with("QUALITÉ"):
+			said = text
+	assert_string_contains(said, "s'est allégée à %s" % scene.quality.level_name())
+	var after: String = selector.get_item_text(0)
+	assert_string_contains(after, "automatique (%s — abaissé)" % scene.quality.level_name())

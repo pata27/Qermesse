@@ -1698,3 +1698,12 @@ avant de conclure qu'un signal ne part pas.
 au repos — laissait le boîtier en course, LED allumées, précisément ce que le manuel §6 promet
 d'éviter. Lister ce qui peut être « en cours côté boîtier » (course, test capteurs, vitrine) et le
 comparer à ce que la fermeture arrête.
+
+## Une décision prise sans l'opérateur lui est dite, et l'affichage la reflète
+
+La dégradation automatique de qualité émettait un signal que personne n'écoutait : le sélecteur
+disait « automatique (moyen) » sur une scène passée en bas, sans un mot. Même règle que pour les
+réglages corrigés au chargement ou les fichiers illisibles : tout mécanisme qui décide seul
+(dégrader, corriger, écarter) doit le dire dans le journal **et** dans le widget qui prétend
+montrer l'état. Méthode : `grep '^signal'` et, pour chacun, `grep` de ses abonnés — un signal sans
+abonné est une décision que personne ne voit.

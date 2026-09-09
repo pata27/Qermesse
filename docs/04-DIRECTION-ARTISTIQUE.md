@@ -149,7 +149,10 @@ ne tient pas les 60 fps, une image qui fourmille vaut mieux qu'une image qui sac
 
 **L'automatique est un choix, pas seulement un état de départ.** Le sélecteur l'offre comme
 première entrée, au même titre que l'écran, et il indique le niveau réellement détecté
-(`automatique (moyen)`). Sans ce retour en arrière, un opérateur qui essaie « élevé » un soir perd
+(`automatique (moyen)`) — et, si la scène s'est allégée d'elle-même en cours de soirée, le niveau
+réellement **appliqué** (`automatique (bas — abaissé)`), l'opérateur en étant prévenu dans le
+journal du panneau Course : une décision prise sans lui doit lui être dite, sinon il cherche
+pourquoi l'image a changé. Sans ce retour en arrière, un opérateur qui essaie « élevé » un soir perd
 définitivement la dégradation qui protège les 60 fps, et ne peut la rétablir qu'en éditant un
 fichier JSON. Le sélecteur reste utilisable **fenêtre spectacle fermée** : c'est un réglage
 persisté, que l'ouverture suivante applique — on le règle la veille, sans projecteur branché.

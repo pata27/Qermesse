@@ -84,12 +84,22 @@ func open_spectacle() -> void:
 			controller.settings.render_quality
 		)
 		spectacle.closed_by_user.connect(_on_spectacle_closed)
+		# UNE DECISION PRISE SANS L'OPERATEUR LUI EST DITE. La scene s'allege
+		# d'elle-meme sous les 60 fps ; sans ce relais, le selecteur Qualite
+		# disait encore « automatique (moyen) » sur une scene passee en bas, et
+		# personne n'expliquait pourquoi l'image avait change.
+		spectacle.scene.quality_changed.connect(_on_quality_degraded)
 	else:
 		spectacle.move_to(
 			controller.settings.show_window_screen, spectacle.is_fullscreen()
 		)
 		spectacle.show()
 	controller.settings.single_window_mode = false
+	spectacle_changed.emit()
+
+
+func _on_quality_degraded(level_name: String) -> void:
+	controller.report_quality_degraded(level_name)
 	spectacle_changed.emit()
 
 
