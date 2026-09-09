@@ -176,11 +176,21 @@ func lane_text(lane: int) -> String:
 	return _lanes[lane].text
 
 
+## LES LIGNES SONT CELLES DE LA COURSE, pas du roster vivant. L'operateur qui
+## prepare la manche suivante decoche une piste : sa ligne disparaissait alors
+## que le moteur la fait courir — distance, vitesse, arrivee, plus rien sous
+## ses yeux. Tant que le moteur porte une course — en cours, arrivee, resultat
+## affiche —, ce sont ses pistes ; au repos, le roster reprend la main. Noms et
+## couleurs restent vivants : le manuel promet la couleur immediate.
 func _refresh_lanes() -> void:
 	var state := _controller.engine.race_state()
+	var race_lanes: Array[int] = []
+	if state != null and _controller.engine.state() != RaceEngine.State.IDLE:
+		race_lanes = state.config.active_riders
 	for lane: int in range(Protocol.MAX_RIDERS):
 		var rider := _controller.roster.rider(lane)
-		if not rider.active:
+		var shown := race_lanes.has(lane) if not race_lanes.is_empty() else rider.active
+		if not shown:
 			_lanes[lane].text = ""
 			_lanes[lane].visible = false
 			continue

@@ -928,3 +928,33 @@ func test_le_boitier_ne_se_change_pas_pendant_une_course() -> void:
 
 	_controller.stop_race()
 	assert_false(toggle.disabled, "STOP : on peut de nouveau basculer")
+
+
+func test_decocher_une_piste_en_course_ne_la_fait_pas_disparaitre_du_panneau() -> void:
+	# Le panneau Course listait les pistes du ROSTER VIVANT. L'operateur qui
+	# prepare la manche suivante decoche la piste 2 : sa ligne disparaissait
+	# alors que le moteur la fait courir — distance, vitesse, arrivee, plus
+	# rien a l'ecran operateur. Mesure. En course, les lignes sont celles de la
+	# course.
+	assert_true(await _await_identified())
+	_controller.settings.distance_m = 2000.0
+	assert_true(_controller.start_race())
+	assert_true(await _await_running())
+	var race_panel := _panel.race_panel()
+	assert_string_contains(race_panel.lane_text(1), "P2", "la piste 2 court")
+
+	_controller.roster.set_active(1, false)
+	_controller.roster_changed.emit()
+	# Les lignes se rafraichissent a chaque trame de progression : on en laisse
+	# passer quelques-unes, sinon l'ancien code passerait aussi.
+	for i: int in range(10):
+		await get_tree().process_frame
+	assert_string_contains(
+		race_panel.lane_text(1), "P2", "decochee, elle court toujours : sa ligne reste"
+	)
+
+	_controller.stop_race()
+	_controller.acknowledge_results()
+	race_panel.refresh()
+	assert_eq(race_panel.lane_text(1), "", "au repos, le roster reprend la main : piste 2 absente")
+	_controller.roster.set_active(1, true)

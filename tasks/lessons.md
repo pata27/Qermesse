@@ -1676,3 +1676,11 @@ ni abandon à trois secondes. Une course figée sans issue. Même famille que la
 capteurs : ce qui remplace ou emprunte le boîtier doit être refusé (et grisé) tant qu'une course
 dure. Méthode : lister les actions du panneau Matériel et sonder chacune **en course**, pas au
 repos où tout marche.
+
+## Le panneau opérateur aussi raconte la course, pas le roster vivant
+
+Après le HUD (config figée) et l'écran public, le panneau Course listait encore les pistes du
+roster **vivant** : décocher une piste pendant qu'elle court la faisait disparaître sous les yeux
+de l'opérateur. Même règle, troisième consommateur : tant que le moteur porte une course, les
+pistes sont les siennes. Et pour prouver le rouge d'un affichage rafraîchi par les trames, il faut
+laisser passer des trames avant d'affirmer — sinon l'ancien code passe aussi.

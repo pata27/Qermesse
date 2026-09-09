@@ -80,9 +80,11 @@ décrit le déroulé normal d'une soirée.
    *pénaliser* annonce la piste et son handicap, *relancer* arrête la course en affichant le motif.
 4. **START**. Le décompte `3 · 2 · 1 · PARTEZ` est piloté par le boîtier : les LED et l'écran
    sont d'accord. Ne pas compter à haute voix sur une autre cadence.
-   Pendant la course, **on peut préparer la suivante** — noms, mode, distance, pénalité : l'écran
-   public continue de raconter la course en cours, avec sa configuration à elle, quoi qu'on change
-   dans le panneau. Le nouveau réglage ne prend effet qu'au prochain START.
+   Pendant la course, **on peut préparer la suivante** — noms, pistes, mode, distance, pénalité :
+   l'écran public continue de raconter la course en cours, avec sa configuration à elle, quoi qu'on
+   change dans le panneau, et les lignes de pistes du panneau **Course** restent celles qui
+   courent — décocher une piste ne la fait pas disparaître tant qu'elle pédale. Le nouveau réglage
+   ne prend effet qu'au prochain START.
 5. **STOP** interrompt une course en cours ; **Relancer** l'interrompt et réarme la même
    configuration — c'est le geste du faux départ qu'on refait tout de suite. Les deux ne sont
    proposés que tant qu'il y a quelque chose à interrompre : **après une arrivée, ils sont
