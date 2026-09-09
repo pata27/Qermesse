@@ -1707,3 +1707,11 @@ réglages corrigés au chargement ou les fichiers illisibles : tout mécanisme q
 (dégrader, corriger, écarter) doit le dire dans le journal **et** dans le widget qui prétend
 montrer l'état. Méthode : `grep '^signal'` et, pour chacun, `grep` de ses abonnés — un signal sans
 abonné est une décision que personne ne voit.
+
+## Un signal sans abonné est du code mort — et la garde le dit désormais seule
+
+Après `quality_changed`, trois autres signaux dormaient : `race_started` (le moteur, doublé par
+`state_changed`), `opened` et `closed` (l'écran scindé). Retirés, et une garde par réflexion sur
+`^signal` exige un `.connect` pour chaque signal déclaré. Accroc en route : une suppression « le
+bloc autour de la ligne » a emporté trois signaux voisins essentiels — quand on retire une ligne,
+on retire **la ligne**, pas le paragraphe qui la contient ; et on relit le diff avant la suite.

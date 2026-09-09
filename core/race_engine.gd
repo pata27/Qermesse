@@ -16,7 +16,6 @@ signal state_changed(previous: State, current: State)
 ## Commande serie a emettre. La couche applicative la relaie au lien.
 signal command_requested(command: String)
 signal countdown_tick(value: int)
-signal race_started()
 signal rider_finished(rider: int, elapsed_ms: int, rank: int)
 signal rider_eliminated(rider: int, rank: int, gap_m: float)
 signal false_start_detected(rider: int, policy: RaceConfig.FalseStartPolicy)
@@ -280,7 +279,6 @@ func _make_rule(mode: RaceConfig.Mode) -> RaceRule:
 func _begin_running() -> void:
 	_rule.begin(_race_state)
 	_set_state(State.RUNNING)
-	race_started.emit()
 
 
 func _fail_arming(reason: String) -> void:

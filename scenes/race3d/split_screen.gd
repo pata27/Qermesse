@@ -19,9 +19,6 @@
 class_name SplitScreen
 extends Node
 
-signal opened()
-signal closed()
-
 ## Quatre groupes au plus, donc trois lames. Au-delà, il n'y a plus de coureur
 ## à mettre dedans : la piste en compte quatre.
 const MAX_PANES := 3
@@ -213,7 +210,6 @@ func _ensure_pane(index: int) -> Pane:
 ## seuil bas : c'est l'hystérésis, sans laquelle un écart qui oscille autour du
 ## seuil ferait battre la lame.
 func consider(gaps: PackedFloat32Array) -> void:
-	var was_open := _live_panes > 0
 
 	# UN CHANGEMENT DE PELOTON REMET LES COMPTEURS À ZÉRO.
 	#
@@ -268,11 +264,6 @@ func consider(gaps: PackedFloat32Array) -> void:
 		pane.target = 1.0
 	for index: int in range(_live_panes, _panes.size()):
 		_panes[index].target = 0.0
-
-	if _live_panes > 0 and not was_open:
-		opened.emit()
-	elif _live_panes == 0 and was_open:
-		closed.emit()
 
 
 func advance(delta: float) -> void:

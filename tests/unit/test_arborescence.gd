@@ -624,3 +624,40 @@ func test_chaque_fichier_de_tests_se_charge() -> void:
 		if not extends_gut:
 			broken.append("%s : n'etend pas GutTest, GUT l'ignorera" % name)
 	assert_eq(broken, [] as Array[String], "des fichiers de tests que GUT laisserait de cote")
+
+
+func test_aucun_signal_n_est_declare_pour_rien() -> void:
+	# UN SIGNAL SANS ABONNE EST UNE DECISION QUE PERSONNE NE VOIT. La scene
+	# emettait `quality_changed` a chaque degradation automatique, et rien ne
+	# l'ecoutait : le selecteur Qualite mentait, le journal se taisait. Trois
+	# autres signaux dormaient — `race_started`, `opened`, `closed` —, sans
+	# meme un lecteur : du code mort. Ce test enumere les signaux DECLARES et
+	# exige un `.connect` ou un `connect("nom"` quelque part ; il s'entretient
+	# seul.
+	var texts: Dictionary = {}
+	for root: String in SCANNED:
+		var files := PackedStringArray()
+		_walk(root, files)
+		for path: String in files:
+			if path.get_extension() == "gd":
+				var file := FileAccess.open(path, FileAccess.READ)
+				if file != null:
+					texts[path] = _without_comments(file.get_as_text())
+	var corpus := ""
+	for text: Variant in texts.values():
+		corpus += str(text)
+
+	var orphans: Array[String] = []
+	var declaration := RegEx.create_from_string("(?m)^signal ([a-zA-Z_][a-zA-Z0-9_]*)")
+	for path: Variant in texts.keys():
+		if str(path).contains("/tests/"):
+			continue
+		for found: RegExMatch in declaration.search_all(str(texts[path])):
+			var name := found.get_string(1)
+			var listened := (
+				corpus.contains(".%s.connect(" % name)
+				or corpus.contains("connect(\"%s\"" % name)
+			)
+			if not listened:
+				orphans.append("%s : %s" % [str(path).get_file(), name])
+	assert_eq(orphans, [] as Array[String], "des signaux que personne n'ecoute")
