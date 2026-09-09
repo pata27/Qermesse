@@ -58,7 +58,11 @@ build du GDExtension, tests C++, émulateur construit seul comme le dit le READM
 Godot, tests GUT headless, rejeu des traces de référence par `ss_replay`, témoin indépendant
 `ss_probe.py` sur un vrai pseudo-terminal (Linux), course complète à l'interface, export des
 binaires.
-Sur tag : publication d'une release avec les trois artefacts.
+Sur tag : publication d'une release avec les trois artefacts — **après avoir vérifié que la version
+du tag est celle de `project.godot`** (`scripts/check_version_tag.py`) : les archives sont nommées
+d'après le tag, le titre de la fenêtre et le JSON de course d'après le projet, et les deux doivent
+dire la même chose. Un tag `v0.9.1` sur un projet resté en `0.9.0-beta` fait échouer la release au
+lieu de publier un logiciel qui se contredit.
 
 ## 4. Risques et parades
 

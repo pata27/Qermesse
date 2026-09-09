@@ -1749,3 +1749,12 @@ classe inconnue. À lancer après tout fichier nouveau porteur de `class_name`, 
 ailleurs. Et la version : `project.godot` disait 0.9.0-beta, les presets d'export 0.3.0 — c'est
 le second que Windows et macOS montrent. Une source, une garde qui compare, et la version lisible
 là où on en a besoin (titre, JSON envoyé au développeur).
+
+## Ce qui nomme une release doit lire la même source que ce qui la signe
+
+Les archives de release prenaient leur numéro du **tag**, le titre et le JSON de course de
+`project.godot` : deux sources, aucune confrontation. Un tag posé sans relever la version aurait
+publié un logiciel qui se contredit. Le contrôle vit dans un script Python appelé par la CI et
+éprouvé par la suite GUT en sous-processus, sur le vrai tag et sur un faux — comme l'outil de rejeu.
+Méthode : pour chaque valeur qui apparaît dans un nom de fichier publié, retrouver d'où elle
+vient et qui d'autre la lit ; si ce n'est pas le même endroit, un script les confronte.

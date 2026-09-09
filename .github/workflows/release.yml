@@ -136,6 +136,12 @@ jobs:
       # les binaires : quelqu'un qui telecharge une archive n'a pas forcement le
       # depot sous la main, et « voir DEPANNAGE.md » ne veut alors rien dire.
       - uses: actions/checkout@v4
+      # LE TAG DOIT DIRE LA VERSION DU PROJET. Les archives sont nommees d'apres
+      # le tag ; le titre de la fenetre et le JSON de course lisent
+      # `project.godot`. Un tag pose sans relever la version publierait un
+      # logiciel qui se contredit : on echoue ici, avant d'empaqueter.
+      - name: Verifier que le tag porte la version de project.godot
+        run: python3 scripts/check_version_tag.py --tag "$GITHUB_REF_NAME"
       - uses: actions/download-artifact@v4
         with:
           path: artefacts
