@@ -136,6 +136,9 @@ secondes — c'est le temps qu'il faut à quelqu'un pour s'arrêter et regarder.
 
 * **Rien n'est enregistré.** Ces courses n'entrent ni dans **Courses du jour**, ni dans le journal,
   ni dans le dossier des courses. Elles n'ont pas eu lieu.
+* **Les coureurs s'appellent Démo 1 à Démo 4**, sans dossard : ce sont des synthétiques, et l'écran
+  ne doit pas couronner « Alice » pendant qu'Alice est au bar. Vos noms et dossards reviennent à
+  l'arrêt, avec le reste.
 * **Vos réglages sont rendus à l'arrêt** — mode, distance, durée, écart, pistes actives, profil du
   simulateur, et le choix simulateur/matériel. Lancez la vitrine pendant l'apéritif, arrêtez-la
   quand les coureurs arrivent, tout est comme vous l'aviez laissé.

@@ -1782,3 +1782,12 @@ celui-là qui ne se parse plus, elle disparaît avec lui, et GUT rend une suite 
 contrôle vit désormais dans le lanceur, avant GUT, et fait échouer la commande en nommant le
 fichier. Règle : une garde d'intégrité s'exécute à un niveau que la défaillance qu'elle cherche ne
 peut pas atteindre.
+
+## Ce qu'un mode emprunte, il l'emprunte en entier — y compris ce qui identifie des personnes
+
+La vitrine rendait mode, distance, pistes, backend, vitesse ; pas les noms ni les dossards. Ses
+coureurs synthétiques couraient donc sous les vrais noms de la manche précédente, et le podium
+public couronnait quelqu'un de réel. Méthode : pour un mode qui « emprunte et rend », lister tout
+ce que la course lit au départ (config, roster : actif, nom, dossard, couleur) et vérifier que
+chaque champ est soit emprunté-et-rendu, soit volontairement laissé — les couleurs, elles,
+restent : ce sont celles des vélos dans la salle.

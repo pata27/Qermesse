@@ -366,3 +366,32 @@ func test_l_operateur_ne_peut_pas_lancer_une_vraie_course_pendant_la_vitrine() -
 	assert_false(sensor.disabled, "Test capteurs aussi")
 	assert_true(_main.controller.start_race(), "et une vraie course part")
 	_main.controller.stop_race()
+
+
+func test_la_vitrine_court_sous_des_noms_de_demonstration_et_rend_les_vrais() -> void:
+	# La vitrine empruntait mode, distance, pistes — pas les noms. Ses coureurs
+	# synthetiques partaient sous « Alice, dossard 7 » : le podium public
+	# couronnait Alice pendant qu'elle etait au bar. Mesure.
+	_main.controller.roster.rider(0).name = "Alice"
+	_main.controller.roster.rider(0).dossard = "7"
+	_main.controller.roster.rider(1).name = "Bob"
+	_main.open_spectacle()
+	assert_true(await _await_identified())
+	assert_true(_main.attract.start())
+	for i: int in range(3000):
+		await get_tree().process_frame
+		if _main.controller.engine.state() == RaceEngine.State.RUNNING:
+			break
+	var at_start: Dictionary = _main.controller.recorder.get("_roster")
+	assert_eq(str(at_start[0]["name"]), "Démo 1", "la piste 1 court sous un nom de demonstration")
+	assert_eq(str(at_start[0]["dossard"]), "", "et sans dossard")
+	assert_eq(str(at_start[1]["name"]), "Démo 2")
+	assert_eq(_main.controller.roster.rider(0).name, "Démo 1", "le roster vivant le dit aussi")
+	var field: LineEdit = _main.operator.roster_panel().name_field(0)
+	assert_eq(field.text, "Démo 1", "et le panneau Riders montre ce que l'ecran public montre")
+
+	_main.attract.stop()
+	assert_eq(_main.controller.roster.rider(0).name, "Alice", "Alice est rendue")
+	assert_eq(field.text, "Alice", "dans le panneau aussi")
+	assert_eq(_main.controller.roster.rider(0).dossard, "7", "avec son dossard")
+	assert_eq(_main.controller.roster.rider(1).name, "Bob")

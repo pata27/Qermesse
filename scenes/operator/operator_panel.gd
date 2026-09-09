@@ -122,6 +122,11 @@ func _build() -> void:
 	_roster_panel.roster_changed.connect(_on_configuration_changed)
 	_mode_panel.mode_changed.connect(_on_configuration_changed)
 	_hardware_panel.backend_changed.connect(_on_configuration_changed)
+	# LE ROSTER PEUT CHANGER SANS LE PANNEAU : la vitrine emprunte noms et
+	# dossards, puis les rend. Sans ce relais, les champs disaient « Alice »
+	# pendant qu'un « Démo 1 » courait, et l'operateur ne voyait pas ce que
+	# l'ecran public montrait.
+	controller.roster_changed.connect(_on_configuration_changed)
 
 	_hardware_panel.refresh_ports()
 

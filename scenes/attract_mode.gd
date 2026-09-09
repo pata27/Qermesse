@@ -179,6 +179,11 @@ func _apply(scenario: Dictionary) -> void:
 	var riders := int(scenario["riders"])
 	for lane: int in range(Protocol.MAX_RIDERS):
 		_controller.roster.set_active(lane, lane < riders)
+		# Des coureurs synthetiques, sous des noms de demonstration : l'ecran
+		# ne doit couronner personne de reel. Rendus a l'arret.
+		_controller.roster.rider(lane).name = "Démo %d" % (lane + 1)
+		_controller.roster.rider(lane).dossard = ""
+	_controller.roster_changed.emit()
 	# LE SIMULATEUR DOIT AVOIR ASSEZ DE CAPTEURS CABLES. Sans cela, une manche
 	# à quatre coureurs en montrerait deux qui roulent et deux à l'arrêt —
 	# exactement l'image qu'une vitrine ne doit pas donner.
@@ -212,9 +217,20 @@ func _apply_cinematic(amount: float) -> void:
 func _remember() -> void:
 	var settings := _controller.settings
 	var lanes: Array[bool] = []
+	var names: Array[String] = []
+	var dossards: Array[String] = []
 	for lane: int in range(Protocol.MAX_RIDERS):
-		lanes.append(_controller.roster.rider(lane).active)
+		var rider := _controller.roster.rider(lane)
+		lanes.append(rider.active)
+		names.append(rider.name)
+		dossards.append(rider.dossard)
 	_saved = {
+		# LES NOMS AUSSI. La vitrine empruntait mode, distance, pistes — pas
+		# les noms : ses coureurs synthetiques partaient sous « Alice,
+		# dossard 7 », et le podium public couronnait Alice pendant qu'elle
+		# etait au bar. Mesure.
+		"names": names,
+		"dossards": dossards,
 		"mode": settings.mode,
 		"distance_m": settings.distance_m,
 		"duration_s": settings.duration_s,
@@ -236,8 +252,13 @@ func _restore() -> void:
 	settings.duration_s = float(_saved["duration_s"])
 	settings.gap_m = float(_saved["gap_m"])
 	var lanes: Array = _saved["lanes"]
+	var names: Array = _saved["names"]
+	var dossards: Array = _saved["dossards"]
 	for lane: int in range(Protocol.MAX_RIDERS):
 		_controller.roster.set_active(lane, bool(lanes[lane]))
+		_controller.roster.rider(lane).name = str(names[lane])
+		_controller.roster.rider(lane).dossard = str(dossards[lane])
+	_controller.roster_changed.emit()
 	_controller.set_simulator_riders(int(_saved["simulator_riders"]))
 	_controller.set_simulator_profile(str(_saved["profile"]))
 	# CE QU'IL Y AVAIT, pas une valeur par defaut. Remettre 1,0 en dur ecrasait
