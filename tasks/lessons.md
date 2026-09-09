@@ -1815,3 +1815,11 @@ défaut, proportionnelle : « Bob » 283 px, un nom de dix-huit 369 px, colonnes
 quatorze, pour des noms que l'écran public montre à dix-huit. Méthode : quand un format aligne
 par espaces, vérifier la police du widget ; si elle est proportionnelle, mesurer deux lignes
 (`get_minimum_size().x`) — en headless, une `SystemFont` à chasse fixe se charge et se mesure.
+
+## Un défaut de widget trouvé une fois se cherche sur tous les widgets du même genre
+
+La chasse fixe corrigée hier sur les lignes de pistes manquait aussi au tableau Résultats
+(387 px contre 442 pour deux lignes « alignées ») et à la liste des ports. Un `grep` des formats
+`%-Ns`/`%N.Nf` dans `scenes/` les a tous nommés en une commande. Quand une correction tient à une
+propriété de widget (police, `autowrap`, `set_pressed_no_signal`), la chercher par `grep` sur tous
+les widgets du même genre le jour même — et la poser en un seul endroit partagé.

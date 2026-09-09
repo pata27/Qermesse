@@ -98,6 +98,8 @@ décrit le déroulé normal d'une soirée.
    **La dernière manche est en tête**, comme le journal des messages juste au-dessus : sur une
    soirée chargée, c'est presque toujours celle qu'on veut relire.
    Cette liste survit à un redémarrage : elle est relue depuis les fichiers de course au lancement.
+   Le tableau est en chasse fixe : rangs, distances, temps et vitesses forment des colonnes, quels
+   que soient les noms.
    Chaque ligne donne l'heure d'arrivée **en heure locale** (`21:47`), le mode et le vainqueur ;
    les fichiers, eux, sont horodatés en UTC.
 

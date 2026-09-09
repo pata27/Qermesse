@@ -67,6 +67,8 @@ func _build() -> void:
 	port_row.add_child(_refresh_button)
 
 	_port_list = ItemList.new()
+	# Les ports s'alignent en colonnes — retenue, chemin, VID/PID, motif.
+	_port_list.add_theme_font_override("font", OperatorFonts.monospace())
 	_port_list.custom_minimum_size = Vector2(520, 110)
 	_port_list.item_selected.connect(_on_port_selected)
 	add_child(_port_list)

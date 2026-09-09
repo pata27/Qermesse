@@ -30,7 +30,7 @@ var _notice: Label
 var _startup: Label
 ## La police des lignes de pistes — voir `_build`. Dix-huit caracteres de nom,
 ## la largeur que l'ecran public montre, puis les chiffres en colonnes.
-var _lane_font := _monospace()
+var _lane_font := OperatorFonts.monospace()
 var _notices: PackedStringArray = []
 
 
@@ -313,10 +313,3 @@ func _on_race_finished(result: RaceResult) -> void:
 	)
 	refresh()
 
-
-static func _monospace() -> SystemFont:
-	var font := SystemFont.new()
-	font.font_names = PackedStringArray(
-		["DejaVu Sans Mono", "Liberation Mono", "Consolas", "Menlo", "Courier New", "monospace"]
-	)
-	return font

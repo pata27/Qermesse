@@ -32,6 +32,9 @@ func _build() -> void:
 
 	_table = RichTextLabel.new()
 	_table.bbcode_enabled = false
+	# CHASSE FIXE : les lignes du tableau sont rembourrees en colonnes ; dans la
+	# police par defaut, « Bob » faisait 387 px et un nom de dix-huit 442.
+	_table.add_theme_font_override("normal_font", OperatorFonts.monospace())
 	_table.custom_minimum_size = Vector2(520, 140)
 	_table.text = "Aucune course terminée."
 	add_child(_table)
