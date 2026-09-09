@@ -958,3 +958,28 @@ func test_decocher_une_piste_en_course_ne_la_fait_pas_disparaitre_du_panneau() -
 	race_panel.refresh()
 	assert_eq(race_panel.lane_text(1), "", "au repos, le roster reprend la main : piste 2 absente")
 	_controller.roster.set_active(1, true)
+
+
+func test_les_lignes_de_pistes_alignent_leurs_colonnes_quel_que_soit_le_nom() -> void:
+	# La ligne etait rembourree a quatorze caracteres dans une police
+	# proportionnelle : « Bob » donnait 283 px, un nom de dix-huit 369 px, et
+	# les chiffres partaient dans tous les sens. Chasse fixe, rembourrage a la
+	# largeur que l'ecran public montre : deux lignes, meme largeur.
+	assert_true(await _await_identified())
+	_controller.roster.rider(0).name = "Bob"
+	_controller.roster.rider(1).name = "Maximilien-Alexanx"
+	assert_true(_controller.engine.arm(_controller.current_config(), 0))
+	_controller.engine.race_state().apply_sample([100, 100, 0, 0], 5000)
+	var race_panel := _panel.race_panel()
+	race_panel.refresh()
+	await get_tree().process_frame
+	var lanes: Array = race_panel.get("_lanes")
+	var short_line: Label = lanes[0]
+	var long_line: Label = lanes[1]
+	assert_eq(short_line.text.length(), long_line.text.length(), "meme nombre de caracteres")
+	assert_almost_eq(
+		short_line.get_minimum_size().x, long_line.get_minimum_size().x, 1.0,
+		"et la meme largeur : la police est a chasse fixe"
+	)
+	assert_string_contains(long_line.text, "Maximilien-Alexanx", "le nom entier tient")
+	_controller.engine.abort("fin du test")

@@ -101,6 +101,10 @@ décrit le déroulé normal d'une soirée.
    Chaque ligne donne l'heure d'arrivée **en heure locale** (`21:47`), le mode et le vainqueur ;
    les fichiers, eux, sont horodatés en UTC.
 
+Au-dessus, une ligne par piste en course — numéro, nom, distance, vitesse, puis `ARRIVÉ` ou
+`ÉLIMINÉ` — en chasse fixe : les chiffres s'alignent en colonnes, quelle que soit la longueur des
+noms, et l'œil compare deux pistes sans lire.
+
 Sous les boutons, une ligne dit **où en est la course**, en toutes lettres :
 
 | Ligne | Ce que ça veut dire |

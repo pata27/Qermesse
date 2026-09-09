@@ -28,6 +28,9 @@ var _notice: Label
 ## Conditions de la session, distinctes des alertes de course : elles survivent
 ## a l'ardoise propre.
 var _startup: Label
+## La police des lignes de pistes — voir `_build`. Dix-huit caracteres de nom,
+## la largeur que l'ecran public montre, puis les chiffres en colonnes.
+var _lane_font := _monospace()
 var _notices: PackedStringArray = []
 
 
@@ -87,6 +90,12 @@ func _build() -> void:
 	for lane: int in range(Protocol.MAX_RIDERS):
 		var label := Label.new()
 		label.add_theme_font_size_override("font_size", 18)
+		# CHASSE FIXE. La ligne est rembourree pour aligner distance et vitesse
+		# en colonnes ; avec la police proportionnelle par defaut, le rembourrage
+		# n'alignait rien — 283 px pour « Bob », 369 pour un nom de dix-huit
+		# caracteres, les chiffres partout. Une police systeme a chasse fixe,
+		# presente sur les trois OS, rend les colonnes reelles.
+		label.add_theme_font_override("font", _lane_font)
 		add_child(label)
 		_lanes.append(label)
 
@@ -197,7 +206,7 @@ func _refresh_lanes() -> void:
 		_lanes[lane].visible = true
 		_lanes[lane].add_theme_color_override("font_color", Color(rider.color))
 		if state == null:
-			_lanes[lane].text = "P%d %s" % [lane + 1, rider.display_name()]
+			_lanes[lane].text = "P%d %-18s" % [lane + 1, rider.display_name()]
 			continue
 		var suffix := ""
 		if state.eliminated[lane]:
@@ -205,7 +214,7 @@ func _refresh_lanes() -> void:
 		elif state.finished_ms[lane] > 0:
 			suffix = "  ARRIVÉ %.2f s" % (state.finished_ms[lane] / 1000.0)
 		_lanes[lane].text = (
-			"P%d %-14s %7.1f m  %5.1f km/h%s"
+			"P%d %-18s %7.1f m  %5.1f km/h%s"
 			% [
 				lane + 1,
 				rider.display_name(),
@@ -303,3 +312,11 @@ func _on_race_finished(result: RaceResult) -> void:
 		]
 	)
 	refresh()
+
+
+static func _monospace() -> SystemFont:
+	var font := SystemFont.new()
+	font.font_names = PackedStringArray(
+		["DejaVu Sans Mono", "Liberation Mono", "Consolas", "Menlo", "Courier New", "monospace"]
+	)
+	return font

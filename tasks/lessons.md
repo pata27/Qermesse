@@ -1807,3 +1807,11 @@ vitrine — et le HUD annonçait les trois en grand, voilé, en rouge. Le signal
 passé dans le moteur*, pas *ce que le public doit en savoir*. Pour chaque abonné d'un signal
 d'abandon, demander : dans quel contexte ce signal peut-il partir, et l'annonce vaut-elle pour
 chacun ? Ici le contexte (mode démo actif) était lisible chez le contrôleur.
+
+## Un rembourrage `%-14s` n'aligne rien dans une police proportionnelle
+
+La ligne de piste du panneau Course était rembourrée à quatorze caractères — dans la police par
+défaut, proportionnelle : « Bob » 283 px, un nom de dix-huit 369 px, colonnes fictives. Et
+quatorze, pour des noms que l'écran public montre à dix-huit. Méthode : quand un format aligne
+par espaces, vérifier la police du widget ; si elle est proportionnelle, mesurer deux lignes
+(`get_minimum_size().x`) — en headless, une `SystemFont` à chasse fixe se charge et se mesure.
