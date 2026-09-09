@@ -154,7 +154,8 @@ clavier hors des boutons prévus, et le CSV produit est correct.
 * Corrections issues du terrain.
 * Export : `.exe` + installeur Windows, `.AppImage` Linux, `.app` + `.dmg` macOS.
   Signature et notarisation macOS si un compte développeur est disponible ; sinon, documenter la
-  procédure de contournement Gatekeeper pour l'utilisateur.
+  procédure de contournement Gatekeeper pour l'utilisateur — **fait : pas de compte, fiche dans
+  `DEPANNAGE` (« macOS refuse d'ouvrir l'application »)**.
 * Build automatique et publication de release par la CI sur tag.
 * Manuel opérateur court : branchement, calibration, déroulé d'une course, que faire si ça coince.
 * `docs/DEPANNAGE.md` : port introuvable, ticks sur la mauvaise piste, lien qui tombe, projecteur

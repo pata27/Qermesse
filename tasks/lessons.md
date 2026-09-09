@@ -1732,3 +1732,11 @@ Quand une garde est ajoutée à un mécanisme, chercher ses jumeaux — même ap
 `DEPANNAGE`, même fiche « édité à la main » — et la leur donner le jour même. Et rester vrai dans
 la doc : un nom trop long n'est pas corrigé, il est raccourci à l'affichage ; la ligne ne doit pas
 promettre une correction qui n'existe pas.
+
+## Un registre de décisions vieillit plus vite que le code qu'il gouverne
+
+docs/06 §5 listait cinq décisions « à confirmer » ; une était tranchée depuis le lot 2 (docs/02
+le dit), une autre engageait le plan à documenter Gatekeeper « si pas de compte Apple » — et une
+archive macOS non signée était publiée sans la fiche. Méthode : relire les listes de décisions et
+d'engagements conditionnels (« si … alors documenter ») à chaque release, et confronter chaque
+ligne à ce qui existe. Ce tour n'a pas de rouge : c'est de la doc, et on le dit.

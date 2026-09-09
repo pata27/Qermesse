@@ -82,14 +82,20 @@ Ces points ne bloquent pas le démarrage — les lots 0 à 2 peuvent commencer �
 tranchés avant les lots concernés.
 
 1. **Poursuite à 3–4 riders** : élimination progressive (retenue par défaut) ou « premier à mettre
-   `G` à tous les autres ». *Avant le lot 2.*
+   `G` à tous les autres ». *Avant le lot 2.* — **Tranché : élimination progressive**, `02` §3 ;
+   l'autre variante reste derrière `PursuitRule`, non écrite tant qu'elle n'est pas demandée.
 2. **VID/PID du matériel réel** : brancher le boîtier et relever l'identifiant USB
-   (`lsusb` sur Linux) pour alimenter l'allowlist. *Avant le jalon J1.*
+   (`lsusb` sur Linux) pour alimenter l'allowlist. *Avant le jalon J1.* — **Ouvert avec J1**
+   (`05`) : l'allowlist porte les identifiants connus d'`01` §5 (Uno, CH340, FTDI, CP210x), celui
+   du boîtier réel reste à relever.
 3. **Nombre de capteurs réellement câblés** sur le boîtier de l'utilisateur : 2 ou 4 ?
-   Conditionne l'effort de test à 4 riders. *Avant le lot 3.*
-4. **Compte développeur Apple** disponible ou non. *Avant le lot 6.*
+   Conditionne l'effort de test à 4 riders. *Avant le lot 3.* — **Ouvert avec J1** ; le
+   simulateur et l'émulateur partent sur 2, le panneau Riders prévient si l'on en coche plus.
+4. **Compte développeur Apple** disponible ou non. *Avant le lot 6.* — **Non : pas de compte.**
+   L'archive macOS est publiée non signée, et `DEPANNAGE` porte la fiche de contournement
+   Gatekeeper que `05` demandait dans ce cas.
 5. **Marque et habillage** : logo, nom affiché, éventuels sponsors à afficher sur l'écran spectacle.
-   *Avant le lot 5.*
+   *Avant le lot 5.* — **Ouvert** : l'écran spectacle ne porte aucun logo ni sponsor.
 
 ## 6. Hors périmètre de cette version
 

@@ -348,6 +348,30 @@ façon.
 
 ---
 
+## macOS refuse d'ouvrir l'application (« endommagée », « développeur non identifié »)
+
+L'archive macOS de la release n'est **ni signée ni notarisée** : il n'y a pas de compte développeur
+Apple (docs/06 §5, décision 4). Gatekeeper bloque donc le premier lancement, avec l'un de ces deux
+messages. Ce n'est pas une corruption du fichier.
+
+1. Après avoir dézippé, **ne pas double-cliquer** : clic droit (ou Ctrl-clic) sur l'application →
+   **Ouvrir** → confirmer **Ouvrir** dans la boîte de dialogue. À faire une seule fois ; les
+   lancements suivants passent par un double-clic.
+2. Si macOS dit que l'application est **endommagée** (Ventura et suivants), le clic droit ne suffit
+   pas : ouvrir le Terminal dans le dossier dézippé et retirer la quarantaine :
+
+```sh
+xattr -dr com.apple.quarantine SilverSprint*.app
+```
+
+3. En dernier recours : **Réglages système → Confidentialité et sécurité**, section *Sécurité*, où
+   le lancement refusé apparaît avec un bouton **Ouvrir quand même**.
+
+Le boîtier série n'est pas concerné : une fois l'application ouverte, le port USB est vu comme sur
+Linux. Voir *Le boîtier n'est pas détecté* si ce n'est pas le cas.
+
+---
+
 ## Tous les messages du panneau Course
 
 Le journal du panneau **Course** garde les cinq derniers messages, le plus récent en tête. Voici
