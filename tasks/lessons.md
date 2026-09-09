@@ -1823,3 +1823,20 @@ La chasse fixe corrigée hier sur les lignes de pistes manquait aussi au tableau
 `%-Ns`/`%N.Nf` dans `scenes/` les a tous nommés en une commande. Quand une correction tient à une
 propriété de widget (police, `autowrap`, `set_pressed_no_signal`), la chercher par `grep` sur tous
 les widgets du même genre le jour même — et la poser en un seul endroit partagé.
+
+## Un label sans retour à la ligne dicte la largeur de sa colonne
+
+L'avertissement du roster (571 px pour deux pistes nommées, sans `autowrap`) fixait la largeur de
+sa colonne — plus qu'une moitié de fenêtre à la taille minimale. Le scan « chaque `Label` a-t-il
+son `autowrap_mode` ? » l'a nommé avec la ligne firmware. Règle : tout `Label` dont le texte
+vient d'un format ou d'une liste (pistes, motifs, chemins) se plie, avec une largeur minimale ;
+seuls les libellés fixes et courts s'en passent.
+
+## Une copie de secours sous `/tmp` peut naître vide — et effacer le projet en le « restaurant »
+
+`/tmp` a refusé mes écritures (quota) en pleine preuve du rouge : le `cp` de sauvegarde a créé un
+fichier **vide**, et la restauration a recopié ce vide sur `panel_hardware.gd`. Le shell rendait
+code 1 sans sortie — ses commandes tournaient quand même, seule la sortie (sous `/tmp`) se perdait.
+Règles : les copies de secours vont sous le projet, dans `.run/backup/` (ignoré par git, sur
+`/home`) ; vérifier la copie (`test -s`) **avant** de neutraliser ; et quand toutes les commandes
+échouent sans sortie, soupçonner le disque, pas la commande — puis relire l'état des fichiers.

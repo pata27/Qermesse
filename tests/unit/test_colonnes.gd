@@ -61,3 +61,20 @@ func test_le_tableau_des_resultats_et_la_liste_des_ports_alignent_leurs_colonnes
 	var narrow := port_font.get_string_size("iiiiiiii", HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
 	var wide := port_font.get_string_size("MMMMMMMM", HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
 	assert_almost_eq(narrow, wide, 1.0, "la liste des ports est en chasse fixe")
+
+
+func test_un_avertissement_long_se_plie_au_lieu_d_elargir_sa_colonne() -> void:
+	# L'avertissement du roster n'avait pas de retour a la ligne : 571 px pour
+	# deux pistes nommees, et la colonne prenait cette largeur — plus qu'une
+	# moitie de fenetre a sa taille minimale. Mesure. Un texte se plie.
+	for lane: int in range(4):
+		_controller.roster.set_active(lane, true)
+		_controller.roster.rider(lane).color = _controller.roster.rider(0).color
+	_panel.roster_panel().refresh()
+	await get_tree().process_frame
+	var warning: Label = _panel.roster_panel().get("_warning")
+	assert_false(warning.text.is_empty(), "quatre pistes de la meme couleur : il y a un avertissement")
+	assert_lte(warning.get_minimum_size().x, 480.0, "et il ne pousse pas les murs de sa colonne")
+	var firmware: Label = _panel.hardware_panel().get("_firmware_label")
+	assert_false(firmware.text.is_empty())
+	assert_lte(firmware.get_minimum_size().x, 480.0, "la ligne firmware non plus")

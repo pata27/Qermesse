@@ -89,6 +89,12 @@ func _build() -> void:
 		_resets.append(reset)
 
 	_warning = Label.new()
+	# RETOUR A LA LIGNE. Sans lui, l'avertissement dictait la largeur de sa
+	# colonne : 571 px pour « Couleurs trop proches sur les pistes 1 et 2 … »,
+	# davantage a trois pistes — plus qu'une moitie de fenetre a sa taille
+	# minimale. Un texte ne pousse pas les murs ; il se plie.
+	_warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_warning.custom_minimum_size.x = 480
 	_warning.add_theme_color_override("font_color", Color("#FF3B30"))
 	add_child(_warning)
 	# `refresh()` et non `_refresh_warning()` : le bouton « Defaut » naissait

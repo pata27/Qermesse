@@ -57,6 +57,10 @@ func _build() -> void:
 	_state_label = Label.new()
 	add_child(_state_label)
 	_firmware_label = Label.new()
+	# Meme regle que l'avertissement du roster : la ligne « Firmware : inconnu
+	# — aucun V: reçu, le départ reste interdit » se plie, elle ne pousse pas.
+	_firmware_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_firmware_label.custom_minimum_size.x = 480
 	add_child(_firmware_label)
 
 	var port_row := HBoxContainer.new()
