@@ -36,7 +36,7 @@ func setup(controller: AppController) -> void:
 	_build()
 	_controller.race_state_changed.connect(_on_race_state)
 	_controller.link_state_changed.connect(func(_s: int) -> void: refresh())
-	_controller.demo_mode_changed.connect(func(_a: bool) -> void: refresh())
+	_controller.demo_mode_changed.connect(_on_demo_mode_changed)
 	_controller.countdown_tick.connect(_on_countdown)
 	_controller.progress_updated.connect(_on_progress)
 	_controller.notice.connect(_on_notice)
@@ -266,6 +266,16 @@ func _push_notice(text: String) -> void:
 
 
 ## Ardoise propre : une nouvelle course ne traine pas les alertes de l'ancienne.
+## A L'ARRET DE LA VITRINE, LE JOURNAL EST RENDU. Ses manches y laissaient
+## leurs eliminations et leurs podiums de demonstration — cinq lignes qui
+## masquaient les alertes de la derniere vraie course. Le manuel promet
+## qu'elles n'ont pas eu lieu ; le journal doit le dire aussi.
+func _on_demo_mode_changed(active: bool) -> void:
+	if not active:
+		_clear_notices()
+	refresh()
+
+
 func _clear_notices() -> void:
 	_notices.clear()
 	_notice.text = ""

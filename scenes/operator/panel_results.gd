@@ -18,6 +18,7 @@ func setup(controller: AppController) -> void:
 	# Les courses deja sur disque aujourd'hui — le logiciel a pu etre relance.
 	_rebuild_history()
 	_controller.race_finished.connect(_on_race_finished)
+	_controller.demo_mode_changed.connect(_on_demo_mode_changed)
 	# Une course arretee entre dans la liste elle aussi : elle a eu lieu, et sa
 	# trace est sur le disque.
 	_controller.race_aborted.connect(func(_note: String) -> void: _rebuild_history())
@@ -203,6 +204,21 @@ func _add_history_item(result: RaceResult) -> void:
 func _on_race_finished(result: RaceResult) -> void:
 	show_result(result)
 	_rebuild_history()
+
+
+## A L'ARRET DE LA VITRINE, LE TABLEAU REVIENT A LA DERNIERE VRAIE COURSE. Les
+## manches de demonstration passent par `race_finished` comme les autres et
+## laissaient leur podium « Démo 2 » a la place de celui d'Alice — pour des
+## courses qui, dit le manuel, n'ont pas eu lieu.
+func _on_demo_mode_changed(active: bool) -> void:
+	if active:
+		return
+	var results := _controller.history()
+	if results.is_empty():
+		_table.text = ""
+		_csv_label.text = "CSV : %s" % _controller.recorder.csv_path()
+		return
+	show_result(results.back())
 
 
 func _on_history_selected(index: int) -> void:

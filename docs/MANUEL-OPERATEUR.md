@@ -134,8 +134,10 @@ Ce sont de **vraies courses**, arbitrées par le même moteur et **à vitesse r�
 montre est le produit, pas une animation à part. Une manche de 250 m dure donc une vingtaine de
 secondes — c'est le temps qu'il faut à quelqu'un pour s'arrêter et regarder.
 
-* **Rien n'est enregistré.** Ces courses n'entrent ni dans **Courses du jour**, ni dans le journal,
-  ni dans le dossier des courses. Elles n'ont pas eu lieu.
+* **Rien n'est enregistré.** Ces courses n'entrent ni dans **Courses du jour**, ni dans le journal
+  CSV, ni dans le dossier des courses. Elles n'ont pas eu lieu. À l'arrêt, le tableau **Résultats**
+  revient à la dernière vraie course et le journal du panneau **Course** est vidé de ses lignes de
+  démonstration : ce qu'il vous restait à lire est ce qui s'est passé pour de vrai.
 * **Les coureurs s'appellent Démo 1 à Démo 4**, sans dossard : ce sont des synthétiques, et l'écran
   ne doit pas couronner « Alice » pendant qu'Alice est au bar. Vos noms et dossards reviennent à
   l'arrêt, avec le reste.

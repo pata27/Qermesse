@@ -1791,3 +1791,11 @@ public couronnait quelqu'un de réel. Méthode : pour un mode qui « emprunte et
 ce que la course lit au départ (config, roster : actif, nom, dossard, couleur) et vérifier que
 chaque champ est soit emprunté-et-rendu, soit volontairement laissé — les couleurs, elles,
 restent : ce sont celles des vélos dans la salle.
+
+## « N'a pas eu lieu » se vérifie sur chaque surface qui raconte une course
+
+La vitrine ne laissait rien sur disque ; mais le tableau Résultats gardait son podium et le
+journal du panneau Course ses éliminations, cinq lignes qui masquaient les alertes de la vraie
+course d'avant. Méthode : lister les abonnés de `race_finished`, `notice`, `race_state_changed`
+(panneaux, HUD, audio, enregistreur) et demander à chacun ce qu'il garde d'une course de
+démonstration une fois la vitrine arrêtée.

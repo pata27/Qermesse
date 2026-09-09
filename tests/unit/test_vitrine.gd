@@ -395,3 +395,41 @@ func test_la_vitrine_court_sous_des_noms_de_demonstration_et_rend_les_vrais() ->
 	assert_eq(field.text, "Alice", "dans le panneau aussi")
 	assert_eq(_main.controller.roster.rider(0).dossard, "7", "avec son dossard")
 	assert_eq(_main.controller.roster.rider(1).name, "Bob")
+
+
+func test_a_l_arret_le_tableau_et_le_journal_reviennent_a_la_derniere_vraie_course() -> void:
+	# « Elles n'ont pas eu lieu » — mais le tableau Resultats gardait le podium
+	# de « Démo 2 » et le journal du panneau Course ses eliminations de
+	# demonstration, cinq lignes qui masquaient les alertes de la derniere
+	# vraie course. Mesure.
+	_main.controller.roster.rider(0).name = "Alice"
+	_main.controller.roster.rider(1).name = "Bob"
+	_main.open_spectacle()
+	assert_true(await _await_identified())
+	_main.controller.settings.mode = RaceConfig.Mode.DISTANCE
+	_main.controller.settings.distance_m = 100.0
+	_main.controller.set_simulation_speed(10.0)
+	assert_true(_main.controller.start_race())
+	for i: int in range(3000):
+		await get_tree().process_frame
+		if _main.controller.history().size() > 0:
+			break
+	var results: PanelResults = _main.operator.results_panel()
+	var race: PanelRace = _main.operator.race_panel()
+	assert_string_contains(results.table_text(), "Alice", "la vraie course est au tableau")
+
+	assert_true(_main.attract.start())
+	var seen: Array[int] = []
+	_main.controller.race_finished.connect(func(_r: RaceResult) -> void: seen.append(1))
+	for i: int in range(6000):
+		await get_tree().process_frame
+		if not seen.is_empty():
+			break
+	assert_false(seen.is_empty(), "une manche de vitrine s'est terminee")
+	_main.attract.stop()
+	await get_tree().process_frame
+	assert_string_contains(results.table_text(), "Alice", "le tableau revient a la vraie course")
+	assert_false(results.table_text().contains("Démo"), "et plus de Démo")
+	assert_false(
+		race.notice_text().contains("Démo"), "le journal n'a plus ses lignes de demonstration"
+	)
