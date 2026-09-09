@@ -1799,3 +1799,11 @@ journal du panneau Course ses éliminations, cinq lignes qui masquaient les aler
 course d'avant. Méthode : lister les abonnés de `race_finished`, `notice`, `race_state_changed`
 (panneaux, HUD, audio, enregistreur) et demander à chacun ce qu'il garde d'une course de
 démonstration une fois la vitrine arrêtée.
+
+## Un abandon technique n'est pas toujours un incident à annoncer
+
+`engine.abort()` sert autant à l'arrêt opérateur, au lien perdu, qu'à la fin d'une manche de
+vitrine — et le HUD annonçait les trois en grand, voilé, en rouge. Le signal dit *ce qui s'est
+passé dans le moteur*, pas *ce que le public doit en savoir*. Pour chaque abonné d'un signal
+d'abandon, demander : dans quel contexte ce signal peut-il partir, et l'annonce vaut-elle pour
+chacun ? Ici le contexte (mode démo actif) était lisible chez le contrôleur.

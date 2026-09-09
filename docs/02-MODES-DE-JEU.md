@@ -127,7 +127,8 @@ firmware sur une condition de distance. Quand le PC décide la fin, il envoie `s
 > écrans le disent ainsi — podium titré `ARRIVÉE`, motif du plafond en pied, entrée normale dans les
 > courses du jour. Seul un abandon — arrêt opérateur, lien perdu, fermeture du logiciel — s'annonce
 > `INTERROMPUE`, parce que là personne n'a gagné. Le champ `interrupted` couvre les deux cas ; c'est
-> `end_reason` qui les sépare.
+> `end_reason` qui les sépare. L'arrêt de la vitrine en pleine manche de démonstration, lui, n'est
+> pas un abandon qui se raconte : la course n'a pas eu lieu, l'écran public revient au repos.
 
 **Plafonds de sécurité, appliqués par le PC (l'un ou l'autre déclenche la fin).**
 * Durée : `plafond_secs` (défaut 300 s), mesuré sur `elapsedMs`. Vainqueur = celui qui mène.

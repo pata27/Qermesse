@@ -138,6 +138,9 @@ secondes — c'est le temps qu'il faut à quelqu'un pour s'arrêter et regarder.
   CSV, ni dans le dossier des courses. Elles n'ont pas eu lieu. À l'arrêt, le tableau **Résultats**
   revient à la dernière vraie course et le journal du panneau **Course** est vidé de ses lignes de
   démonstration : ce qu'il vous restait à lire est ce qui s'est passé pour de vrai.
+* **Arrêter la vitrine en pleine manche n'est pas un incident** : l'écran public revient au repos,
+  sans bandeau `COURSE INTERROMPUE` — ce bandeau est réservé aux vrais abandons, arrêt opérateur ou
+  lien perdu, où le public doit savoir pourquoi la course s'arrête.
 * **Les coureurs s'appellent Démo 1 à Démo 4**, sans dossard : ce sont des synthétiques, et l'écran
   ne doit pas couronner « Alice » pendant qu'Alice est au bar. Vos noms et dossards reviennent à
   l'arrêt, avec le reste.

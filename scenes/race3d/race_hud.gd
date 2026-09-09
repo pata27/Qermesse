@@ -677,17 +677,9 @@ func _on_state(_previous: int, current: int) -> void:
 		_shown_speed.clear()
 		_printed_speed.clear()
 		_tension.reset()
-		_notice.text = ""
-		_covered_notice = ""
-		_notice_big = false
-		_notice.add_theme_color_override("font_color", ALERT)
-		_place_notice()
-		# Une nouvelle course efface la précédente : le podium ne doit pas
-		# rester par-dessus le décompte suivant — et ce qu'il avait effacé
-		# revient. Les cartes viennent d'être reconstruites ; l'écart et la
-		# barre reprennent leur visibilité selon le mode.
-		_podium.visible = false
-		_pending_result = null
+		# Une nouvelle course efface la précédente : bandeau et podium ne
+		# doivent pas rester par-dessus le décompte suivant.
+		_clear_banner_and_podium()
 		_notice.visible = true
 		_refresh_objective()
 	elif current == RaceEngine.State.FINISHED or current == RaceEngine.State.IDLE:
@@ -881,7 +873,27 @@ func _on_link_state(state: int) -> void:
 		_place_notice()
 
 
+func _clear_banner_and_podium() -> void:
+	_notice.text = ""
+	_covered_notice = ""
+	_notice_big = false
+	_notice.add_theme_color_override("font_color", ALERT)
+	_abort_veil.visible = false
+	_podium.visible = false
+	_pending_result = null
+	_place_notice()
+
+
 func _on_aborted(note: String) -> void:
+	# L'ARRET DE LA VITRINE N'EST PAS UN INCIDENT : le bandeau d'abandon est
+	# reserve aux vrais abandons. La manche de demonstration n'a pas eu lieu,
+	# l'ecran revient au repos ; l'armement suivant reconstruit le reste.
+	if _controller.demo_mode:
+		_clear_banner_and_podium()
+		_tension.visible = false
+		for entry: Dictionary in _cards.values():
+			(entry["root"] as Control).visible = false
+		return
 	# LE MOTIF EST AFFICHÉ. Le moteur le connaît — faux départ, plafond, lien
 	# perdu — et il était jeté : le public voyait une course s'arrêter sans
 	# raison, et l'opérateur devait l'expliquer au micro.

@@ -433,3 +433,26 @@ func test_a_l_arret_le_tableau_et_le_journal_reviennent_a_la_derniere_vraie_cour
 	assert_false(
 		race.notice_text().contains("Démo"), "le journal n'a plus ses lignes de demonstration"
 	)
+
+
+func test_arreter_la_vitrine_en_pleine_manche_ne_laisse_pas_de_bandeau_d_incident() -> void:
+	# L'arret de la vitrine abandonne la manche en cours. L'ecran public en
+	# faisait un incident : « COURSE INTERROMPUE — fin du mode démo », en grand,
+	# voile, jusqu'a la prochaine course. Mesure. Ce bandeau est reserve aux
+	# vrais abandons ; ici la course n'a pas eu lieu, l'ecran revient au repos.
+	_main.open_spectacle()
+	assert_true(await _await_identified())
+	assert_true(_main.attract.start())
+	for i: int in range(3000):
+		await get_tree().process_frame
+		if _main.controller.engine.state() == RaceEngine.State.RUNNING:
+			break
+	assert_eq(_main.controller.engine.state(), RaceEngine.State.RUNNING, "une manche court")
+	var hud: RaceHud = _main.spectacle.scene.hud()
+	_main.attract.stop()
+	await get_tree().process_frame
+	assert_false(
+		hud.notice_text().contains("INTERROMPUE"), "pas de bandeau d'incident : %s" % hud.notice_text()
+	)
+	assert_false(bool(hud.get("_notice_big")), "rien en grand")
+	assert_false((hud.get("_abort_veil") as CanvasItem).visible, "pas de voile")
