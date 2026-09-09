@@ -21,6 +21,8 @@ Trois vérifications qui ne demandent aucun matériel :
 ```sh
 ctest --test-dir build --output-on-failure          # attendu : 100% tests passed
 godot --headless --script tests/run.gd ; echo $?    # attendu : 0
+# Un fichier de tests qui ne se charge pas fait echouer la commande AVANT la suite, en le nommant :
+# GUT, seul, l'ecarterait et rendrait une suite verte amputee.
 godot --headless --script tools/check_extension.gd  # attendu : « module natif SerialLink : CHARGE »
 godot --headless --script tools/ss_replay.gd -- tests/fixtures/*.json  # attendu : 0 divergence
 ```

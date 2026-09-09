@@ -1774,3 +1774,11 @@ dictionnaire des profils, la table de docs/07), et j'ai conclu à un profil manq
 trois lignes plus bas — jusqu'à ajouter une ligne en double. Pour comparer des listes, extraire le
 **bloc entier** par son délimiteur (accolade fermante, fin de table), jamais par un numéro de
 ligne deviné ; et quand une garde nouvelle dit « manquant », vérifier d'abord la lecture.
+
+## Une garde qui protège le chargement ne doit pas dépendre de ce qu'elle protège
+
+La garde « chaque fichier de tests se charge » vivait dans un fichier de tests : le jour où c'est
+celui-là qui ne se parse plus, elle disparaît avec lui, et GUT rend une suite verte amputée. Le
+contrôle vit désormais dans le lanceur, avant GUT, et fait échouer la commande en nommant le
+fichier. Règle : une garde d'intégrité s'exécute à un niveau que la défaillance qu'elle cherche ne
+peut pas atteindre.
