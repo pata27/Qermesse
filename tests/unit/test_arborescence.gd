@@ -696,3 +696,33 @@ func test_la_version_du_logiciel_est_lisible_dans_le_titre_et_la_trace() -> void
 	main.recorder_races_dir = ProjectSettings.globalize_path("user://test_version/races")
 	add_child_autofree(main)
 	assert_string_contains(str(main.get_window().title), AppVersion.current(), "le titre la porte")
+
+
+func test_la_table_des_profils_de_docs_07_est_celle_du_simulateur() -> void:
+	# docs/03 §5 exige douze profils ; le simulateur, l'emulateur et la table
+	# `--profile` de docs/07 — celle qu'on lit pour choisir un profil de
+	# capture — les ont tous aujourd'hui. Rien ne le tenait : un profil ajoute
+	# au code sans sa ligne, ou une ligne sans son profil, passait. Les deux
+	# listes doivent etre les memes, dans les deux sens.
+	var file := FileAccess.open("res://docs/07-EMULATEUR-FIRMWARE.md", FileAccess.READ)
+	assert_not_null(file)
+	var documented: Array[String] = []
+	var row := RegEx.create_from_string("(?m)^\\| `([a-z-]+)` \\|")
+	var in_table := false
+	for line: String in file.get_as_text().split("\n"):
+		if line.begins_with("Profils prédéfinis"):
+			in_table = true
+			continue
+		if in_table and line.begins_with("| `"):
+			var found := row.search(line)
+			if found != null:
+				documented.append(found.get_string(1))
+		elif in_table and not documented.is_empty() and not line.begins_with("|"):
+			break
+	var implemented: Array[String] = []
+	var sim_script: GDScript = load("res://hardware/link_sim.gd")
+	for name: Variant in (sim_script.get_script_constant_map()["PROFILES"] as Dictionary).keys():
+		implemented.append(str(name))
+	documented.sort()
+	implemented.sort()
+	assert_eq(documented, implemented, "la table de docs/07 et LinkSim.PROFILES doivent se repondre")

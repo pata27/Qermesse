@@ -1758,3 +1758,19 @@ publié un logiciel qui se contredit. Le contrôle vit dans un script Python app
 éprouvé par la suite GUT en sous-processus, sur le vrai tag et sur un faux — comme l'outil de rejeu.
 Méthode : pour chaque valeur qui apparaît dans un nom de fichier publié, retrouver d'où elle
 vient et qui d'autre la lit ; si ce n'est pas le même endroit, un script les confronte.
+
+## Quand le compte de tests baisse sans échec, un fichier entier a été écarté — celui de la garde
+
+372 → 357 tests, 28 → 27 fichiers, zéro échec : GUT avait écarté `test_arborescence.gd` pour une
+erreur de parse dans mon nouveau test — et la garde « chaque fichier de tests se charge » vit
+dans ce fichier-là. Un total qui baisse est un échec, même vert. Vérifier le parse d'un fichier
+seul : `godot --headless --check-only -s <fichier>` répond en une seconde là où la suite met cinq
+minutes. Et `LinkSim` n'est pas un `class_name` : on précharge `hardware/link_sim.gd`.
+
+## Une plage de lignes coupe les listes : lire jusqu'à la fin du bloc avant de conclure
+
+Deux fois dans ce tour, `sed -n 19,30p` et `sed -n 135,147p` ont tronqué une liste (le
+dictionnaire des profils, la table de docs/07), et j'ai conclu à un profil manquant qui existait
+trois lignes plus bas — jusqu'à ajouter une ligne en double. Pour comparer des listes, extraire le
+**bloc entier** par son délimiteur (accolade fermante, fin de table), jamais par un numéro de
+ligne deviné ; et quand une garde nouvelle dit « manquant », vérifier d'abord la lecture.
