@@ -1684,3 +1684,17 @@ roster **vivant** : décocher une piste pendant qu'elle court la faisait dispara
 de l'opérateur. Même règle, troisième consommateur : tant que le moteur porte une course, les
 pistes sont les siennes. Et pour prouver le rouge d'un affichage rafraîchi par les trames, il faut
 laisser passer des trames avant d'affirmer — sinon l'ancien code passe aussi.
+
+## Une lambda GDScript capture les entiers par valeur
+
+`var n := 0 ; signal.connect(func() -> void: n += 1)` n'incrémente qu'une copie : `n` reste à 0
+dehors. Un `Array` ou un `Dictionary`, capturés par référence, font le compteur (`seen.append(1)`,
+`seen.size()`). Une sonde qui compte « zéro » avec ce motif ne mesure rien — vérifier le motif
+avant de conclure qu'un signal ne part pas.
+
+## La fermeture doit arrêter tout ce qui court côté boîtier, pas seulement le moteur
+
+`shutdown()` n'abandonnait que le moteur ; un test capteurs — course à blanc côté boîtier, moteur
+au repos — laissait le boîtier en course, LED allumées, précisément ce que le manuel §6 promet
+d'éviter. Lister ce qui peut être « en cours côté boîtier » (course, test capteurs, vitrine) et le
+comparer à ce que la fermeture arrête.

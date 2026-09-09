@@ -158,9 +158,10 @@ le public attend » : le simulateur permet de faire courir les gens quand même.
 ## 6. Après
 
 Fermer la fenêtre opérateur arrête proprement une course encore en cours : le boîtier reçoit son
-ordre d'arrêt, la course est marquée **INTERROMPUE** et sa trace est écrite comme les autres. Sans
-cela le boîtier resterait en course, LED allumées, et refuserait de repartir droit au lancement
-suivant.
+ordre d'arrêt, la course est marquée **INTERROMPUE** et sa trace est écrite comme les autres. Un
+**test capteurs** encore en cours reçoit le même ordre — c'est une course à blanc côté boîtier.
+Sans cela le boîtier resterait en course, LED allumées, et refuserait de repartir droit au
+lancement suivant.
 
 
 Le dossier des résultats contient un **CSV** (une ligne par événement, toutes courses de la

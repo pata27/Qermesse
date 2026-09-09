@@ -448,6 +448,11 @@ func history() -> Array[RaceResult]:
 ## course deja lancee (docs/01 §5.4). La trace de la course en cours etait
 ## perdue par la meme occasion, alors que tout autre abandon la conserve.
 func shutdown() -> void:
+	# UN TEST CAPTEURS EST UNE COURSE A BLANC COTE BOITIER. Le moteur, lui, est
+	# au repos : sans ce `s`, fermer le logiciel pendant le test laissait le
+	# boitier en course, LED allumees, et il refusait de repartir droit au
+	# lancement suivant — precisement ce que le manuel §6 promet d'eviter.
+	end_sensor_test()
 	if not _engine_at_rest():
 		engine.abort("fermeture du logiciel")
 	save_preferences()

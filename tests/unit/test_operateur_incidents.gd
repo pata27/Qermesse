@@ -882,3 +882,30 @@ func _last_containing(texts: Array[String], needle: String) -> String:
 		if text.contains(needle):
 			found = text
 	return found
+
+
+func test_fermer_le_logiciel_pendant_un_test_capteurs_arrete_le_boitier() -> void:
+	# Manuel §6 : a la fermeture, le boitier recoit son ordre d'arret. Le test
+	# capteurs est une course a blanc cote boitier, moteur au repos : `shutdown`
+	# ne regardait que le moteur, et le boitier restait en course, LED
+	# allumees. Preuve sans ecouter le port : les trames R: detournees vers
+	# `sensor_activity` cessent quand le simulateur a recu `s`.
+	assert_true(await _await_identified())
+	_controller.begin_sensor_test()
+	assert_true(_controller.sensor_test_active())
+	# UN TABLEAU, PAS UN ENTIER : une lambda GDScript capture les entiers par
+	# valeur, et `frames += 1` n'incrementait qu'une copie.
+	var frames: Array[int] = []
+	_controller.sensor_activity.connect(func(_t: PackedInt32Array) -> void: frames.append(1))
+	# Le decompte du simulateur, puis des trames.
+	for i: int in range(600):
+		await wait_physics_frames(1)
+		if not frames.is_empty():
+			break
+	assert_gt(frames.size(), 0, "la course a blanc envoie des trames")
+
+	_controller.shutdown()
+	assert_false(_controller.sensor_test_active(), "le test est termine")
+	var after_shutdown := frames.size()
+	await wait_physics_frames(30)
+	assert_eq(frames.size(), after_shutdown, "plus une trame : le boitier a recu `s`")
