@@ -1715,3 +1715,11 @@ Après `quality_changed`, trois autres signaux dormaient : `race_started` (le mo
 `^signal` exige un `.connect` pour chaque signal déclaré. Accroc en route : une suppression « le
 bloc autour de la ligne » a emporté trois signaux voisins essentiels — quand on retire une ligne,
 on retire **la ligne**, pas le paragraphe qui la contient ; et on relit le diff avant la suite.
+
+## Une variable écrite et jamais lue est soit du code mort, soit une mesure qui n'a pas de fenêtre
+
+Le scan des `var` membres (lectures = occurrences qui ne sont pas des affectations) a trouvé deux
+compteurs jamais relus dans le moniteur de rendu — et, à côté, une liste qui grossissait d'un
+flottant par image toute la soirée. Un accumulateur sans lecteur signale souvent une fenêtre
+qu'on a voulu faire et jamais faite. Méthode : après fonctions, constantes et signaux, scanner
+les variables ; et pour toute collection alimentée à chaque image, demander ce qui l'évacue.

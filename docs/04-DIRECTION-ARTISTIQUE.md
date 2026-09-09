@@ -136,7 +136,9 @@ elle renvoie les projecteurs de salle dans tout le volume.
 de combien. Un chiffre imprimé sans conséquence n'est qu'une observation ; la CI n'ayant pas de
 GPU, c'est le seul endroit où cette exigence peut mordre.
 C'est la machine réelle d'un événement, pas une station de jeu. Toute fonctionnalité visuelle qui
-fait passer sous 60 fps est coupée ou dégradée. Trois niveaux de qualité (`bas / moyen / élevé`),
+fait passer sous 60 fps est coupée ou dégradée. Le moniteur qui en juge ne garde que **la dernière
+minute** d'images — une soirée entière ne l'alourdit pas, et son verdict porte sur ce qui vient de
+se passer, pas sur le démarrage. Trois niveaux de qualité (`bas / moyen / élevé`),
 détection automatique au premier lancement, réglage manuel possible. **Un niveau choisi à la main
 est persisté et désarme la dégradation automatique** : sinon il serait défait dès la première
 seconde sous le budget, et la machine du projecteur retrouverait un niveau trop lourd à chaque

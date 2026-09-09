@@ -15,25 +15,34 @@ const WINDOW_S := 3.0
 ## Marge : à 57 fps on ne dégrade pas encore, la mesure elle-même est bruitée.
 const TRIGGER_FPS := 55.0
 
-var _accumulated_s := 0.0
-var _frames := 0
+## FENETRE GLISSANTE. Le moniteur gardait TOUTES les images depuis le
+## lancement : un flottant par image, toute la soiree, sur la machine reelle
+## d'un evenement — et deux compteurs qu'il n'a jamais relus. Il ne garde que
+## les dernieres `retain_s` secondes : de quoi juger « stables », pas de quoi
+## grossir. L'outil de mesure regle cette fenetre sur la sienne.
+var retain_s := 60.0
+var _clock_s := 0.0
 var _below_since_s := 0.0
 var _samples: Array[float] = []
+var _stamps: Array[float] = []
 
 
 func reset() -> void:
-	_accumulated_s = 0.0
-	_frames = 0
+	_clock_s = 0.0
 	_below_since_s = 0.0
 	_samples.clear()
+	_stamps.clear()
 
 
 ## Rend true quand le budget n'est pas tenu assez longtemps pour qu'il faille
 ## dégrader. L'appelant décide quoi faire — ce module ne touche à rien.
 func sample(delta_s: float, fps: float) -> bool:
-	_accumulated_s += delta_s
-	_frames += 1
+	_clock_s += delta_s
 	_samples.append(fps)
+	_stamps.append(_clock_s)
+	while not _stamps.is_empty() and _clock_s - _stamps[0] > retain_s:
+		_stamps.pop_front()
+		_samples.pop_front()
 
 	if fps < TRIGGER_FPS:
 		_below_since_s += delta_s

@@ -365,6 +365,8 @@ func _measure() -> void:
 	while warmup < MEASURE_WARMUP_S:
 		warmup += await _step()
 
+	# La fenetre du moniteur est celle de la mesure : rien n'en tombe avant le rapport.
+	_scene.perf.retain_s = _window_s
 	_scene.perf.reset()
 	var trace := PackedStringArray()
 	var elapsed := 0.0
