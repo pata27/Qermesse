@@ -612,3 +612,32 @@ func test_un_fichier_sain_ne_signale_aucune_correction() -> void:
 	file.close()
 	settings.load_from(_path("settings.json"))
 	assert_eq(settings.corrections().size(), 0, "les corrections sont celles du DERNIER chargement")
+
+
+func test_une_valeur_de_roster_corrigee_au_chargement_est_nommee() -> void:
+	# Meme regle que les reglages : une couleur qui n'en est pas une prenait la
+	# charte en silence, une piste hors 1..4 disparaissait sans un mot.
+	AppPaths.ensure_dir(_dir)
+	var file := FileAccess.open(_path("roster.json"), FileAccess.WRITE)
+	file.store_string(
+		'{"riders": [{"lane": 1, "name": "Bob", "color": "#GGGGGG", "active": true},'
+		+ ' {"lane": 7, "name": "Fantôme", "active": true}]}'
+	)
+	file.close()
+	var roster := Roster.new()
+	assert_true(roster.load_from(_path("roster.json")))
+	var said := " ; ".join(roster.corrections())
+	assert_eq(roster.corrections().size(), 2, "deux corrections, deux lignes")
+	assert_string_contains(said, "piste 2 : couleur « #GGGGGG » invalide")
+	assert_string_contains(said, "piste 8 hors 1..4")
+	assert_eq(roster.rider(1).color, Roster.DEFAULT_COLORS[1], "la charte est gardee")
+	assert_eq(roster.rider(1).name, "Bob", "et le reste de la piste est pris")
+
+	# Un fichier sain — un nom long compris, qui n'est pas une faute — ne dit rien.
+	file = FileAccess.open(_path("roster.json"), FileAccess.WRITE)
+	file.store_string(
+		'{"riders": [{"lane": 0, "name": "Un nom vraiment beaucoup trop long", "color": "#FF0000"}]}'
+	)
+	file.close()
+	assert_true(roster.load_from(_path("roster.json")))
+	assert_eq(roster.corrections(), [] as Array[String], "rien a corriger, rien a dire")

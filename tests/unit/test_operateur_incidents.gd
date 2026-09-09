@@ -909,3 +909,26 @@ func test_fermer_le_logiciel_pendant_un_test_capteurs_arrete_le_boitier() -> voi
 	var after_shutdown := frames.size()
 	await wait_physics_frames(30)
 	assert_eq(frames.size(), after_shutdown, "plus une trame : le boitier a recu `s`")
+
+
+func test_un_roster_lisible_mais_faux_est_dit_au_lancement() -> void:
+	var roster_path := ProjectSettings.globalize_path(TEST_ROOT).path_join("roster-faux.json")
+	AppPaths.ensure_dir(ProjectSettings.globalize_path(TEST_ROOT))
+	var file := FileAccess.open(roster_path, FileAccess.WRITE)
+	file.store_string('{"riders": [{"lane": 0, "name": "Alice", "color": "rouge", "active": true}]}')
+	file.close()
+	var controller := AppController.new()
+	controller.preferences_enabled = true
+	controller.settings_path = ProjectSettings.globalize_path(TEST_ROOT).path_join("absent.json")
+	controller.roster_path = roster_path
+	controller.recorder_logs_dir = _logs
+	controller.recorder_races_dir = _races
+	add_child_autofree(controller)
+	var panel := OperatorPanel.new()
+	add_child_autofree(panel)
+	panel.setup(controller)
+	var line := panel.race_panel().startup_text()
+	assert_string_contains(line, "ROSTER : 1 valeur(s) corrigée(s) dans roster.json")
+	assert_string_contains(line, "piste 1 : couleur « rouge » invalide")
+	assert_eq(controller.roster.rider(0).name, "Alice", "le nom, lui, est pris")
+	DirAccess.remove_absolute(roster_path)

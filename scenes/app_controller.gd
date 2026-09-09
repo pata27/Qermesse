@@ -168,6 +168,12 @@ func initialize() -> void:
 				% [corrected.size(), " ; ".join(corrected)]
 			)
 		_load_user_file(roster.load_from.bind(roster_path), "ROSTER")
+		var roster_fixed := roster.corrections()
+		if not roster_fixed.is_empty():
+			_startup_problems.append(
+				"ROSTER : %d valeur(s) corrigée(s) dans roster.json — %s"
+				% [roster_fixed.size(), " ; ".join(roster_fixed)]
+			)
 
 	_link = Link.new()
 	_link.name = "Link"

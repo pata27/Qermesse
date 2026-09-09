@@ -1723,3 +1723,12 @@ compteurs jamais relus dans le moniteur de rendu — et, à côté, une liste qu
 flottant par image toute la soirée. Un accumulateur sans lecteur signale souvent une fenêtre
 qu'on a voulu faire et jamais faite. Méthode : après fonctions, constantes et signaux, scanner
 les variables ; et pour toute collection alimentée à chaque image, demander ce qui l'évacue.
+
+## Une règle posée pour un fichier vaut pour son jumeau
+
+Les réglages nommaient leurs corrections au chargement depuis dix tours ; le roster, chargé par
+la même ligne, corrigeait encore en silence (couleur invalide → charte, piste hors 1..4 ignorée).
+Quand une garde est ajoutée à un mécanisme, chercher ses jumeaux — même appelant, même
+`DEPANNAGE`, même fiche « édité à la main » — et la leur donner le jour même. Et rester vrai dans
+la doc : un nom trop long n'est pas corrigé, il est raccourci à l'affichage ; la ligne ne doit pas
+promettre une correction qui n'existe pas.

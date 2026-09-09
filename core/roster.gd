@@ -64,6 +64,10 @@ class Rider:
 		return rider
 
 var riders: Array[Rider] = []
+## CE QUE LE CHARGEMENT A CORRIGE, une entree par valeur — meme regle que les
+## reglages : ramener a la charte sans le dire, c'est changer la couleur d'un
+## velo sous les pieds de l'operateur qui a edite le fichier a la main.
+var _corrections: Array[String] = []
 
 
 ## Ramene un nom a la largeur affichable, en montrant qu'il est coupe. Point
@@ -165,12 +169,18 @@ func to_dict() -> Dictionary:
 
 
 func from_dict(data: Dictionary) -> void:
+	_corrections.clear()
 	var list: Array = data.get("riders", [])
 	for item: Variant in list:
 		if not (item is Dictionary):
 			continue
 		var loaded := Rider.from_dict(item)
 		var target := rider(loaded.lane)
+		if target == null:
+			_corrections.append(
+				"piste %d hors 1..%d, entrée ignorée" % [loaded.lane + 1, Protocol.MAX_RIDERS]
+			)
+			continue
 		if target != null:
 			target.name = loaded.name
 			target.dossard = loaded.dossard
@@ -186,6 +196,16 @@ func from_dict(data: Dictionary) -> void:
 			# lisible.
 			if Color.html_is_valid(loaded.color):
 				target.color = loaded.color
+			else:
+				_corrections.append(
+					"piste %d : couleur « %s » invalide, couleur de charte gardée"
+					% [loaded.lane + 1, loaded.color]
+				)
+
+
+## Les corrections du dernier chargement, pour la ligne de demarrage.
+func corrections() -> Array[String]:
+	return _corrections
 
 
 func save(path: String = "") -> bool:

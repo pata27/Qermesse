@@ -229,6 +229,10 @@ qui n'est pas un nombre est **remplacée par la valeur par défaut**, et la lign
 **Course** dit lesquelles : `REGLAGES : N valeur(s) corrigée(s) dans settings.json — …`. Sans
 cela, un écart `"abc"` devenait 10 m en silence, et la poursuite éliminait au premier tour de
 rouleau.
+Même règle pour `roster.json` : une couleur qui n'en est pas une prend la couleur de charte, une
+piste hors 1..4 est ignorée, et la ligne orange les nomme :
+`ROSTER : N valeur(s) corrigée(s) dans roster.json — …`. Un nom trop long n'est pas une faute :
+il est gardé entier et raccourci à l'affichage.
 
 ---
 
@@ -369,6 +373,7 @@ d'entrée quand on lit un message et qu'on ne sait pas par où commencer.
 | `COURSES DU JOUR : N fichier(s) de course illisible(s), la liste est incomplète` | Au lancement, un ou plusieurs fichiers de course du jour n'ont pas pu être relus — disque coupé pendant l'écriture, fichier tronqué. La liste **Courses du jour** est donc plus courte que le nombre de manches réellement courues. | Le message donne les noms. Le **journal CSV du jour garde ses lignes** : classements, temps et vitesses y sont. Seul le rejeu de ces courses-là est perdu. |
 | `REGLAGES : …` / `ROSTER : …` au lancement | Un fichier de configuration est illisible ; les valeurs par défaut ont été prises. | Voir « Les noms des riders et les réglages ont disparu au lancement ». |
 | `REGLAGES : N valeur(s) corrigée(s) dans settings.json — …` | Le fichier de réglages se lit, mais une ou plusieurs valeurs sont hors bornes ou ne sont pas des nombres — édité à la main. Chacune est ramenée dans ses bornes ou remplacée par la valeur par défaut ; le message les nomme, avec la valeur lue et la valeur gardée. | Vérifier les réglages dans les panneaux **Mode** et **Matériel** avant la première course. La prochaine sauvegarde réécrit le fichier propre. |
+| `ROSTER : N valeur(s) corrigée(s) dans roster.json — …` | Le fichier des riders se lit, mais une couleur n'en est pas une ou une piste est hors 1..4 — édité à la main. Chacune est corrigée et nommée. | Vérifier les noms et couleurs dans le panneau **Riders** avant la première course. La prochaine sauvegarde réécrit le fichier propre. |
 | `Module natif absent : retour au simulateur.` | Le GDExtension n'est pas compilé : aucun port série n'est accessible. | `cd addons/serial_link && scons target=template_debug`. Voir « Le boîtier n'est pas détecté ». |
 | `test capteurs : impossible pendant une course` | Le test capteurs est une course à blanc ; il ne peut pas tourner par-dessus une vraie. | Attendre l'arrivée, ou STOP. |
 | `QUALITÉ : la scène s'est allégée à N — la machine ne tenait pas 60 fps` | La dégradation automatique a joué : la fenêtre spectacle est passée à un niveau inférieur pour garder l'image fluide. Le sélecteur **Qualité** montre le niveau appliqué. | Rien à faire ce soir. Si c'est chaque soirée, forcer ce niveau dans le sélecteur : il sera mémorisé. |
