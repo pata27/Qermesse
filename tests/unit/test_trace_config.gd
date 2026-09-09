@@ -64,6 +64,10 @@ func test_chaque_champ_de_la_configuration_survit_au_json_de_course() -> void:
 
 	var day := Recorder.new(_logs, _races).load_day()
 	assert_eq(day.size(), 1, "la course est relue")
+	# La trace dit quel logiciel l'a ecrite : c'est le fichier qu'on envoie au
+	# developpeur, qui doit savoir quel build juger.
+	var raw := FileAccess.get_file_as_string(_races.path_join("%s.json" % day[0].uuid))
+	assert_string_contains(raw, "\"app\": \"%s\"" % AppVersion.current())
 	var relu: RaceConfig = day[0].config
 	for name: String in expected:
 		assert_eq(relu.get(name), expected[name], "champ %s : perdu par le JSON de course" % name)

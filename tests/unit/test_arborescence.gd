@@ -661,3 +661,38 @@ func test_aucun_signal_n_est_declare_pour_rien() -> void:
 			if not listened:
 				orphans.append("%s : %s" % [str(path).get_file(), name])
 	assert_eq(orphans, [] as Array[String], "des signaux que personne n'ecoute")
+
+
+func test_les_presets_d_export_portent_la_version_du_projet() -> void:
+	# Deux versions se contredisaient : `project.godot` en 0.9.0-beta, les
+	# presets d'export en 0.3.0 — c'est cette derniere que Windows et macOS
+	# lisent dans les proprietes du binaire. UNE source : `project.godot` ;
+	# les presets doivent la suivre, la version courte sans le suffixe.
+	var file := FileAccess.open("res://export_presets.cfg", FileAccess.READ)
+	assert_not_null(file, "les presets d'export sont versionnes avec le projet")
+	var text := file.get_as_text()
+	var wrong: Array[String] = []
+	var full := RegEx.create_from_string("(?m)^application/(version|product_version)=\"([^\"]*)\"")
+	for found: RegExMatch in full.search_all(text):
+		if found.get_string(2) != AppVersion.current():
+			wrong.append("%s=%s" % [found.get_string(1), found.get_string(2)])
+	var short := RegEx.create_from_string("(?m)^application/(short_version|file_version)=\"([^\"]*)\"")
+	for found: RegExMatch in short.search_all(text):
+		if found.get_string(2) != AppVersion.numeric():
+			wrong.append("%s=%s" % [found.get_string(1), found.get_string(2)])
+	assert_gt(full.search_all(text).size(), 0, "au moins un preset declare une version")
+	assert_eq(
+		wrong, [] as Array[String],
+		"presets en desaccord avec project.godot %s" % AppVersion.current()
+	)
+
+
+func test_la_version_du_logiciel_est_lisible_dans_le_titre_et_la_trace() -> void:
+	assert_ne(AppVersion.current(), "dev", "project.godot declare une version")
+	assert_false(AppVersion.numeric().contains("-"), "la version courte n'a pas de suffixe")
+	var main: Node = (load("res://scenes/main.gd") as GDScript).new()
+	main.preferences_enabled = false
+	main.recorder_logs_dir = ProjectSettings.globalize_path("user://test_version/logs")
+	main.recorder_races_dir = ProjectSettings.globalize_path("user://test_version/races")
+	add_child_autofree(main)
+	assert_string_contains(str(main.get_window().title), AppVersion.current(), "le titre la porte")

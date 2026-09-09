@@ -464,6 +464,7 @@ func _write_json(result: RaceResult) -> String:
 		"started_at": _started_iso,
 		"finished_at": result.finished_at_iso,
 		"firmware": Protocol.FIRMWARE_VERSION,
+		"app": AppVersion.current(),
 		"config": {
 			"mode": result.mode,
 			"active_riders": _config.active_riders,

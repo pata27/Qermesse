@@ -203,6 +203,7 @@ qu'il faut envoyer au développeur en cas de résultat suspect : la course peut 
 l'identique. **Une course arrêtée en a un aussi** — c'est même le fichier le plus utile après un
 incident, puisqu'il contient les trames reçues jusqu'à la coupure.
 
+Le fichier porte la version du logiciel qui l'a écrit (`app`) et celle du firmware : les citer avec.
 Le rejeu se fait avec `tools/ss_replay.gd` : il repousse les trames dans un moteur neuf, recalcule
 tout et compare au classement enregistré. Une divergence est un bug du logiciel, pas de la course.
 

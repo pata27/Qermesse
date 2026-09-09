@@ -1740,3 +1740,12 @@ le dit), une autre engageait le plan à documenter Gatekeeper « si pas de compt
 archive macOS non signée était publiée sans la fiche. Méthode : relire les listes de décisions et
 d'engagements conditionnels (« si … alors documenter ») à chaque release, et confronter chaque
 ligne à ce qui existe. Ce tour n'a pas de rouge : c'est de la doc, et on le dit.
+
+## Un `class_name` nouveau exige un import, et deux versions sont une de trop
+
+`godot --headless --import` (étape 1 de RECETTE) est ce qui enregistre un `class_name` nouveau et
+crée son `.uid` : sans lui, la suite entière s'effondre en « Unexpected Errors » sans nommer la
+classe inconnue. À lancer après tout fichier nouveau porteur de `class_name`, et avant de chercher
+ailleurs. Et la version : `project.godot` disait 0.9.0-beta, les presets d'export 0.3.0 — c'est
+le second que Windows et macOS montrent. Une source, une garde qui compare, et la version lisible
+là où on en a besoin (titre, JSON envoyé au développeur).
