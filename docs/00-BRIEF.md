@@ -1,4 +1,4 @@
-# SilverSprint v3 — Brief de développement
+# Qermesse — Brief de développement
 
 > **À lire en premier, intégralement, avant toute action.**
 > Ce dossier `docs/` est la source de vérité du projet. Les documents `01` et `02` sont **normatifs** :

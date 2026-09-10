@@ -1,4 +1,4 @@
-# CI SilverSprint v3 — docs/06 §3.
+# CI Qermesse — docs/06 §3.
 #
 # Deux niveaux de test, tous deux sur les trois OS :
 #   1. binaires natifs C++ (emulateur de firmware, plus tard le parseur serie),

@@ -473,7 +473,7 @@ func test_un_fichier_absent_est_refuse_proprement() -> void:
 func test_les_chemins_suivent_la_convention_du_systeme() -> void:
 	var config_dir := AppPaths.config_dir()
 	assert_false(config_dir.is_empty())
-	assert_string_contains(config_dir.to_lower(), "silversprint")
+	assert_string_contains(config_dir.to_lower(), "qermesse")
 	assert_string_contains(AppPaths.settings_path(), "settings.json")
 	assert_string_contains(AppPaths.logs_dir(), "logs")
 	assert_string_contains(AppPaths.races_dir(), "races")
@@ -481,7 +481,7 @@ func test_les_chemins_suivent_la_convention_du_systeme() -> void:
 
 func test_le_nom_du_journal_quotidien_suit_le_format_v1() -> void:
 	var name := AppPaths.daily_log_name({"year": 2026, "month": 8, "day": 31})
-	assert_eq(name, "2026_08_31_SilverSprintRaceLog.csv")
+	assert_eq(name, "2026_08_31_QermesseRaceLog.csv")
 
 
 # =============================================================================
@@ -752,22 +752,22 @@ func test_le_csv_dapres_minuit_porte_la_date_de_la_soiree() -> void:
 	# deux CSV, et l'operateur en exporterait la moitie.
 	assert_eq(
 		AppPaths.daily_log_name({"year": 2030, "month": 6, "day": 16, "hour": 0, "minute": 10}),
-		"2030_06_15_SilverSprintRaceLog.csv",
+		"2030_06_15_QermesseRaceLog.csv",
 		"00 h 10 appartient a la soiree de la veille"
 	)
 	assert_eq(
 		AppPaths.daily_log_name({"year": 2030, "month": 6, "day": 16, "hour": 23, "minute": 50}),
-		"2030_06_16_SilverSprintRaceLog.csv",
+		"2030_06_16_QermesseRaceLog.csv",
 		"23 h 50 est du jour meme"
 	)
 	assert_eq(
 		AppPaths.daily_log_name({"year": 2030, "month": 6, "day": 16, "hour": 5, "minute": 0}),
-		"2030_06_16_SilverSprintRaceLog.csv",
+		"2030_06_16_QermesseRaceLog.csv",
 		"5 h pile ouvre la journee"
 	)
 	assert_eq(
 		AppPaths.daily_log_name({"year": 2030, "month": 6, "day": 1, "hour": 4, "minute": 59}),
-		"2030_05_31_SilverSprintRaceLog.csv",
+		"2030_05_31_QermesseRaceLog.csv",
 		"la bascule traverse aussi les changements de mois"
 	)
 

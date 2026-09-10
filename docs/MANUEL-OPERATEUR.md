@@ -1,4 +1,4 @@
-# Manuel opérateur — SilverSprint v3
+# Manuel opérateur — Qermesse
 
 Court, volontairement. Tout ce qui concerne une panne est dans **`DEPANNAGE.md`** ; ce manuel
 décrit le déroulé normal d'une soirée.

@@ -30,7 +30,7 @@ var _controller: AppController
 
 
 func _init() -> void:
-	title = "SilverSprint — spectacle"
+	title = "Qermesse — spectacle"
 	# Monde 3D distinct de celui de la fenêtre opérateur : voir l'en-tête.
 	own_world_3d = true
 	size = WINDOWED_SIZE

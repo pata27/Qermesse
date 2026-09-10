@@ -4,7 +4,7 @@
 
 ---
 
-Tu développes **SilverSprint v3**, une refonte complète d'un logiciel de course de rouleaux
+Tu développes **Qermesse** (ex-SilverSprint v3), une refonte complète d'un logiciel de course de rouleaux
 (goldsprints) : deux à quatre cyclistes pédalent sur des rouleaux instrumentés, un boîtier Arduino
 compte les tours et le logiciel affiche la course. Le matériel et le firmware existants sont
 conservés à l'identique ; tout le logiciel PC est réécrit.

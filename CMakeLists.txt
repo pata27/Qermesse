@@ -8,7 +8,7 @@
 # chaine godot-cpp. Elle ne passe pas par ici.
 
 cmake_minimum_required(VERSION 3.16)
-project(silversprint_native LANGUAGES CXX)
+project(qermesse_native LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

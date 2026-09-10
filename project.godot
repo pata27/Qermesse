@@ -1,4 +1,4 @@
-; SilverSprint v3 — configuration du projet Godot.
+; Qermesse — configuration du projet Godot.
 ;
 ; Regle d'or de docs/03 §2 : core/ ne connait ni la scene, ni le port serie, ni
 ; le rendu. Il tourne et se teste en headless.
@@ -7,7 +7,7 @@ config_version=5
 
 [application]
 
-config/name="SilverSprint v3"
+config/name="Qermesse"
 config/description="Logiciel de course de rouleaux (goldsprints)."
 ; PRE-VERSION, et le numero le dit. Le critere de sortie de docs/05 est J6 — un
 ; tiers qui installe sur machine vierge et fait courir deux personnes sans aide

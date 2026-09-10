@@ -191,7 +191,7 @@ Le défaut est `AVERTISSEMENT` : en événementiel, relancer une course pour un 
 **CSV** — reprise du format v1 pour continuité, mais avec les événements réellement écrits
 (la v1 déclarait 5 types d'événements et n'en écrivait qu'un).
 
-Fichier : `<données_app>/logs/YYYY_MM_DD_SilverSprintRaceLog.csv`, **append réel**
+Fichier : `<données_app>/logs/YYYY_MM_DD_QermesseRaceLog.csv`, **append réel**
 (la v1 rechargeait et réécrivait tout le fichier à chaque ligne — à ne pas reproduire).
 
 Colonnes : `timestamp_iso, event, mode, rider, dossard, distance_m, temps_ms, vitesse_moy_kph, vitesse_max_kph, rang, note`
@@ -265,9 +265,9 @@ ne réécrit pas l'histoire.
 sont écrits en toutes lettres (`"mode": "poursuite"`), comme dans la trace d'une course. Les
 fichiers écrits par une version antérieure, qui portaient des entiers, restent relus — une mise à
 jour ne fait pas perdre ses réglages à l'opérateur. Chemins standards par OS :
-* Linux `~/.config/silversprint/settings.json`
-* macOS `~/Library/Application Support/SilverSprint/settings.json`
-* Windows `%APPDATA%\SilverSprint\settings.json`
+* Linux `~/.config/qermesse/settings.json`
+* macOS `~/Library/Application Support/Qermesse/settings.json`
+* Windows `%APPDATA%\Qermesse\settings.json`
 
 Les noms des riders **sont persistés** (roster réutilisable d'une course à l'autre) — la v1 les
 perdait à chaque lancement. La **couleur**, en revanche, est écrite mais jamais relue : elle vient

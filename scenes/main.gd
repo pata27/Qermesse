@@ -51,7 +51,7 @@ func _ready() -> void:
 	operator.setup(controller, self)
 
 	var window := get_window()
-	window.title = "SilverSprint v3 %s — operateur" % AppVersion.current()
+	window.title = "Qermesse %s — operateur" % AppVersion.current()
 	window.min_size = Vector2i(1100, 760)
 	# TAILLE EXPLICITE. Sans elle, le gestionnaire de fenêtres ouvre souvent la
 	# fenêtre au maximum, et l'interface — qui tient en deux colonnes — flottait

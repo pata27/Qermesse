@@ -181,17 +181,17 @@ et celui du **fichier de la course sélectionnée**, qui est celui à envoyer au
 
 Les **outils de démonstration** (`tools/ss_operator_demo.gd`, `tools/ss_race3d_demo.gd`) font de
 vraies courses et enregistrent donc de vrais fichiers. Ils écrivent dans un dossier séparé —
-`<données Godot>/SilverSprint v3/demo/` — et **jamais** dans celui de l'opérateur, sauf si on le leur
+`<données Godot>/Qermesse/demo/` — et **jamais** dans celui de l'opérateur, sauf si on le leur
 demande avec `--donnees <dossier>`. Une course apparue dans « Courses du jour » sans que personne
 n'ait couru vient d'un outil lancé avant ce cloisonnement.
 
 | Système | Emplacement |
 |---|---|
-| Linux | `~/.local/share/silversprint/logs/` |
-| macOS | `~/Library/Application Support/SilverSprint/logs/` |
-| Windows | `%APPDATA%\SilverSprint\logs\` |
+| Linux | `~/.local/share/qermesse/logs/` |
+| macOS | `~/Library/Application Support/Qermesse/logs/` |
+| Windows | `%APPDATA%\Qermesse\logs\` |
 
-Un fichier par journée d'exploitation, nommé `AAAA_MM_JJ_SilverSprintRaceLog.csv`. Cette journée
+Un fichier par journée d'exploitation, nommé `AAAA_MM_JJ_QermesseRaceLog.csv`. Cette journée
 va de 5 h à 5 h : une course de 00 h 10 est écrite dans le fichier de la **veille**, avec le reste
 de sa soirée. **Une course appartient au jour de son départ**, toute entière : celle qui part à
 04 h 59 et arrive à 05 h 01 est dans le fichier de la veille du début à la fin, comme son JSON.
@@ -307,8 +307,8 @@ géométrie de l'écran où se trouvait la **souris au lancement**, et le compos
 la fenêtre s'ouvrirait donc « là où était le pointeur ». C'est le compositeur qui doit faire les
 deux, par une règle sur le **titre** des fenêtres, qui est stable :
 
-* fenêtre spectacle : `SilverSprint — spectacle`
-* fenêtre opérateur : `SilverSprint v3 — operateur` (suffixée de ` (DEBUG)` hors export)
+* fenêtre spectacle : `Qermesse — spectacle`
+* fenêtre opérateur : `Qermesse — operateur` (suffixée de ` (DEBUG)` hors export)
 
 ### Hyprland 0.55 et suivants — configuration Lua
 
@@ -317,19 +317,19 @@ configuration est en **Lua**. Le signe qui ne trompe pas : `hyprctl systeminfo` 
 `configProvider: lua`. Dans ce cas **tout ce qu'on écrit dans `hyprland.conf` est ignoré en
 silence** — `hyprctl reload` répond `ok`, `hyprctl configerrors` reste vide, et rien ne change.
 
-Dans un fichier `~/.config/hypr/silversprint.lua`, chargé par `require("silversprint")` depuis
+Dans un fichier `~/.config/hypr/qermesse.lua`, chargé par `require("qermesse")` depuis
 `hyprland.lua` :
 
 ```lua
 hl.window_rule({
-    name = "silversprint-spectacle",
-    match = { title = "^(SilverSprint).*spectacle.*" },
+    name = "qermesse-spectacle",
+    match = { title = "^(Qermesse).*spectacle.*" },
     monitor = "eDP-1",       -- nom donné par `hyprctl monitors`
     fullscreen = true,
 })
 hl.window_rule({
-    name = "silversprint-operateur",
-    match = { title = "^(SilverSprint).*operateur.*" },
+    name = "qermesse-operateur",
+    match = { title = "^(Qermesse).*operateur.*" },
     monitor = "DP-10",
 })
 ```
@@ -340,8 +340,8 @@ Pour essayer une règle **sans toucher au fichier**, `hyprctl eval '<le même ap
 ### Hyprland avant 0.55 — configuration hyprlang
 
 ```
-windowrulev2 = monitor <NOM_ECRAN>, title:^(SilverSprint).*spectacle.*
-windowrulev2 = fullscreen, title:^(SilverSprint).*spectacle.*
+windowrulev2 = monitor <NOM_ECRAN>, title:^(Qermesse).*spectacle.*
+windowrulev2 = fullscreen, title:^(Qermesse).*spectacle.*
 ```
 
 ### Vérifier, ne pas supposer
@@ -367,7 +367,7 @@ messages. Ce n'est pas une corruption du fichier.
    pas : ouvrir le Terminal dans le dossier dézippé et retirer la quarantaine :
 
 ```sh
-xattr -dr com.apple.quarantine SilverSprint*.app
+xattr -dr com.apple.quarantine Qermesse*.app
 ```
 
 3. En dernier recours : **Réglages système → Confidentialité et sécurité**, section *Sécurité*, où

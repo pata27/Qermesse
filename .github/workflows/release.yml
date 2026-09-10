@@ -30,19 +30,19 @@ jobs:
             preset: Linux
             godot_archive: Godot_v4.5-stable_linux.x86_64.zip
             godot_binary: Godot_v4.5-stable_linux.x86_64
-            output: dist/SilverSprint-v3.x86_64
+            output: dist/Qermesse.x86_64
           - os: windows-latest
             label: Windows
             preset: Windows
             godot_archive: Godot_v4.5-stable_win64.exe.zip
             godot_binary: Godot_v4.5-stable_win64.exe
-            output: dist/SilverSprint-v3.exe
+            output: dist/Qermesse.exe
           - os: macos-latest
             label: macOS
             preset: macOS
             godot_archive: Godot_v4.5-stable_macos.universal.zip
             godot_binary: Godot.app/Contents/MacOS/Godot
-            output: dist/SilverSprint-v3.zip
+            output: dist/Qermesse.zip
     steps:
       - uses: actions/checkout@v4
         with:
@@ -121,7 +121,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: silversprint-${{ matrix.label }}
+          name: qermesse-${{ matrix.label }}
           path: dist/
           if-no-files-found: error
 
@@ -163,12 +163,12 @@ jobs:
           mkdir -p release
           for dir in artefacts/*/; do
             label="$(basename "$dir")"
-            label="${label#silversprint-}"
+            label="${label#qermesse-}"
             case "$label" in
-              Linux) name="SilverSprint-v3-${version}-linux-x86_64" ;;
-              Windows) name="SilverSprint-v3-${version}-windows-x86_64" ;;
-              macOS) name="SilverSprint-v3-${version}-macos-universal" ;;
-              *) name="SilverSprint-v3-${version}-${label}" ;;
+              Linux) name="Qermesse-${version}-linux-x86_64" ;;
+              Windows) name="Qermesse-${version}-windows-x86_64" ;;
+              macOS) name="Qermesse-${version}-macos-universal" ;;
+              *) name="Qermesse-${version}-${label}" ;;
             esac
             cp docs/MANUEL-OPERATEUR.md docs/DEPANNAGE.md "$dir"
             (cd "$dir" && zip -r -9 "../../release/${name}.zip" .)
@@ -223,4 +223,4 @@ jobs:
             faire un clic droit puis « Ouvrir », ou lever la mise en
             quarantaine :
 
-                xattr -dr com.apple.quarantine SilverSprint-v3.app
+                xattr -dr com.apple.quarantine Qermesse.app

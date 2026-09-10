@@ -52,7 +52,7 @@ immersive, cette voie coûte plusieurs mois avant le premier rendu convaincant.
 ## 2. Arborescence du projet
 
 ```
-SilverSprint-v3/
+Qermesse/
 ├── docs/                          # ces specs — source de vérité
 ├── tasks/
 │   ├── todo.md                    # avancement, coché au fil de l'eau
@@ -220,7 +220,7 @@ Contraintes d'implémentation :
 
 ### Repli si le GDExtension pose problème sur une plateforme
 
-Plan B documenté, non implémenté par défaut : un petit binaire pont (`silversprint-bridge`) qui
+Plan B documenté, non implémenté par défaut : un petit binaire pont (`qermesse-bridge`) qui
 lit le port série et expose les trames sur une socket TCP locale, Godot s'y connectant en
 `StreamPeerTCP`. Coûte un process supplémentaire mais élimine tout risque de compilation native
 par plateforme. **À n'activer que si le lot 1 dérape** — voir `04`, jalon J1.

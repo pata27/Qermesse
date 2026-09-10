@@ -352,16 +352,18 @@ func test_l_arbre_de_l_architecture_est_celui_du_depot() -> void:
 	var guide := FileAccess.open("res://docs/03-ARCHITECTURE.md", FileAccess.READ)
 	assert_not_null(guide, "le document se lit")
 	var text := guide.get_as_text()
-	var block := text.substr(text.find("SilverSprint-v3/"))
+	var block := text.substr(text.find("Qermesse/"))
 	block = block.substr(0, block.find("```"))
 
 	# Chaque dossier dessine doit exister ET contenir quelque chose. Un dossier
 	# vide dessine dans le plan est pire qu'absent : on le cherche.
 	var missing: Array[String] = []
-	var folder := RegEx.create_from_string("(?m)^[^a-z]*([a-z0-9_]+)/")
+	# La racine « Qermesse/ » n'est pas un dossier a chercher : les glyphes de
+	# l'arbre precedent chaque entree, jamais une majuscule.
+	var folder := RegEx.create_from_string("(?m)^[^a-zA-Z]*([a-z0-9_]+)/")
 	for found: RegExMatch in folder.search_all(block):
 		var name := found.get_string(1)
-		if name == "SilverSprint-v3" or missing.has(name):
+		if name == "Qermesse" or missing.has(name):
 			continue
 		if not _folder_has_content(name):
 			missing.append(name)

@@ -1,4 +1,4 @@
-# SilverSprint v3 — Suivi
+# Qermesse — Suivi
 
 Spécifications : `docs/`. Brief d'entrée : `docs/00-BRIEF.md`.
 **Aucune case cochée sans preuve** (sortie de test, capture, vidéo).
