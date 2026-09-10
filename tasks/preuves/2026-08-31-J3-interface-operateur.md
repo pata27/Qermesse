@@ -35,7 +35,7 @@ en course      : 3.51 s
 mode distance, fin : tous arrives
   rang 1  piste 1  Alice       99.8 m    9.01 s  moy  39.9 km/h  max  47.0 km/h
   rang 2  piste 2  Bob         99.8 m    9.02 s  moy  39.8 km/h  max  47.0 km/h
-=== CSV : /home/antoine/.local/share/silversprint/logs/2026_08_31_SilverSprintRaceLog.csv ===
+=== CSV : /home/antoine/.local/share/qermesse/logs/2026_08_31_QermesseRaceLog.csv ===
 timestamp_iso,event,mode,rider,dossard,distance_m,temps_ms,vitesse_moy_kph,vitesse_max_kph,rang,note
 2026-08-31T13:49:17,RACE_START,distance,,,,,,,,"uuid=20260831-134917-cb09, 2 piste(s) active(s)"
 2026-08-31T13:49:21,RIDER_FINISH,distance,0,,,9009,,,1,
@@ -43,10 +43,10 @@ timestamp_iso,event,mode,rider,dossard,distance_m,temps_ms,vitesse_moy_kph,vites
 2026-08-31T13:49:21,RACE_FINISH,distance,0,,99.825,9009,39.890,47.007,1,tous arrives
 2026-08-31T13:49:21,RACE_FINISH,distance,1,,99.825,9020,39.842,47.007,2,tous arrives
 === captures ===
-  /home/antoine/Code/SilverSprint-v3/tasks/preuves/images/j3-configure.png
-  /home/antoine/Code/SilverSprint-v3/tasks/preuves/images/j3-countdown.png
-  /home/antoine/Code/SilverSprint-v3/tasks/preuves/images/j3-course.png
-  /home/antoine/Code/SilverSprint-v3/tasks/preuves/images/j3-resultats.png
+  <dépôt>/tasks/preuves/images/j3-configure.png
+  <dépôt>/tasks/preuves/images/j3-countdown.png
+  <dépôt>/tasks/preuves/images/j3-course.png
+  <dépôt>/tasks/preuves/images/j3-resultats.png
 ```
 
 ### Lecture du CSV

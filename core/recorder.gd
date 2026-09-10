@@ -393,7 +393,7 @@ func load_day(now: Dictionary = Time.get_datetime_dict_from_system()) -> Array[R
 			continue
 		_last_scan_opened += 1
 		var data := JsonStore.read(_races_dir.path_join(name))
-		if data.is_empty() or str(data.get("format", "")) != "silversprint-race/1":
+		if data.is_empty() or not str(data.get("format", "")).ends_with("-race/1"):
 			# Le nom du fichier porte deja la date du jour — le filtre au-dessus
 			# l'a verifie — donc c'est bien une course d'aujourd'hui qui manque.
 			_last_scan_unreadable.append(name)
@@ -482,7 +482,7 @@ func _write_json(result: RaceResult) -> String:
 		return ""
 
 	var payload := {
-		"format": "silversprint-race/1",
+		"format": "qermesse-race/1",
 		"uuid": _uuid,
 		"started_at": _started_iso,
 		"finished_at": result.finished_at_iso,

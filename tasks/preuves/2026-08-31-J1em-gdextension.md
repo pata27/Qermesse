@@ -35,10 +35,10 @@ mode            : MATERIEL (via GDExtension)
 ports detectes  : 32, dont 0 candidat(s)
   aucun port ne coche de critere — aucun ne sera ouvert au hasard
   (un pseudo-terminal n'apparait pas ici : utiliser --port)
-port force      : /home/antoine/Code/SilverSprint-v3/.run/ttyEMU
+port force      : <dépôt>/.run/ttyEMU
 [   0.02 s] lien -> DISCONNECTED
 [   0.03 s] lien -> IDENTIFIED
-[   0.03 s] firmware SS_v0.1.7 sur /home/antoine/Code/SilverSprint-v3/.run/ttyEMU
+[   0.03 s] firmware SS_v0.1.7 sur <dépôt>/.run/ttyEMU
 [   0.03 s] course armee : 100 m = 278 ticks
 [   0.03 s] version : SS_v0.1.7
 [   0.03 s] ack longueur : 278 ticks

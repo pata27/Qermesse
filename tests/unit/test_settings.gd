@@ -641,39 +641,3 @@ func test_une_valeur_de_roster_corrigee_au_chargement_est_nommee() -> void:
 	file.close()
 	assert_true(roster.load_from(_path("roster.json")))
 	assert_eq(roster.corrections(), [] as Array[String], "rien a corriger, rien a dire")
-
-
-func test_l_ancien_dossier_silversprint_est_repris_une_fois_sous_le_nouveau_nom() -> void:
-	# Le logiciel s'est appele SilverSprint v3 jusqu'a la 0.9.1-beta. Au premier
-	# lancement sous Qermesse, ses reglages, son roster et ses courses ne
-	# doivent pas avoir disparu : ils demenagent, une fois, sans rien detruire.
-	var old_root := _path("ancien")
-	var new_root := _path("nouveau")
-	# Le dossier de test survit d'une execution a l'autre ; une migration
-	# « une fois » ne doit trouver aucun reste.
-	_rm_tree(old_root)
-	_rm_tree(new_root)
-	AppPaths.ensure_dir(old_root.path_join("logs"))
-	var file := FileAccess.open(old_root.path_join("roster.json"), FileAccess.WRITE)
-	file.store_string('{"riders": [{"lane": 0, "name": "Alice"}]}')
-	file.close()
-	file = FileAccess.open(old_root.path_join("logs").path_join("j.csv"), FileAccess.WRITE)
-	file.store_string("ligne")
-	file.close()
-	var moved := AppPaths.migrate_tree(old_root, new_root)
-	assert_eq(moved.size(), 2, "les deux fichiers sont repris : %s" % [moved])
-	assert_true(FileAccess.file_exists(new_root.path_join("roster.json")))
-	assert_true(FileAccess.file_exists(new_root.path_join("logs").path_join("j.csv")))
-	assert_true(FileAccess.file_exists(old_root.path_join("roster.json")), "l'ancien reste en place")
-	assert_eq(AppPaths.migrate_tree(old_root, new_root), [] as Array[String], "une fois, pas deux")
-	assert_eq(AppPaths.migrate_tree(_path("inexistant"), _path("x")), [] as Array[String])
-
-
-func _rm_tree(path: String) -> void:
-	if not DirAccess.dir_exists_absolute(path):
-		return
-	for name: String in DirAccess.get_files_at(path):
-		DirAccess.remove_absolute(path.path_join(name))
-	for name: String in DirAccess.get_directories_at(path):
-		_rm_tree(path.path_join(name))
-	DirAccess.remove_absolute(path)

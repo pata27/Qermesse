@@ -1,4 +1,4 @@
-// Réplique fidèle de ss_basic.ino — cwhitney/SilverSprint, commit 3a6157e,
+// Réplique fidèle de ss_basic.ino — depot amont d'origine, commit 3a6157e,
 // md5 bba3bc3980f90eecf67438183b2b1ed1, 323 lignes.
 //
 // Contrat : ce fichier reproduit le firmware BUGS COMPRIS (docs/07 §4). Aucun

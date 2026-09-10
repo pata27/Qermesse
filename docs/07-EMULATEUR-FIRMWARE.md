@@ -1,7 +1,7 @@
 # 07 — Émulateur de firmware (`ss_emu`)
 
 > **Statut : directeur.** Le comportement de référence est `docs/01`, lui-même adossé au firmware
-> amont `cwhitney/SilverSprint`, `apps/Arduino/ss_basic/ss_basic.ino`, commit `3a6157e`,
+> amont d'origine, `apps/Arduino/ss_basic/ss_basic.ino`, commit `3a6157e`,
 > md5 `bba3bc3980f90eecf67438183b2b1ed1`, 323 lignes.
 > En cas de désaccord entre ce document et `01`, c'est `01` qui gagne — et si `01` désaccorde avec
 > le `.ino`, c'est le `.ino` qui gagne et `01` qui est corrigé.

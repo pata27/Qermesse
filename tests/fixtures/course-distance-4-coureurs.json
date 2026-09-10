@@ -18,7 +18,7 @@
   },
   "finished_at": "2026-09-01T13:41:16",
   "firmware": "SS_v0.1.7",
-  "format": "silversprint-race/1",
+  "format": "qermesse-race/1",
   "result": {
     "avg_kph": [
       39.3828468322754,

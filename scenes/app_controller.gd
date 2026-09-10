@@ -156,20 +156,6 @@ func initialize() -> void:
 	_initialized = true
 
 	if preferences_enabled:
-		# PREMIER LANCEMENT SOUS LE NOUVEAU NOM : les reglages, le roster et les
-		# courses de l'ancien dossier SilverSprint sont repris, et l'operateur
-		# le lit sur la ligne orange — ses noms n'ont pas disparu, ils ont
-		# demenage.
-		# Seulement sur les dossiers reels : un test qui fixe ses propres chemins
-		# ne doit pas demenager les fichiers de la machine.
-		var moved: Array[String] = []
-		if settings_path.is_empty() and roster_path.is_empty():
-			moved = AppPaths.migrate_legacy()
-		if not moved.is_empty():
-			_startup_problems.append(
-				"MIGRATION : %d fichier(s) repris de l'ancien dossier SilverSprint vers %s"
-				% [moved.size(), AppPaths.data_dir().get_base_dir()]
-			)
 		_load_user_file(settings.load_from.bind(settings_path), "REGLAGES")
 		# UN FICHIER LISIBLE MAIS FAUX EST DIT AUSSI. Chaque valeur ramenee dans
 		# ses bornes ou remplacee par defaut est nommee, avec ce qui a ete lu et

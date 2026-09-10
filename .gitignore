@@ -53,3 +53,4 @@ Thumbs.db
 # Cache SCons (CI)
 .scons-cache/
 dist/
+__pycache__/

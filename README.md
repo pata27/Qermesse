@@ -70,7 +70,7 @@ liste à cocher avant chaque événement.
 
 ## Matériel
 
-Compatible avec les boîtiers **SilverSprint / OpenSprints** existants : un Arduino Uno (ou un
+Compatible avec les boîtiers **OpenSprints** et compatibles : un Arduino Uno (ou un
 clone CH340, FTDI, CP210x) avec le firmware `ss_basic.ino` **non modifié** (`SS_v0.1.7`), un
 capteur à effet Hall par rouleau, un aimant. Le protocole série, ses trames et ses pièges sont
 décrits dans [`docs/01-PROTOCOLE-HARDWARE.md`](docs/01-PROTOCOLE-HARDWARE.md). Le diamètre du
@@ -133,10 +133,9 @@ captures, vidéo), `ss_probe.py` (témoin indépendant du protocole, en Python).
 
 ## Lignée
 
-* **v1** — [cwhitney/SilverSprint](https://github.com/cwhitney/SilverSprint), C++/Cinder,
-  macOS + Windows. Le firmware Arduino vient de là, et n'a pas bougé.
+* **v1** — le logiciel d'origine, C++/Cinder, macOS + Windows. Le firmware Arduino vient de
+  là, et n'a pas bougé.
 * **v2** — prototype C++/SDL2, abandonné.
-* **Qermesse** — refonte complète sous Godot 4.5, trois OS, module série natif, s'est appelée
-  *SilverSprint v3* jusqu'à la 0.9.1-beta.
+* **Qermesse** — refonte complète sous Godot 4.5, trois OS, module série natif.
 
 Licence MIT.

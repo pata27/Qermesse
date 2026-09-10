@@ -1,6 +1,6 @@
 # Preuve — Jalon **J0** franchi
 
-**Date** 2026-08-31 · **Run CI** [33390935079](https://github.com/pata27/SilverSprint-v3/actions/runs/33390935079) · commit `43e4a1e`
+**Date** 2026-08-31 · **Run CI** [33390935079](https://github.com/pata27/Qermesse/actions/runs/33390935079) · commit `43e4a1e`
 
 `docs/05` lot 0 : *« `godot --headless --script tests/run.gd` sort en code 0 dans la CI, sur les trois OS. »*
 

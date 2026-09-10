@@ -66,7 +66,7 @@ static func load_file(path: String) -> Loaded:
 		return out
 
 	var data: Dictionary = json.data
-	if str(data.get("format", "")) != "silversprint-race/1":
+	if not str(data.get("format", "")).ends_with("-race/1"):
 		out.error = "format inconnu : %s" % str(data.get("format", "(absent)"))
 		return out
 

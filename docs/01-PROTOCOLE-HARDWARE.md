@@ -3,7 +3,7 @@
 > **Statut : figé. Le firmware n'est PAS modifié en v3.**
 > Ce document est la source de vérité du protocole série. Il a été reconstitué par lecture
 > croisée du firmware `apps/Arduino/ss_basic/ss_basic.ino` (323 lignes) et du driver PC
-> `apps/Silversprints/src/data/SerialReader.cpp` du dépôt v1 (`/home/antoine/Code/SilverSprint`).
+> le lecteur série du dépôt v1 (`SerialReader.cpp`).
 > Toute divergence constatée sur du matériel réel doit être corrigée **ici en premier**, puis dans le code.
 
 ---

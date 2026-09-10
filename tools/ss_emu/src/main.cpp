@@ -1,4 +1,4 @@
-// ss_emu — émulateur du firmware SilverSprint sur pseudo-terminal.
+// ss_emu — émulateur du firmware d'origine sur pseudo-terminal.
 // Spécification : docs/07-EMULATEUR-FIRMWARE.md
 //
 // Rappel qui vaut d'être répété : franchir un scénario avec ss_emu franchit le
@@ -49,7 +49,7 @@ struct Options {
 
 void usage() {
     std::cout <<
-        R"(ss_emu — emulateur du firmware SilverSprint (SS_v0.1.7) sur pseudo-terminal.
+        R"(ss_emu — emulateur du firmware d'origine (SS_v0.1.7) sur pseudo-terminal.
 
   --pty                  cree un pseudo-terminal et affiche son chemin
   --link <chemin>        lien symbolique stable vers le pseudo-terminal

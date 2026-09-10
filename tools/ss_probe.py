@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ss_probe — sonde console independante pour le lien serie SilverSprint.
+"""ss_probe — sonde console independante pour le lien serie du boitier.
 
 Les colonnes `P0..P3` de la ligne d'etat suivent les CHAMPS de la trame `R:`,
 pour se confronter a l'octet pres ; les evenements recopient la trame telle

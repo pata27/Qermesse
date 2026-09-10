@@ -1,15 +1,15 @@
 # Prompt de démarrage — agent de développement
 
-*(à copier-coller tel quel dans la session de l'agent, depuis `/home/antoine/Code/SilverSprint-v3`)*
+*(à copier-coller tel quel dans la session de l'agent, depuis le dépôt)*
 
 ---
 
-Tu développes **Qermesse** (ex-SilverSprint v3), une refonte complète d'un logiciel de course de rouleaux
+Tu développes **Qermesse**, une refonte complète d'un logiciel de course de rouleaux
 (goldsprints) : deux à quatre cyclistes pédalent sur des rouleaux instrumentés, un boîtier Arduino
 compte les tours et le logiciel affiche la course. Le matériel et le firmware existants sont
 conservés à l'identique ; tout le logiciel PC est réécrit.
 
-Le répertoire de travail est `/home/antoine/Code/SilverSprint-v3`. Il contient déjà les
+Le répertoire de travail est le dépôt Qermesse. Il contient déjà les
 spécifications complètes dans `docs/` et le suivi d'avancement dans `tasks/todo.md`.
 **Il ne contient encore aucun code.**
 
@@ -28,9 +28,9 @@ Lis intégralement, dans l'ordre :
 `docs/04-DIRECTION-ARTISTIQUE.md` ne te servira qu'au lot 4 : tu peux le survoler pour l'instant.
 
 Deux dépôts servent de référence en **lecture seule** — ne les modifie sous aucun prétexte :
-* `/home/antoine/Code/SilverSprint` — la v1 d'origine (C++/Cinder). Contient le **firmware Arduino**
+* le dépôt v1 — la v1 d'origine (C++/Cinder). Contient le **firmware Arduino**
   dans `apps/Arduino/ss_basic/ss_basic.ino` : c'est la source de vérité du matériel, à lire.
-* `/home/antoine/Code/SilverSprint-v2` — un prototype abandonné (C++/SDL2/ImGui). Utile pour
+* le dépôt v2 — un prototype abandonné (C++/SDL2/ImGui). Utile pour
   quelques concepts, mais son post-mortem est déjà intégré aux specs. N'en recopie pas le code.
 
 ## Les décisions sont prises, ne les rouvre pas

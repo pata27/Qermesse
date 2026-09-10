@@ -6,7 +6,7 @@
 
 ## Ce qu'on fait
 
-Refonte complète du logiciel de course de rouleaux **SilverSprint** (goldsprints).
+Refonte complète d'un logiciel de course de rouleaux (goldsprints) hérité.
 Le matériel et le firmware Arduino existants sont **conservés à l'identique**. Tout le logiciel PC
 est réécrit : nouvelle stack, vue 3D immersive, trois modes de jeu, qualité professionnelle,
 multiplateforme natif Windows / Linux / macOS.
@@ -25,7 +25,7 @@ multiplateforme natif Windows / Linux / macOS.
 
 ## Les deux découvertes qui structurent tout le projet
 
-L'analyse du code v1 (`/home/antoine/Code/SilverSprint`) a mis au jour deux faits qui changent
+L'analyse du code v1 (le dépôt v1) a mis au jour deux faits qui changent
 l'architecture. Ils sont détaillés dans `01` §5.
 
 1. **Le firmware ne sait pas combien de riders sont actifs.** En mode distance, il attend que les
@@ -40,7 +40,7 @@ Un développeur qui ignore ce point reproduira mécaniquement les bugs de la v1.
 
 ## L'erreur à ne pas répéter
 
-Le prototype v2 (`/home/antoine/Code/SilverSprint-v2`) a consacré sa dernière session à embellir
+Le prototype v2 (le dépôt v2) a consacré sa dernière session à embellir
 l'affichage — vélo animé, halos, traînées — alors que la chaîne de données qu'il visualisait
 **n'avait jamais été validée contre un Arduino réel**. Il s'arrête littéralement sur un commit
 « mode mock, no Arduino needed ». Le parseur, pur et sans risque, avait 7 tests ; le threading série,

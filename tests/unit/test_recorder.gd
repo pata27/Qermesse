@@ -560,7 +560,7 @@ func _write_foreign_day_race(uuid: String, started_at: String) -> void:
 		]
 	var file := FileAccess.open(_races.path_join("%s-%s.json" % [stamp, uuid]), FileAccess.WRITE)
 	file.store_string(JSON.stringify({
-		"format": "silversprint-race/1",
+		"format": "qermesse-race/1",
 		"uuid": uuid,
 		"started_at": started_at,
 		"finished_at": started_at,
@@ -914,7 +914,7 @@ func test_une_course_illisible_est_ecartee_mais_comptee() -> void:
 	# autres — mais tronque, comme le laisserait une coupure de courant.
 	var abimee := _races.path_join("%s-abimee.json" % bonne.uuid.substr(0, 8))
 	var file := FileAccess.open(abimee, FileAccess.WRITE)
-	file.store_string('{"format": "silversprint-race/1", "result": {"ran')
+	file.store_string('{"format": "qermesse-race/1", "result": {"ran')
 	file.close()
 
 	var recorder := Recorder.new(_logs, _races)
@@ -934,7 +934,7 @@ func test_un_fichier_d_un_autre_jour_n_est_pas_compte_comme_illisible() -> void:
 	_run_recorded_race(_config(), [45.0, 43.0])
 	var veille := _races.path_join("19990101T120000-vieille.json")
 	var file := FileAccess.open(veille, FileAccess.WRITE)
-	file.store_string('{"format": "silversprint-race/1"}')
+	file.store_string('{"format": "qermesse-race/1"}')
 	file.close()
 
 	var recorder := Recorder.new(_logs, _races)
