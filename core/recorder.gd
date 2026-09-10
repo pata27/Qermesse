@@ -77,6 +77,29 @@ func problems() -> Array[String]:
 	return _problems
 
 
+## LE DISQUE SE VERIFIE LA VEILLE, pas a la fin de la premiere course. Un
+## dossier de resultats non inscriptible — cle en lecture seule, quota, droits
+## — n'etait decouvert qu'au premier « ENREGISTREMENT : … », en soiree. Cette
+## sonde cree les deux dossiers, y ecrit un fichier temoin et l'efface ; elle
+## rend ce qui a echoue, sans toucher aux problemes de course.
+func check_writable() -> Array[String]:
+	var problems: Array[String] = []
+	for dir: String in [_logs_dir, _races_dir]:
+		if not AppPaths.ensure_dir(dir, problems):
+			continue
+		var probe := dir.path_join(".ecriture-temoin")
+		var file := FileAccess.open(probe, FileAccess.WRITE)
+		if file == null:
+			problems.append(
+				"dossier %s non inscriptible (erreur %d)" % [dir, FileAccess.get_open_error()]
+			)
+			continue
+		file.store_string("ok")
+		file.close()
+		DirAccess.remove_absolute(probe)
+	return problems
+
+
 ## Dossier des courses, et chemin du JSON d'une course donnee. `DEPANNAGE`
 ## demande a l'operateur d'envoyer ce fichier au developpeur : encore faut-il
 ## qu'il puisse le nommer sans deviner un dossier voisin et un uuid.

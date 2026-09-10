@@ -194,6 +194,14 @@ func initialize() -> void:
 		if recorder_races_dir.is_empty():
 			recorder_races_dir = aside.path_join("races")
 	recorder = Recorder.new(recorder_logs_dir, recorder_races_dir)
+	# LE DISQUE SE VERIFIE LA VEILLE. Un dossier de resultats non inscriptible
+	# n'etait decouvert qu'au premier « ENREGISTREMENT : … », a la fin de la
+	# premiere course, devant le public. La ligne orange le dit au lancement.
+	var unwritable := recorder.check_writable()
+	if not unwritable.is_empty():
+		_startup_problems.append(
+			"RÉSULTATS : rien ne pourra être enregistré — %s" % " ; ".join(unwritable)
+		)
 	# Un redemarrage en pleine soiree ne vide pas « Courses du jour ».
 	_history = recorder.load_day()
 	# ET IL DIT CE QU'IL N'A PAS SU RELIRE. Une course ecartee disparaissait de
@@ -828,10 +836,7 @@ func _on_race_finished(result: RaceResult) -> void:
 	if not demo_mode:
 		_history.append(result)
 	race_finished.emit(result)
-	# Le classement est a l'ecran ; s'il n'est PAS sur disque, l'operateur
-	# doit le savoir maintenant, pas en cherchant le CSV a la fin de la soiree.
-	if not recorder.problems().is_empty():
-		notice.emit("ENREGISTREMENT : %s" % recorder.problems()[recorder.problems().size() - 1])
+	_report_recording_problems()
 	save_preferences()
 	# LE RESULTAT EST A L'ECRAN : la FSM le dit. `docs/02` §1 fait suivre
 	# FINISHED de RESULTS, « resultat consultable, en attente d'acquittement » ;
@@ -923,5 +928,17 @@ func _on_race_aborted(note: String) -> void:
 		if not demo_mode:
 			_history.append(partial)
 	recorder.record_abort(note)
+	# MEME ALERTE QU'A L'ARRIVEE : une course interrompue dont la trace ne
+	# s'ecrit pas se taisait, alors que c'est precisement celle que DEPANNAGE
+	# fait envoyer au developpeur.
+	_report_recording_problems()
 	race_aborted.emit(note)
+
+
+## Le classement est a l'ecran ; s'il n'est PAS sur disque, l'operateur doit le
+## savoir maintenant, pas en cherchant le CSV a la fin de la soiree.
+func _report_recording_problems() -> void:
+	if recorder.problems().is_empty():
+		return
+	notice.emit("ENREGISTREMENT : %s" % recorder.problems()[recorder.problems().size() - 1])
 	save_preferences()

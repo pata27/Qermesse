@@ -215,6 +215,11 @@ godot --headless --script tools/ss_replay.gd -- --dossier <dossier races>
 de course : `ENREGISTREMENT : …`. Le logiciel ne s'arrête pas pour autant ; le classement reste à
 l'écran, mais il n'est **pas** sur disque. Libérer de la place ou changer de dossier, puis relancer.
 
+Mieux : **le logiciel vérifie ses dossiers au lancement**, en y écrivant un fichier témoin. S'il
+ne peut pas, la ligne orange du panneau **Course** le dit dès la veille — `RÉSULTATS : rien ne
+pourra être enregistré — …` — et non à la fin de la première course devant le public. Une course
+**interrompue** dont la trace ne peut pas s'écrire le dit aussi, comme une course finie.
+
 ---
 
 ## Les noms des riders et les réglages ont disparu au lancement
@@ -394,6 +399,7 @@ d'entrée quand on lit un message et qu'on ne sait pas par où commencer.
 | `PISTE N : aucun tick depuis le départ — coureur absent ou capteur débranché ?` | Une piste **cochée** n'a produit aucun tick au bout de dix secondes, ou du quart de l'épreuve — le premier des deux. La fin du message dit ce que la course en fera : en distance elle **attend** cette piste ; en temps elle **finira au gong** quand même ; en poursuite la piste **sera éliminée** à l'écart décisif. | En distance : décocher la piste et relancer, ou rebrancher le capteur. En temps et en poursuite : rien, la course se termine seule — ne pas l'arrêter pour ça. Voir « Une piste reste à zéro ». |
 | `PISTE N : pointe à X km/h — capteur qui rebondit ou aimant qui passe deux fois par tour ?` | Une pointe humainement invraisemblable. La mesure est **conservée**, pas corrigée. | Voir « Les vitesses affichées sont absurdes ». |
 | `ENREGISTREMENT : …` | Le classement est à l'écran mais n'a pas pu être écrit sur le disque. | Le plus urgent de la soirée : photographier l'écran de résultats, puis voir « Le CSV est introuvable ». |
+| `RÉSULTATS : rien ne pourra être enregistré — …` | Au lancement, le dossier des journaux ou des courses n'a pas pu être créé ou ne se laisse pas écrire — support en lecture seule, droits, disque plein. Rien de ce soir ne sera sur disque tant que ce n'est pas réparé. | Libérer de la place, corriger les droits ou changer de dossier, puis relancer le logiciel — **avant** la première course. |
 | `SAUVEGARDE DES REGLAGES : …` / `SAUVEGARDE DU ROSTER : …` | Les réglages ou les noms n'ont pas pu être écrits. La course, elle, est enregistrée. | Vérifier l'espace disque et les droits sur le dossier de configuration. Les noms seront à ressaisir au prochain lancement. |
 | `COURSES DU JOUR : N fichier(s) de course illisible(s), la liste est incomplète` | Au lancement, un ou plusieurs fichiers de course du jour n'ont pas pu être relus — disque coupé pendant l'écriture, fichier tronqué. La liste **Courses du jour** est donc plus courte que le nombre de manches réellement courues. | Le message donne les noms. Le **journal CSV du jour garde ses lignes** : classements, temps et vitesses y sont. Seul le rejeu de ces courses-là est perdu. |
 | `REGLAGES : …` / `ROSTER : …` au lancement | Un fichier de configuration est illisible ; les valeurs par défaut ont été prises. | Voir « Les noms des riders et les réglages ont disparu au lancement ». |

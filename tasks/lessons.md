@@ -1840,3 +1840,11 @@ code 1 sans sortie — ses commandes tournaient quand même, seule la sortie (so
 Règles : les copies de secours vont sous le projet, dans `.run/backup/` (ignoré par git, sur
 `/home`) ; vérifier la copie (`test -s`) **avant** de neutraliser ; et quand toutes les commandes
 échouent sans sortie, soupçonner le disque, pas la commande — puis relire l'état des fichiers.
+
+## Ce qui se découvre en fin de première course se vérifie au lancement
+
+Un dossier de résultats non inscriptible n'était dit qu'au premier `ENREGISTREMENT : …`, à la fin
+de la première course, devant le public — alors que le manuel fait tout préparer la veille. Et
+l'abandon, lui, se taisait. Méthode : pour chaque alerte émise « à la fin de quelque chose »,
+demander si sa cause est déjà connaissable au lancement (dossier, port, fichier) ; si oui, la
+sonder au démarrage avec un fichier témoin, et la mettre sur la ligne orange.

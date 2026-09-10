@@ -932,3 +932,60 @@ func test_un_roster_lisible_mais_faux_est_dit_au_lancement() -> void:
 	assert_string_contains(line, "piste 1 : couleur « rouge » invalide")
 	assert_eq(controller.roster.rider(0).name, "Alice", "le nom, lui, est pris")
 	DirAccess.remove_absolute(roster_path)
+
+
+func test_un_dossier_de_resultats_non_inscriptible_est_dit_des_le_lancement() -> void:
+	# Le manuel fait tout preparer la veille ; un disque qui refuse d'ecrire
+	# n'etait decouvert qu'a la fin de la premiere course, devant le public.
+	var blocked := ProjectSettings.globalize_path(TEST_ROOT).path_join("races-bloque")
+	var file := FileAccess.open(blocked, FileAccess.WRITE)
+	file.store_string("pas un dossier")
+	file.close()
+	var controller := AppController.new()
+	controller.preferences_enabled = false
+	controller.recorder_logs_dir = _logs
+	controller.recorder_races_dir = blocked
+	add_child_autofree(controller)
+	var panel := OperatorPanel.new()
+	add_child_autofree(panel)
+	panel.setup(controller)
+	var line := panel.race_panel().startup_text()
+	assert_string_contains(line, "RÉSULTATS : rien ne pourra être enregistré")
+	assert_string_contains(line, "races-bloque", "le dossier fautif est nomme")
+	DirAccess.remove_absolute(blocked)
+
+
+func test_une_course_interrompue_dont_la_trace_ne_s_ecrit_pas_le_dit_aussi() -> void:
+	# L'arrivee prevenait ; l'abandon se taisait — pour la trace que DEPANNAGE
+	# fait justement envoyer au developpeur.
+	var blocked := ProjectSettings.globalize_path(TEST_ROOT).path_join("logs-bloque-2")
+	var file := FileAccess.open(blocked, FileAccess.WRITE)
+	file.store_string("pas un dossier")
+	file.close()
+	var controller := AppController.new()
+	controller.preferences_enabled = false
+	controller.recorder_logs_dir = blocked
+	controller.recorder_races_dir = _races
+	add_child_autofree(controller)
+	var notices: Array[String] = []
+	controller.notice.connect(func(text: String) -> void: notices.append(text))
+	controller.set_simulation_speed(10.0)
+	for i: int in range(120):
+		await wait_physics_frames(1)
+		if controller.link_state() == Protocol.State.IDENTIFIED:
+			break
+	controller.settings.distance_m = 2000.0
+	assert_true(controller.start_race())
+	for i: int in range(300):
+		await wait_physics_frames(1)
+		if controller.engine.state() == RaceEngine.State.RUNNING:
+			break
+	await wait_physics_frames(10)
+	notices.clear()
+	controller.stop_race()
+	var said := false
+	for text: String in notices:
+		if text.begins_with("ENREGISTREMENT"):
+			said = true
+	assert_true(said, "l'abandon previent comme l'arrivee : %s" % [notices])
+	DirAccess.remove_absolute(blocked)
