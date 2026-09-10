@@ -13,7 +13,7 @@ config/description="Logiciel de course de rouleaux (goldsprints)."
 ; tiers qui installe sur machine vierge et fait courir deux personnes sans aide
 ; — et il n'est pas franchi, pas plus que J1, la validation sur l'Arduino reel.
 ; Tout le reste l'est. Un 1.0 se pose apres une vraie soiree, pas avant.
-config/version="0.9.1-beta"
+config/version="0.9.2-beta"
 config/features=PackedStringArray("4.5", "Forward Plus")
 run/main_scene="res://scenes/main.tscn"
 

@@ -150,9 +150,12 @@ func test_couper_les_preferences_isole_aussi_les_courses_enregistrees() -> void:
 	# ils veulent.
 	var chosen := AppController.new()
 	chosen.preferences_enabled = false
-	chosen.recorder_logs_dir = "/tmp/ss-test/logs"
+	# Un chemin sous la racine de test, pas `/tmp` : le controleur cree ses
+	# dossiers des le lancement, et Windows n'a pas de `/tmp` a creer.
+	var chosen_logs := _path("ss-test").path_join("logs")
+	chosen.recorder_logs_dir = chosen_logs
 	add_child_autofree(chosen)
-	assert_eq(chosen.recorder_logs_dir, "/tmp/ss-test/logs")
+	assert_eq(chosen.recorder_logs_dir, chosen_logs)
 
 
 func test_le_plein_ecran_du_spectacle_est_un_reglage_a_part_entiere() -> void:
